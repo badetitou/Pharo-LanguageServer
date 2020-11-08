@@ -75,8 +75,22 @@ PLSServer >> start [
 { #category : #starting }
 PLSServer >> textDocumentCompletion: CompletionParams [
 	<jrpc: #'textDocument/completion'>
-	^ JRPCRequestObject new 
+	| completionList |
+	completionList := PLSCompletionList new.
+	completionList
+		items:
+			{(PLSCompletionItem new
+				label: 'TypeScript';
+				kind: PLSCompletionItemKind text;
+				data: 1;
+				yourself).
+			(PLSCompletionItem new
+				label: 'JavaScript';
+				kind: PLSCompletionItemKind text;
+				data: 2;
+				yourself)}.
+	^ JRPCRequestObject new
 		method: #'textDocument/completion';
-		params: PLSCompletionList new asJRPCJSON;
+		params: completionList asJRPCJSON;
 		yourself
 ]
