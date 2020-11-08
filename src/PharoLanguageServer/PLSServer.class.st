@@ -12,9 +12,25 @@ server messageProcessor
 "
 Class {
 	#name : #PLSServer,
-	#superclass : #JRPCTCPServer,
+	#superclass : #JRPCServer,
+	#instVars : [
+		'port',
+		'tcpServer',
+		'serverLoop',
+		'process'
+	],
 	#category : #PharoLanguageServer
 }
+
+{ #category : #defaults }
+PLSServer class >> defaultPort [
+	^ 4000
+]
+
+{ #category : #stopping }
+PLSServer >> defaultPort [
+	^ self class defaultPort
+]
 
 { #category : #starting }
 PLSServer >> extractLengthOf: data [
@@ -30,18 +46,48 @@ PLSServer >> getDatafromPosition: startingPoint fromSocket: clientSocket in: exi
 ]
 
 { #category : #starting }
+PLSServer >> getHeaderFor: answer into: aStream [
+	aStream << 'Content-Length: ' << answer size asString << String crlf
+		<< String crlf
+]
+
+{ #category : #starting }
 PLSServer >> initialize [
 	super initialize.
 	self addHandlersFromPragmasIn: self
 ]
 
-{ #category : #starting }
+{ #category : #lsp }
 PLSServer >> onInitializeTrace: trace processId: processId clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 	<jrpc: #initialize>
-	^ JRPCRequestObject new 
-		method: 'initialize';
-		params: PLSInitializeResult new asJRPCJSON;
-		yourself
+	^ PLSInitializeResult new
+]
+
+{ #category : #stopping }
+PLSServer >> port [
+	^ port ifNil: [ port := self defaultPort ]
+]
+
+{ #category : #stopping }
+PLSServer >> port: anObject [
+	port := anObject
+]
+
+{ #category : #starting }
+PLSServer >> sendData: answer toClient: clientSocket [
+	answer
+		ifNotEmpty: [ clientSocket
+				sendData:
+					(String
+						streamContents: [ :contentStream | 
+							self getHeaderFor: answer into: contentStream.
+							contentStream << answer ]) ]
+]
+
+{ #category : #lsp }
+PLSServer >> serverInitialized [
+	<jrpc: #'initialized'>
+	Transcript crShow: 'Initialized'
 ]
 
 { #category : #starting }
@@ -49,36 +95,45 @@ PLSServer >> start [
 	tcpServer := Socket newTCP.
 	tcpServer listenOn: self port backlogSize: 10.
 	serverLoop := true.
-	process := [ [ serverLoop ]
-		whileTrue: [ (tcpServer waitForAcceptFor: 60)
-				ifNotNil: [ :clientSocket | 
-					[ [ | data buffer length startingPoint |
+	(tcpServer waitForAcceptFor: 60)
+		ifNotNil: [ :clientSocket | 
+			process := [ [ serverLoop ]
+				whileTrue: [ | data buffer length startingPoint |
 					data := clientSocket receiveData.
 					length := self extractLengthOf: data.
 					startingPoint := data indexOf: ${.
 					buffer := String new: length.
 					startingPoint = 0
 						ifTrue: [ self getDatafromPosition: 1 fromSocket: clientSocket in: buffer ]
-						ifFalse: [ (data copyFrom: startingPoint to: data size) withIndexDo: [ :each :index | buffer at: index put: each ].
+						ifFalse: [ (data copyFrom: startingPoint to: data size)
+								withIndexDo: [ :each :index | buffer at: index put: each ].
 							self
 								getDatafromPosition: data size - startingPoint + 2
 								fromSocket: clientSocket
-								in: buffer].
-					clientSocket sendData: (self handleJSON: buffer) ]
-						ensure: [ clientSocket closeAndDestroy ] ]
-						forkAt: Processor lowIOPriority
-						named: 'JRPC TCP connection' ] ] ]
-		forkAt: Processor highIOPriority
-		named: 'JRPC TCP server'
+								in: buffer ].
+					self sendData: (self handleJSON: buffer) toClient: clientSocket ] ]
+				forkAt: Processor lowIOPriority
+				named: 'JRPC TCP connection' ]
 ]
 
-{ #category : #starting }
-PLSServer >> textDocumentCompletion: CompletionParams [
+{ #category : #stopping }
+PLSServer >> stop [
+	serverLoop := false.
+	tcpServer closeAndDestroy.
+	
+	"Ensure process finishes."
+	process isTerminated
+		ifTrue: [ ^ self ].
+	process terminate
+]
+
+{ #category : #lsp }
+PLSServer >> textDocumentCompletionWithContext: context position: position textDocument: textDocument [
 	<jrpc: #'textDocument/completion'>
 	| completionList |
 	completionList := PLSCompletionList new.
 	completionList
-		items:
+		completionItems:
 			{(PLSCompletionItem new
 				label: 'TypeScript';
 				kind: PLSCompletionItemKind text;
@@ -89,8 +144,5 @@ PLSServer >> textDocumentCompletion: CompletionParams [
 				kind: PLSCompletionItemKind text;
 				data: 2;
 				yourself)}.
-	^ JRPCRequestObject new
-		method: #'textDocument/completion';
-		params: completionList asJRPCJSON;
-		yourself
+	^ completionList
 ]

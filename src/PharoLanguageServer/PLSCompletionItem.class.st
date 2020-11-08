@@ -32,6 +32,13 @@ PLSCompletionItem >> additionalTextEdits: anObject [
 	additionalTextEdits := anObject
 ]
 
+{ #category : #lsp }
+PLSCompletionItem >> asJRPCJSON [
+	^ {(#label -> self label).
+	(#kind -> self kind).
+	(#data -> self data)} asDictionary
+]
+
 { #category : #accessing }
 PLSCompletionItem >> command [
 	^ command
