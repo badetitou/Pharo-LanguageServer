@@ -38,7 +38,10 @@ PLSServer >> initialize [
 { #category : #starting }
 PLSServer >> onInitializeTrace: trace processId: processId clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 	<jrpc: #initialize>
-	Transcript crShow: 'initialize'
+	^ JRPCRequestObject new 
+		method: 'initialize';
+		params: PLSInitializeResult new asJRPCJSON;
+		yourself
 ]
 
 { #category : #starting }
@@ -67,4 +70,13 @@ PLSServer >> start [
 						named: 'JRPC TCP connection' ] ] ]
 		forkAt: Processor highIOPriority
 		named: 'JRPC TCP server'
+]
+
+{ #category : #starting }
+PLSServer >> textDocumentCompletion: CompletionParams [
+	<jrpc: #'textDocument/completion'>
+	^ JRPCRequestObject new 
+		method: #'textDocument/completion';
+		params: PLSCompletionList new asJRPCJSON;
+		yourself
 ]
