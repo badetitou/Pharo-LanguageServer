@@ -32,6 +32,21 @@ PLSServer >> defaultPort [
 	^ self class defaultPort
 ]
 
+{ #category : #'lsp - text synchronisation' }
+PLSServer >> didChange: textDocument contentChanges: contentChanges [
+	<jrpc: #'textDocument/didChange'>
+]
+
+{ #category : #'lsp - text synchronisation' }
+PLSServer >> didClose: textDocument [
+	<jrpc: #'textDocument/didClose'>
+]
+
+{ #category : #'lsp - text synchronisation' }
+PLSServer >> didOpen: textDocument [
+	<jrpc: #'textDocument/didOpen'>
+]
+
 { #category : #starting }
 PLSServer >> extractLengthOf: data [
 	(data beginsWith: 'Content-Length: ')
@@ -145,4 +160,9 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 				data: 2;
 				yourself)}.
 	^ completionList
+]
+
+{ #category : #'lsp - text synchronisation' }
+PLSServer >> willSave: textDocument reason: reason [
+	<jrpc: #'textDocument/willSave'>
 ]

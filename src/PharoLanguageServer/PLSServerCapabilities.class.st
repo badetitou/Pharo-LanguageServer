@@ -1,7 +1,7 @@
 Class {
 	#name : #PLSServerCapabilities,
 	#superclass : #Object,
-	#category : #'PharoLanguageServer-Structure'
+	#category : #'PharoLanguageServer-Structure-Capabilities'
 }
 
 { #category : #converting }
