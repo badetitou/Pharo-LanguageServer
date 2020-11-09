@@ -6,10 +6,22 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'openClose',
-		'change'
+		'change',
+		'willSave',
+		'willSaveWaitUntil',
+		'save'
 	],
 	#category : #'PharoLanguageServer-Structure-Capabilities'
 }
+
+{ #category : #accessing }
+PLSTextDocumentSyncOptions >> asJRPCJSON [
+	^ {(#change -> self change asJRPCJSON).
+	(#openClose -> self openClose asJRPCJSON).
+	(#willSave -> false).
+	(#willSaveWaitUntil -> false).
+	(#save -> false)} asDictionary
+]
 
 { #category : #accessing }
 PLSTextDocumentSyncOptions >> change [
@@ -35,4 +47,34 @@ PLSTextDocumentSyncOptions >> openClose [
 { #category : #accessing }
 PLSTextDocumentSyncOptions >> openClose: anObject [
 	openClose := anObject
+]
+
+{ #category : #accessing }
+PLSTextDocumentSyncOptions >> save [
+	^ save
+]
+
+{ #category : #accessing }
+PLSTextDocumentSyncOptions >> save: anObject [
+	save := anObject
+]
+
+{ #category : #accessing }
+PLSTextDocumentSyncOptions >> willSave [
+	^ willSave
+]
+
+{ #category : #accessing }
+PLSTextDocumentSyncOptions >> willSave: anObject [
+	willSave := anObject
+]
+
+{ #category : #accessing }
+PLSTextDocumentSyncOptions >> willSaveWaitUntil [
+	^ willSaveWaitUntil
+]
+
+{ #category : #accessing }
+PLSTextDocumentSyncOptions >> willSaveWaitUntil: anObject [
+	willSaveWaitUntil := anObject
 ]

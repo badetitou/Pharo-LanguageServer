@@ -17,7 +17,8 @@ Class {
 		'port',
 		'tcpServer',
 		'serverLoop',
-		'process'
+		'process',
+		'context'
 	],
 	#category : #PharoLanguageServer
 }
@@ -25,6 +26,11 @@ Class {
 { #category : #defaults }
 PLSServer class >> defaultPort [
 	^ 4000
+]
+
+{ #category : #context }
+PLSServer >> context [
+	^ context
 ]
 
 { #category : #stopping }
@@ -40,11 +46,18 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didClose: textDocument [
 	<jrpc: #'textDocument/didClose'>
+	self context removeItem: ((textDocument at: #textDocument) at: #uri)
 ]
 
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didOpen: textDocument [
 	<jrpc: #'textDocument/didOpen'>
+	self context textItem: (textDocument at: #uri) put: textDocument 
+]
+
+{ #category : #'lsp - text synchronisation' }
+PLSServer >> didSave: textDocument text: text [
+	<jrpc: #'textDocument/didSave'>
 ]
 
 { #category : #starting }
@@ -69,7 +82,8 @@ PLSServer >> getHeaderFor: answer into: aStream [
 { #category : #starting }
 PLSServer >> initialize [
 	super initialize.
-	self addHandlersFromPragmasIn: self
+	self addHandlersFromPragmasIn: self.
+	context := PLSContext new
 ]
 
 { #category : #lsp }
@@ -86,6 +100,11 @@ PLSServer >> port [
 { #category : #stopping }
 PLSServer >> port: anObject [
 	port := anObject
+]
+
+{ #category : #context }
+PLSServer >> resetContext [
+	context := PLSContext new
 ]
 
 { #category : #starting }
@@ -165,4 +184,9 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 { #category : #'lsp - text synchronisation' }
 PLSServer >> willSave: textDocument reason: reason [
 	<jrpc: #'textDocument/willSave'>
+]
+
+{ #category : #'lsp - text synchronisation' }
+PLSServer >> willSaveUntil: textDocument reason: reason [
+	<jrpc: #'textDocument/willSaveWaitUntil'>
 ]
