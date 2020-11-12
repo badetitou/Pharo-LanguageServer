@@ -196,15 +196,7 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 		position: position;
 		yourself.
 	completionList := PLSCompletionList new.
-	completionList
-		completionItems:
-			(completionEngine entries
-				collectWithIndex: [ :entry :index | 
-					PLSCompletionItem new
-						label: entry contents;
-						kind: PLSCompletionItemKind text;
-						data: index;
-						yourself ]) asArray.
+	completionList completionItems: completionEngine entries asArray.
 	^ completionList
 ]
 

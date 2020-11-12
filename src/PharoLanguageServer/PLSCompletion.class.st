@@ -27,6 +27,12 @@ PLSCompletion >> entries [
 		source: self source
 		position: self position.
 	^ self completionContext entries
+		collectWithIndex: [ :entry :index |
+			PLSCompletionItem new
+				label: entry contents;
+				kind: entry asPLSCompletionItemKind;
+				data: index;
+				yourself ]
 ]
 
 { #category : #initialization }
