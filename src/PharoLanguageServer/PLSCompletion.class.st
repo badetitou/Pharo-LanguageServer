@@ -41,8 +41,8 @@ PLSCompletion >> position: aDictionaryLineCharacter [
 	self source
 		lineIndicesDo: [ :start :end :endDelimiter | 
 			current = (aDictionaryLineCharacter at: #line)
-				ifTrue: [
-					^ position := start + (aDictionaryLineCharacter at: #character) ].
+				ifTrue:
+					[ ^ position := start - 1 + (aDictionaryLineCharacter at: #character) ].
 			current := current + 1 ].
 	^ -1
 ]
