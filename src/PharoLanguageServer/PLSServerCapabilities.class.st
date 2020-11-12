@@ -7,14 +7,21 @@ Class {
 { #category : #converting }
 PLSServerCapabilities >> asJRPCJSON [
 	^ {(#completionProvider -> self completionProvider asJRPCJSON).
-		(#textDocumentSync -> self textDocumentSync asJRPCJSON).
-		(#hoverProvider -> self hoverProvider asJRPCJSON)}
-		asDictionary
+	(#textDocumentSync -> self textDocumentSync asJRPCJSON).
+	(#hoverProvider -> self hoverProvider asJRPCJSON).
+	(#documentFormattingProvider
+		-> self documentFormattingProvider asJRPCJSON)} asDictionary
 ]
 
 { #category : #'as yet unclassified' }
 PLSServerCapabilities >> completionProvider [
 	^ PLSCompletionOptions new
+]
+
+{ #category : #converting }
+PLSServerCapabilities >> documentFormattingProvider [
+	^ PLSDocumentFormattingOptions new
+		
 ]
 
 { #category : #converting }

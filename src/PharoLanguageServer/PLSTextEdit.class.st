@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : #accessing }
+PLSTextEdit >> asJRPCJSON [
+	^ {(#range -> self range asJRPCJSON).
+	(#newText -> self newText asJRPCJSON)} asDictionary
+]
+
+{ #category : #accessing }
 PLSTextEdit >> newText [
 	"The string to be inserted. For delete operations use an empty string."
 	^ newText

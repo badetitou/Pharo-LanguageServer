@@ -12,6 +12,12 @@ Class {
 }
 
 { #category : #accessing }
+PLSPosition >> asJRPCJSON [
+	^ {(#line -> self line asJRPCJSON).
+	(#character -> self character asJRPCJSON)} asDictionary
+]
+
+{ #category : #accessing }
 PLSPosition >> character [
 	"Character offset on a line in a document (zero-based).
 	Assuming that the line is represented as a string, the `character` value represents the gap between the `character` and `character + 1`.

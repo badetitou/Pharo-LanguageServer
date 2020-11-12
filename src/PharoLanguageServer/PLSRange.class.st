@@ -21,7 +21,7 @@ Class {
 { #category : #converting }
 PLSRange >> asJRPCJSON [
 	^ {(#start -> self start asJRPCJSON).
-	(#end -> self end asJRPCJSON)}
+	(#end -> self end asJRPCJSON)} asDictionary 
 ]
 
 { #category : #accessing }

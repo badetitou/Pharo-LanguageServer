@@ -22,15 +22,17 @@ String >> wordAt: anIndex [
 	"('word before index' wordAt: 4) >>> 'word'"
 
 	"('word before index' wordAt: 15)  >>> 'index'"
+	
+	"('word before index.hello' wordAt: 15)  >>> 'index'"
 
 	| sepBefore sepAfter tokBefore tokAfter |
 	tokBefore := false.
 	sepBefore := anIndex.
 	sepAfter := anIndex.
-	[ sepBefore > 0 and: [ (self at: sepBefore) isSeparator not ] ]
+	[ sepBefore > 0 and: [ ((self at: sepBefore) isSeparator or: [ (self at: sepBefore) isOtherPunctuation ]) not ] ]
 		whileTrue: [ tokBefore := true.
 			sepBefore := sepBefore - 1 ].
-	[ sepAfter < (self size + 1) and: [ (self at: sepAfter) isSeparator not ] ]
+	[ sepAfter < (self size + 1) and: [ ((self at: sepAfter) isSeparator or: [ (self at: sepAfter) isOtherPunctuation ]) not ] ]
 		whileTrue: [ tokAfter := true.
 			sepAfter := sepAfter + 1 ].
 	^ (tokBefore and: [ tokAfter ])

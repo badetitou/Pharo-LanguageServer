@@ -34,7 +34,7 @@ PLSServer class >> defaultPort [
 PLSServer >> cancelRequest: id [
 	<jrpc: #'$/cancelRequest' >
 	messagesProcesses
-		at: #id
+		at: id
 		ifPresent: [ :process2 | process2 terminate ]
 		ifAbsent: [ Error signal ]
 ]
@@ -112,6 +112,31 @@ PLSServer >> extractRequestFrom: clientSocket [
 				in: result ].
 	data := ''.
 	^ result
+]
+
+{ #category : #'lsp - formatting' }
+PLSServer >> formatTextDocument: textDocument withOptions: options [
+	<jrpc: #'textDocument/formatting'>
+	| codeSource formatter lines endPosition |
+	codeSource := (self context textItem: (textDocument at: #uri))
+		at: #text.
+	lines := codeSource lines.
+	endPosition := PLSPosition new
+		line: lines size;
+		character: lines last size;
+		yourself.
+	formatter := PLSFormater new sourceCode: codeSource.
+	^ {(PLSTextEdit new
+		newText: formatter formated;
+		range:
+			(PLSRange new
+				start:
+					(PLSPosition new
+						line: 0;
+						character: 0;
+						yourself);
+				end: endPosition;
+				yourself))}
 ]
 
 { #category : #starting }
