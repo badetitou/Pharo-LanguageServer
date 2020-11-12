@@ -208,6 +208,17 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 	^ completionList
 ]
 
+{ #category : #'lsp - hover' }
+PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument [
+	<jrpc: #'textDocument/hover'>
+	| hover |
+	hover := PLSHover new
+		source: ((self context textItem: (textDocument at: #uri)) at: #text);
+		position: position;
+		yourself.
+	^ { #contents -> hover contents } asDictionary
+]
+
 { #category : #'lsp - text synchronisation' }
 PLSServer >> willSave: textDocument reason: reason [
 	<jrpc: #'textDocument/willSave'>
