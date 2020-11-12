@@ -18,7 +18,8 @@ Class {
 		'tcpServer',
 		'serverLoop',
 		'process',
-		'context'
+		'serverContext',
+		'data'
 	],
 	#category : #PharoLanguageServer
 }
@@ -30,7 +31,7 @@ PLSServer class >> defaultPort [
 
 { #category : #context }
 PLSServer >> context [
-	^ context
+	^ serverContext
 ]
 
 { #category : #stopping }
@@ -41,6 +42,12 @@ PLSServer >> defaultPort [
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didChange: textDocument contentChanges: contentChanges [
 	<jrpc: #'textDocument/didChange'>
+	| document |
+	document := self context textItem: (textDocument at: #uri).
+	document at: #version put: (textDocument at: #version).
+	contentChanges
+		do:
+			[ :change | change keysAndValuesDo: [ :key :value | document at: key put: value ] ]
 ]
 
 { #category : #'lsp - text synchronisation' }
@@ -69,6 +76,35 @@ PLSServer >> extractLengthOf: data [
 ]
 
 { #category : #starting }
+PLSServer >> extractRequestFrom: clientSocket [
+	| length startingPoint endPoint result |
+	"data is the current buffer state"
+	data ifEmpty: [ data := clientSocket receiveData ].
+	length := self extractLengthOf: data.
+	startingPoint := data indexOf: ${.
+	endPoint := data findCloseBracesFor: startingPoint.
+	result := String new: length.
+	"three options"
+	"startingPoint and endPoint are found"
+	(startingPoint ~= 0 and: [ endPoint ~= 0 ])
+		ifTrue: [ result := data copyFrom: startingPoint to: endPoint.
+			data := data copyFrom: endPoint + 1 to: data size.
+			^ result ].
+	startingPoint = 0
+		ifTrue:
+			[ "none were found" self getDatafromPosition: 1 fromSocket: clientSocket in: result ]
+		ifFalse: [ "only startingPoint is found"
+			(data copyFrom: startingPoint to: data size)
+				withIndexDo: [ :each :index | result at: index put: each ].
+			self
+				getDatafromPosition: data size - startingPoint + 2
+				fromSocket: clientSocket
+				in: result ].
+	data := ''.
+	^ result
+]
+
+{ #category : #starting }
 PLSServer >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
 	clientSocket receiveDataInto: existingData startingAt: startingPoint
 ]
@@ -83,7 +119,8 @@ PLSServer >> getHeaderFor: answer into: aStream [
 PLSServer >> initialize [
 	super initialize.
 	self addHandlersFromPragmasIn: self.
-	context := PLSContext new
+	serverContext := PLSContext new.
+	data := ''
 ]
 
 { #category : #lsp }
@@ -104,7 +141,7 @@ PLSServer >> port: anObject [
 
 { #category : #context }
 PLSServer >> resetContext [
-	context := PLSContext new
+	serverContext := PLSContext new
 ]
 
 { #category : #starting }
@@ -132,20 +169,9 @@ PLSServer >> start [
 	(tcpServer waitForAcceptFor: 60)
 		ifNotNil: [ :clientSocket | 
 			process := [ [ serverLoop ]
-				whileTrue: [ | data buffer length startingPoint |
-					data := clientSocket receiveData.
-					length := self extractLengthOf: data.
-					startingPoint := data indexOf: ${.
-					buffer := String new: length.
-					startingPoint = 0
-						ifTrue: [ self getDatafromPosition: 1 fromSocket: clientSocket in: buffer ]
-						ifFalse: [ (data copyFrom: startingPoint to: data size)
-								withIndexDo: [ :each :index | buffer at: index put: each ].
-							self
-								getDatafromPosition: data size - startingPoint + 2
-								fromSocket: clientSocket
-								in: buffer ].
-					self sendData: (self handleJSON: buffer) toClient: clientSocket ] ]
+				whileTrue: [ | request |
+					request := self extractRequestFrom: clientSocket.
+					self sendData: (self handleJSON: request) toClient: clientSocket ] ]
 				forkAt: Processor lowIOPriority
 				named: 'JRPC TCP connection' ]
 ]
@@ -161,23 +187,24 @@ PLSServer >> stop [
 	process terminate
 ]
 
-{ #category : #lsp }
+{ #category : #'lsp - completion' }
 PLSServer >> textDocumentCompletionWithContext: context position: position textDocument: textDocument [
 	<jrpc: #'textDocument/completion'>
-	| completionList |
+	| completionList completionEngine |
+	completionEngine := PLSCompletion new
+		source: ((self context textItem: (textDocument at: #uri)) at: #text);
+		position: position;
+		yourself.
 	completionList := PLSCompletionList new.
 	completionList
 		completionItems:
-			{(PLSCompletionItem new
-				label: 'TypeScript';
-				kind: PLSCompletionItemKind text;
-				data: 1;
-				yourself).
-			(PLSCompletionItem new
-				label: 'JavaScript';
-				kind: PLSCompletionItemKind text;
-				data: 2;
-				yourself)}.
+			(completionEngine entries
+				collectWithIndex: [ :entry :index | 
+					PLSCompletionItem new
+						label: entry contents;
+						kind: PLSCompletionItemKind text;
+						data: index;
+						yourself ]) asArray.
 	^ completionList
 ]
 
