@@ -32,6 +32,7 @@ PLSCompletion >> entries [
 				label: entry contents;
 				kind: entry asPLSCompletionItemKind;
 				data: index;
+				"documentation: entry description description;"
 				yourself ]
 ]
 

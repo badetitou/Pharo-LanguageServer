@@ -19,7 +19,8 @@ Class {
 		'serverLoop',
 		'process',
 		'serverContext',
-		'data'
+		'data',
+		'messagesProcesses'
 	],
 	#category : #PharoLanguageServer
 }
@@ -27,6 +28,15 @@ Class {
 { #category : #defaults }
 PLSServer class >> defaultPort [
 	^ 4000
+]
+
+{ #category : #lsp }
+PLSServer >> cancelRequest: id [
+	<jrpc: #'$/cancelRequest' >
+	messagesProcesses
+		at: #id
+		ifPresent: [ :process2 | process2 terminate ]
+		ifAbsent: [ Error signal ]
 ]
 
 { #category : #context }
@@ -116,17 +126,42 @@ PLSServer >> getHeaderFor: answer into: aStream [
 ]
 
 { #category : #starting }
+PLSServer >> handleRequest: request toClient: clientSocket [
+	| jrpcMessage |
+	jrpcMessage := [ self parseJSON: request ]
+		on: Error
+		do: [ :err | err return: err asJRPCResponse ].
+	^ messagesProcesses
+		at: jrpcMessage id
+		put:
+			([ self
+				sendData: (self handleJSON: jrpcMessage)
+				toClient: clientSocket.
+			messagesProcesses removeKey: jrpcMessage id ]
+				forkAt: Processor lowIOPriority
+				named: jrpcMessage method)
+]
+
+{ #category : #starting }
 PLSServer >> initialize [
 	super initialize.
+	messageProcessor := PLSMessageProcessor new.
 	self addHandlersFromPragmasIn: self.
 	serverContext := PLSContext new.
-	data := ''
+	data := ''.
+	messagesProcesses := Dictionary new.
 ]
 
 { #category : #lsp }
 PLSServer >> onInitializeTrace: trace processId: processId clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 	<jrpc: #initialize>
 	^ PLSInitializeResult new
+]
+
+{ #category : #starting }
+PLSServer >> parseJSON: aJSONString [
+	^ self messageProcessor parseSupposedJRPCMessageObjectFromString: aJSONString.
+	
 ]
 
 { #category : #stopping }
@@ -171,7 +206,7 @@ PLSServer >> start [
 			process := [ [ serverLoop ]
 				whileTrue: [ | request |
 					request := self extractRequestFrom: clientSocket.
-					self sendData: (self handleJSON: request) toClient: clientSocket ] ]
+					self handleRequest: request toClient: clientSocket ] ]
 				forkAt: Processor lowIOPriority
 				named: 'JRPC TCP connection' ]
 ]

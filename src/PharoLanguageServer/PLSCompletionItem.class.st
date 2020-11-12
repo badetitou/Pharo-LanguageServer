@@ -34,9 +34,13 @@ PLSCompletionItem >> additionalTextEdits: anObject [
 
 { #category : #lsp }
 PLSCompletionItem >> asJRPCJSON [
-	^ {(#label -> self label).
+	| dictionary |
+	dictionary := {(#label -> self label).
 	(#kind -> self kind).
-	(#data -> self data)} asDictionary
+	(#data -> self data)} asDictionary.
+	self documentation
+		ifNotNil: [ dictionary at: #document put: self documentation asString ].
+	^ dictionary
 ]
 
 { #category : #accessing }
@@ -67,16 +71,6 @@ PLSCompletionItem >> data [
 { #category : #accessing }
 PLSCompletionItem >> data: anObject [
 	data := anObject
-]
-
-{ #category : #accessing }
-PLSCompletionItem >> deprecated [
-	^ deprecated
-]
-
-{ #category : #accessing }
-PLSCompletionItem >> deprecated1: anObject [
-	deprecated := anObject
 ]
 
 { #category : #accessing }
