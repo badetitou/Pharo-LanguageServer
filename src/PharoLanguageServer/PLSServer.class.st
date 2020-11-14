@@ -33,7 +33,7 @@ PLSServer class >> defaultPort [
 { #category : #lsp }
 PLSServer >> cancelRequest: id [
 	<jrpc: #'$/cancelRequest' >
-	messagesProcesses
+	self context messageProcesses
 		at: id
 		ifPresent: [ :process2 | process2 terminate ]
 		ifAbsent: [ Error signal ]
@@ -63,7 +63,7 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didClose: textDocument [
 	<jrpc: #'textDocument/didClose'>
-	self context removeItem: ((textDocument at: #textDocument) at: #uri)
+	self context removeItem: (textDocument at: #uri)
 ]
 
 { #category : #'lsp - text synchronisation' }
@@ -156,13 +156,12 @@ PLSServer >> handleRequest: request toClient: clientSocket [
 	jrpcMessage := [ self parseJSON: request ]
 		on: Error
 		do: [ :err | err return: err asJRPCResponse ].
-	^ messagesProcesses
-		at: jrpcMessage id
+	^ self messageProcess: jrpcMessage id
 		put:
 			([ self
 				sendData: (self handleJSON: jrpcMessage)
 				toClient: clientSocket.
-			messagesProcesses removeKey: jrpcMessage id ]
+			self removeMessageProcess: jrpcMessage id ]
 				forkAt: Processor lowIOPriority
 				named: jrpcMessage method)
 ]
@@ -175,6 +174,11 @@ PLSServer >> initialize [
 	serverContext := PLSContext new.
 	data := ''.
 	messagesProcesses := Dictionary new.
+]
+
+{ #category : #context }
+PLSServer >> messageProcess: anId	put: aProcess [
+	self context messageProcessesAt: anId put: aProcess
 ]
 
 { #category : #lsp }
@@ -197,6 +201,11 @@ PLSServer >> port [
 { #category : #stopping }
 PLSServer >> port: anObject [
 	port := anObject
+]
+
+{ #category : #context }
+PLSServer >> removeMessageProcess: anId [
+	self context removeMessageProcess: anId
 ]
 
 { #category : #context }

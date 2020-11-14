@@ -15,7 +15,10 @@ PLSHover >> contents [
 	"can be a class"
 	^ Smalltalk globals
 		at: word asSymbol
-		ifPresent: [ :class | class comment ]
+		ifPresent: [ :class | 
+			class isClass
+				ifTrue: [ class comment ]
+				ifFalse: [ '' ] ]
 		ifAbsent: [ '' ]
 ]
 

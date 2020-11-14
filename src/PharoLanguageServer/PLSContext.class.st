@@ -5,19 +5,41 @@ Class {
 	#name : #PLSContext,
 	#superclass : #Object,
 	#instVars : [
-		'textItems'
+		'textItems',
+		'messageProcesses'
 	],
 	#category : #PharoLanguageServer
 }
 
 { #category : #accessing }
 PLSContext >> initialize [
-	textItems := Dictionary new
+	textItems := Dictionary new.
+	messageProcesses := Dictionary new
+]
+
+{ #category : #accessing }
+PLSContext >> messageProcesses [
+	^ messageProcesses
+]
+
+{ #category : #accessing }
+PLSContext >> messageProcesses: anObject [
+	messageProcesses := anObject
+]
+
+{ #category : #accessing }
+PLSContext >> messageProcessesAt: anId put: aProcess [
+	anId ifNotNil: [ self messageProcesses at: anId put: aProcess ]
 ]
 
 { #category : #accessing }
 PLSContext >> removeItem: aURI [
 	^ self textItems removeKey: aURI
+]
+
+{ #category : #accessing }
+PLSContext >> removeMessageProcess: anId [
+	anId ifNotNil: [ self messageProcesses removeKey: anId ]
 ]
 
 { #category : #accessing }
