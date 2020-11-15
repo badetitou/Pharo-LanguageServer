@@ -18,9 +18,9 @@ Class {
 PLSTextDocumentSyncOptions >> asJRPCJSON [
 	^ {(#change -> self change asJRPCJSON).
 	(#openClose -> self openClose asJRPCJSON).
-	(#willSave -> false).
-	(#willSaveWaitUntil -> false).
-	(#save -> false)} asDictionary
+	(#willSave -> self willSave asJRPCJSON).
+	(#willSaveWaitUntil -> self willSaveWaitUntil asJRPCJSON).
+	(#save -> self save asJRPCJSON)} asDictionary
 ]
 
 { #category : #accessing }

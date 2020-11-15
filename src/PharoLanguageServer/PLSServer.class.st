@@ -13,6 +13,8 @@ server messageProcessor
 Class {
 	#name : #PLSServer,
 	#superclass : #JRPCServer,
+	#traits : 'JRPCParser',
+	#classTraits : 'JRPCParser classTrait',
 	#instVars : [
 		'port',
 		'tcpServer',
@@ -75,6 +77,9 @@ PLSServer >> didOpen: textDocument [
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didSave: textDocument text: text [
 	<jrpc: #'textDocument/didSave'>
+	"Install the code in the image if the code is part of a tonel file"
+	((textDocument at: #uri) endsWith: 'class.st')
+		ifTrue: [ (TonelParser parseString: text) do: #load ]
 ]
 
 { #category : #starting }
@@ -226,8 +231,22 @@ PLSServer >> sendData: answer toClient: clientSocket [
 
 { #category : #lsp }
 PLSServer >> serverInitialized [
-	<jrpc: #'initialized'>
-	Transcript crShow: 'Initialized'
+	<jrpc: #initialized>
+	Transcript crTrace: 'Initialized'
+]
+
+{ #category : #lsp }
+PLSServer >> showMessage: aString ofType: aMessageType toClient: aClient [
+	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
+
+	self
+		sendData:
+			(self convertJRPCJsonableObjectToJSON: (JRPCNotificationObject new
+				method: 'window/showMessage';
+				params:
+					{(#message -> aString).
+					(#type -> aMessageType)} asDictionary) asJRPCJSON)
+		toClient: aClient
 ]
 
 { #category : #starting }
@@ -283,9 +302,11 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 { #category : #'lsp - text synchronisation' }
 PLSServer >> willSave: textDocument reason: reason [
 	<jrpc: #'textDocument/willSave'>
+	1h
 ]
 
 { #category : #'lsp - text synchronisation' }
 PLSServer >> willSaveUntil: textDocument reason: reason [
 	<jrpc: #'textDocument/willSaveWaitUntil'>
+	1h
 ]

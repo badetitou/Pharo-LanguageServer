@@ -33,6 +33,9 @@ PLSServerCapabilities >> hoverProvider [
 PLSServerCapabilities >> textDocumentSync [
 	^ PLSTextDocumentSyncOptions new
 		openClose: true;
+		willSave: false;
+		save: {(#includeText -> true)} asDictionary;
+		willSaveWaitUntil: false;
 		change: PLSTextDocumentSyncKind full;
 		yourself
 ]
