@@ -9,7 +9,7 @@ I am used by the following client extensions:
 
 ## Features
 
-As a language server, I accept two pharo/smalltalk formats:
+As a language server, I accept two Pharo/SmallTalk formats:
 
 - *.st* for smalltalk script (as you can see in a playground).
 - *.class.st* for tonel files.
