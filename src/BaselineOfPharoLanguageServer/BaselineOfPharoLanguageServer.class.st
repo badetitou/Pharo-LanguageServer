@@ -28,5 +28,8 @@ BaselineOfPharoLanguageServer >> defineGroups: spec [
 
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> definePackages: spec [
-	spec package: 'PharoLanguageServer' with: [ spec requires: #('JRPC') ]
+	spec
+		package: 'PharoLanguageServer' with: [ spec requires: #('JRPC') ];
+		package: 'PharoLanguageServer-Tests'
+			with: [ spec requires: #('PharoLanguageServer') ]
 ]
