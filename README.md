@@ -27,3 +27,46 @@ Most of the features are available for both formats.
 ### Tonel specific features
 
 - Saving the file create/update the corresponding class in the image
+
+## Installation
+
+There is two ways to download this project: 
+
+- by downloading a pre-build image (in [releases](https://github.com/badetitou/Pharo-LanguageServer/releases) or from the pharo launcher)
+- by loading the code in a Pharo Image
+
+### Add project in PharoLauncher
+
+To add this project into the pharo launcher:
+
+1. Download the PharoLauncher
+2. Open PharoLauncher
+3. Open a playground
+4. Execute the following piece of code
+
+```Smalltalk
+| sources |
+sources := {
+    PhLTemplateSource new
+        type: #HttpListing;
+        name: 'Pharo Language Server';
+        url: 'https://github.com/badetitou/Pharo-LanguageServer/releases';
+        filterPattern: 'href="([^"]*/Pharo[0-9][^"]*.zip)"';
+        templateNameFormat: '{6} ({5})' }.
+    PhLUserTemplateSources sourcesFile writeStreamDo: [ :s | 
+        (STON writer on: s)
+            newLine: String lf;
+            prettyPrint: true;
+            nextPut: sources ]
+```
+
+### Load the code 
+
+Execute this code in any Pharo Image
+
+```Smalltalk
+Metacello new
+  githubUser: 'badetitou' project: 'Pharo-LanguageServer' path: 'src';
+  baseline: 'PharoLanguageServer';
+  load
+```
