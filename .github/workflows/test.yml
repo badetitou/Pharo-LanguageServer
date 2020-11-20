@@ -31,9 +31,9 @@ jobs:
       - name: package
         run: |
           mv /home/runner/.smalltalkCI/_builds/* .
-          mv TravisCI.image  ${{ matrix.smalltalk }}$PROJECT_NAME.image
-          mv TravisCI.changes  ${{ matrix.smalltalk }}$PROJECT_NAME.changes
-          zip -r  ${{ matrix.smalltalk }}$PROJECT_NAME.zip  ${{ matrix.smalltalk }}$PROJECT_NAME.image  ${{ matrix.smalltalk }}$PROJECT_NAME.changes *.sources pharo.version
+          mv TravisCI.image  ${{ matrix.smalltalk }}-$PROJECT_NAME.image
+          mv TravisCI.changes  ${{ matrix.smalltalk }}-$PROJECT_NAME.changes
+          zip -r  ${{ matrix.smalltalk }}-$PROJECT_NAME.zip  ${{ matrix.smalltalk }}-$PROJECT_NAME.image  ${{ matrix.smalltalk }}-$PROJECT_NAME.changes *.sources pharo.version
           ls
       
       - name: Update Release
@@ -42,4 +42,4 @@ jobs:
         uses: johnwbyrd/update-release@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          files:  ${{ matrix.smalltalk }}${{ env.PROJECT_NAME }}.zip
+          files:  ${{ matrix.smalltalk }}-${{ env.PROJECT_NAME }}.zip
