@@ -39,7 +39,7 @@ There is two ways to download this project:
 
 To add this project into the pharo launcher:
 
-1. Download the PharoLauncher
+1. Download the [PharoLauncher](https://pharo.org/download)
 2. Open PharoLauncher
 3. Open a playground
 4. Execute the following piece of code
