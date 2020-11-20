@@ -41,7 +41,7 @@ To add this project into the pharo launcher:
 
 1. Download the [PharoLauncher](https://pharo.org/download)
 2. Open PharoLauncher
-3. Open a playground
+3. Open a playground (Ctrl + O, Ctrl + W)
 4. Execute the following piece of code
 
 ```Smalltalk
