@@ -41,6 +41,12 @@ PLSServer >> cancelRequest: id [
 		ifAbsent: [ Error signal ]
 ]
 
+{ #category : #commands }
+PLSServer >> commandPharoLanguageServerVersion [
+	<jrpc: #'command:version'>
+	^ '1.0.0'
+]
+
 { #category : #context }
 PLSServer >> context [
 	^ serverContext
