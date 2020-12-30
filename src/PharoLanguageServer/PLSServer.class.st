@@ -51,10 +51,9 @@ PLSServer >> commandPharoLanguageServerVersion [
 PLSServer >> commandPharoPrintIt: line [
 	<jrpc: #'command:printIt'>
 	^ (SmalltalkImage current compiler
-		source: line readStream;
 		context: nil;
 		failBlock: [ ^ nil ];
-		evaluate) printString
+		evaluate: line) printString
 ]
 
 { #category : #commands }
