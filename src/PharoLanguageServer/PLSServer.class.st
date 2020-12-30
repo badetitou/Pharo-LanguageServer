@@ -57,6 +57,13 @@ PLSServer >> commandPharoPrintIt: line [
 		evaluate) printString
 ]
 
+{ #category : #commands }
+PLSServer >> commandPharoSave [
+	<jrpc: #'command:save'>
+	SmalltalkImage current snapshot: true andQuit: false.
+	^ 'Image saved'
+]
+
 { #category : #context }
 PLSServer >> context [
 	^ serverContext
