@@ -6,58 +6,65 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'textItems',
-		'messageProcesses'
+		'messageProcesses',
+		'compilationBindings'
 	],
 	#category : #PharoLanguageServer
 }
 
-{ #category : #accessing }
-PLSContext >> initialize [
-	textItems := Dictionary new.
-	messageProcesses := Dictionary new
+{ #category : #'compilation bindings' }
+PLSContext >> compilationBindingsAt: aKey [
+	^ compilationBindings at: aKey ifAbsentPut: PLSBinder new
 ]
 
-{ #category : #accessing }
+{ #category : #initialization }
+PLSContext >> initialize [
+	textItems := Dictionary new.
+	messageProcesses := Dictionary new.
+	compilationBindings := Dictionary new.
+]
+
+{ #category : #'message processing' }
 PLSContext >> messageProcesses [
 	^ messageProcesses
 ]
 
-{ #category : #accessing }
+{ #category : #'message processing' }
 PLSContext >> messageProcesses: anObject [
 	messageProcesses := anObject
 ]
 
-{ #category : #accessing }
+{ #category : #'message processing' }
 PLSContext >> messageProcessesAt: anId put: aProcess [
 	anId ifNotNil: [ self messageProcesses at: anId put: aProcess ]
 ]
 
-{ #category : #accessing }
+{ #category : #'text item' }
 PLSContext >> removeItem: aURI [
 	^ self textItems removeKey: aURI
 ]
 
-{ #category : #accessing }
+{ #category : #'message processing' }
 PLSContext >> removeMessageProcess: anId [
 	anId ifNotNil: [ self messageProcesses removeKey: anId ]
 ]
 
-{ #category : #accessing }
+{ #category : #'text item' }
 PLSContext >> textItem: aURI [
 	^ self textItems at: aURI
 ]
 
-{ #category : #accessing }
+{ #category : #'text item' }
 PLSContext >> textItem: aURI put: aTextItem [
 	^ self textItems at: aURI put: aTextItem
 ]
 
-{ #category : #accessing }
+{ #category : #'text item' }
 PLSContext >> textItems [
 	^ textItems
 ]
 
-{ #category : #accessing }
+{ #category : #'text item' }
 PLSContext >> textItems: anObject [
 	textItems := anObject
 ]

@@ -50,10 +50,10 @@ PLSServer >> commandPharoLanguageServerVersion [
 { #category : #commands }
 PLSServer >> commandPharoPrintIt: line [
 	<jrpc: #'command:printIt'>
-	^ (SmalltalkImage current compiler
-		context: nil;
-		failBlock: [ ^ nil ];
-		evaluate: line) printString
+	| compiler answer | 
+	compiler := self compilerFor: nil.
+	answer := compiler evaluate: line.
+	^ answer printString
 ]
 
 { #category : #commands }
@@ -61,6 +61,19 @@ PLSServer >> commandPharoSave [
 	<jrpc: #'command:save'>
 	SmalltalkImage current snapshot: true andQuit: false.
 	^ 'Image saved'
+]
+
+{ #category : #accessing }
+PLSServer >> compilerFor: fileURI [
+	| compiler |
+	compiler := SmalltalkImage current compiler
+		transformDoit;
+		failBlock: [ nil ];
+		requestor: (self context compilationBindingsAt: fileURI);
+		yourself.
+	compiler compilationContext
+		setOptions: (CompilationContext defaultOptions copy add: #optionSkipSemanticWarnings; yourself).
+	^ compiler
 ]
 
 { #category : #context }
