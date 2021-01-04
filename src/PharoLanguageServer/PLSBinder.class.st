@@ -9,7 +9,14 @@ Class {
 
 { #category : #binding }
 PLSBinder >> bindingOf: aName [
-	^ compilationBindings at: aName ifAbsentPut: nil
+	(self hasBindingOf: aName)
+		ifFalse: [ compilationBindings add: (WorkspaceVariable key: aName asSymbol) ].
+	^ compilationBindings associationAt: aName
+]
+
+{ #category : #binding }
+PLSBinder >> hasBindingOf: aString [
+	^ compilationBindings includesKey: aString
 ]
 
 { #category : #binding }

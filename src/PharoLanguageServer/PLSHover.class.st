@@ -3,7 +3,8 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'source',
-		'position'
+		'position',
+		'context'
 	],
 	#category : #PharoLanguageServer
 }
@@ -19,7 +20,20 @@ PLSHover >> contents [
 			class isClass
 				ifTrue: [ class comment ]
 				ifFalse: [ '' ] ]
-		ifAbsent: [ '' ]
+		ifAbsent: [ "nil will be replace by the text URI in the future"
+			((self context compilationBindingsAt: nil) hasBindingOf: word)
+				ifTrue: [ ((self context compilationBindingsAt: nil) bindingOf: word) value printString ]
+				ifFalse: [ '' ] ]
+]
+
+{ #category : #accessing }
+PLSHover >> context [
+	^ context
+]
+
+{ #category : #accessing }
+PLSHover >> context: anObject [
+	context := anObject
 ]
 
 { #category : #accessing }
