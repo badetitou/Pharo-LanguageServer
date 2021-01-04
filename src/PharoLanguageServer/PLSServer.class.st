@@ -274,6 +274,11 @@ PLSServer >> serverShutdown [
 	SmalltalkImage current snapshot: false andQuit: true
 ]
 
+{ #category : #'lsp - trace' }
+PLSServer >> setTrace: setTraceParam [
+	<jrpc: #'$/setTrace'>
+]
+
 { #category : #lsp }
 PLSServer >> showMessage: aString ofType: aMessageType toClient: aClient [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
