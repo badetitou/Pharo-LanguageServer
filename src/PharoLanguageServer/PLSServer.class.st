@@ -71,8 +71,6 @@ PLSServer >> compilerFor: fileURI [
 		failBlock: [ nil ];
 		requestor: (self context compilationBindingsAt: fileURI);
 		yourself.
-	compiler compilationContext
-		setOptions: (CompilationContext defaultOptions copy add: #optionSkipSemanticWarnings; yourself).
 	^ compiler
 ]
 
