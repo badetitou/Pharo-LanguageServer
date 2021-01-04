@@ -332,6 +332,7 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 	<jrpc: #'textDocument/hover'>
 	| hover |
 	hover := PLSHover new
+		context: self context;
 		source: ((self context textItem: (textDocument at: #uri)) at: #text);
 		position: position;
 		yourself.
