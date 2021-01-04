@@ -22,7 +22,7 @@ PLSCompletion >> completionContext: anObject [
 { #category : #initialization }
 PLSCompletion >> entries [
 	completionContext := CompletionContext
-		engine: CompletionEngine new
+		engine: PLSCompletionEngine new
 		class: nil
 		source: self source
 		position: self position.
