@@ -51,7 +51,7 @@ sources := {
         type: #HttpListing;
         name: 'Pharo Language Server';
         url: 'https://github.com/badetitou/Pharo-LanguageServer/releases';
-        filterPattern: 'href="([^"]*/Pharo[0-9][^"]*.zip)"';
+        filterPattern: 'href="([^"]*/(Pharo|Moose)[0-9][^"]*.zip)"';
         templateNameFormat: '{6} ({5})' }.
     PhLUserTemplateSources sourcesFile writeStreamDo: [ :s | 
         (STON writer on: s)
