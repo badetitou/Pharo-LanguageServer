@@ -18,6 +18,29 @@ String >> findCloseBracesFor: startIndex [
 ]
 
 { #category : #'*PharoLanguageServer' }
+String >> toPLSSnippet [
+	| idx number |
+	idx := 1.
+	number := 1.
+	^ (self class
+		new: self size
+		streamContents: [ :stream | 
+			| foundIdx |
+			[ (foundIdx := self findString: ':' startingAt: idx) isZero ]
+				whileFalse: [ stream
+						next: foundIdx - idx putAll: self startingAt: idx;
+						nextPutAll: ': $';
+						nextPutAll: number printString;
+						nextPut: Character space.
+					number := number + 1.
+					idx := foundIdx + 3 ].
+			idx <= self size
+				ifTrue:
+					[ stream next: self size - idx + 1 putAll: self startingAt: idx ] ])
+		, '$0'
+]
+
+{ #category : #'*PharoLanguageServer' }
 String >> wordAt: anIndex [
 	"('word before index' wordAt: 4) >>> 'word'"
 

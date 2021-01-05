@@ -30,6 +30,8 @@ PLSCompletion >> entries [
 		collectWithIndex: [ :entry :index |
 			PLSCompletionItem new
 				label: entry contents;
+				insertTextFormat: PLSInsertTextFormat snippet;
+				insertText: entry contents toPLSSnippet ;
 				kind: entry asPLSCompletionItemKind;
 				data: index;
 				"documentation: entry description description;"

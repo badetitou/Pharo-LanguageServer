@@ -37,7 +37,9 @@ PLSCompletionItem >> asJRPCJSON [
 	| dictionary |
 	dictionary := {(#label -> self label).
 	(#kind -> self kind).
-	(#data -> self data)} asDictionary.
+	(#data -> self data).
+	(#insertTextFormat -> self insertTextFormat).
+	(#insertText -> self insertText)} asDictionary.
 	self documentation
 		ifNotNil: [ dictionary at: #document put: self documentation asString ].
 	^ dictionary

@@ -322,13 +322,13 @@ PLSServer >> stop [
 { #category : #'lsp - completion' }
 PLSServer >> textDocumentCompletionWithContext: context position: position textDocument: textDocument [
 	<jrpc: #'textDocument/completion'>
-	| completionList completionEngine |
-	completionEngine := PLSCompletion new
+	| completionList completionTool |
+	completionTool := PLSCompletion new
 		source: ((self context textItem: (textDocument at: #uri)) at: #text);
 		position: position;
 		yourself.
 	completionList := PLSCompletionList new.
-	completionList completionItems: completionEngine entries asArray.
+	completionList completionItems: completionTool entries asArray.
 	^ completionList
 ]
 
