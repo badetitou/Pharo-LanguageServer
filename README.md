@@ -66,7 +66,7 @@ Execute this code in any Pharo Image
 
 ```Smalltalk
 Metacello new
-  githubUser: 'badetitou' project: 'Pharo-LanguageServer' path: 'src';
+  githubUser: 'badetitou' project: 'Pharo-LanguageServer' commitish: 'v1.0.0' path: 'src';
   baseline: 'PharoLanguageServer';
   load
 ```
