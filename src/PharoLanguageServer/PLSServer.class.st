@@ -279,6 +279,11 @@ PLSServer >> setTrace: setTraceParam [
 	<jrpc: #'$/setTrace'>
 ]
 
+{ #category : #'lsp - trace' }
+PLSServer >> setTraceNotification: value [
+	<jrpc: #'$/setTraceNotification'>
+]
+
 { #category : #lsp }
 PLSServer >> showMessage: aString ofType: aMessageType toClient: aClient [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
