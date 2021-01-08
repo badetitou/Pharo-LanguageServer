@@ -97,9 +97,9 @@ DAPServer >> getHeaderFor: answer into: aStream [
 ]
 
 { #category : #starting }
-DAPServer >> handleJSON: aJSON [
+DAPServer >> handleJSON: aDAPRequest [
 	| dapResponse |
-	dapResponse := [ aJSON beHandledBy: self ]
+	dapResponse := [ aDAPRequest beHandledBy: self ]
 		on: Error
 		do: [ :error | 
 			self debugMode
@@ -168,7 +168,9 @@ DAPServer >> messageProcess: anId	put: aProcess [
 
 { #category : #starting }
 DAPServer >> parseJSON: aJSONString [
-	^ STONJSON fromString:  aJSONString.
+	| jsonObject |
+	jsonObject := STONJSON fromString: aJSONString.
+	^ DAPRequest newFromJSON: jsonObject
 ]
 
 { #category : #accessing }

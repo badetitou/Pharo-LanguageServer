@@ -42,27 +42,6 @@ DAPHandler >> executeWithArguments: anArrayOrDictionary [
 ]
 
 { #category : #accessing }
-DAPHandler >> getMethodSelectorFromPragma [
-	"Returns the selector corresponding to the method to execute as behaviour of the handler.
-	 This method is retrieved by searching for <jrpc> pragma.
-	"
-	| pragmas |
-	pragmas := (Pragma allNamed: #dap in: self receiver class).
-	
-	pragmas size = 1
-		ifFalse: [ self error: 'Only one method should be tagged with <dap> pragma.' ].
-		
-	^ pragmas first methodSelector
-]
-
-{ #category : #accessing }
-DAPHandler >> initialize [
-	super initialize.
-	self receiver: self.
-	self messageSelector: self getMethodSelectorFromPragma
-]
-
-{ #category : #accessing }
 DAPHandler >> messageSelector [
 	^ messageSelector
 ]
