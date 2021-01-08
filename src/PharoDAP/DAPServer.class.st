@@ -8,14 +8,44 @@ Class {
 		'process',
 		'data',
 		'serverContext',
-		'messagesProcesses'
+		'messagesProcesses',
+		'handlers',
+		'debugMode'
 	],
 	#category : #PharoDAP
 }
 
+{ #category : #'handlers management' }
+DAPServer >> addHandler: aDAPHandler [
+	handlers add: aDAPHandler
+]
+
+{ #category : #'handlers management' }
+DAPServer >> addHandlersFromPragmasIn: handlerInstance [
+	(Pragma allNamed: #dap: in: handlerInstance class)
+		do: [ :pragma | 
+			self
+				addHandler:
+					(DAPHandler new
+						receiver: handlerInstance;
+						methodName: pragma arguments first;
+						messageSelector: pragma methodSelector;
+						yourself) ]
+]
+
 { #category : #context }
 DAPServer >> context [
 	^ serverContext
+]
+
+{ #category : #accessing }
+DAPServer >> debugMode [
+	^ debugMode
+]
+
+{ #category : #accessing }
+DAPServer >> debugMode: anObject [
+	debugMode := anObject
 ]
 
 { #category : #starting }
@@ -68,7 +98,14 @@ DAPServer >> getHeaderFor: answer into: aStream [
 
 { #category : #starting }
 DAPServer >> handleJSON: aJSON [
-	1h
+	| dapResponse |
+	dapResponse := [ aJSON beHandledBy: self ]
+		on: Error
+		do: [ :error | 
+			self debugMode
+				ifTrue: [ error pass ]
+				ifFalse: [ error return: error asDAPResponse ] ].
+	^ dapResponse beConvertedBy: self
 ]
 
 { #category : #starting }
@@ -91,7 +128,11 @@ DAPServer >> handleRequest: request toClient: clientSocket [
 DAPServer >> initialize [
 	serverContext := PLSContext new.
 	data := ''.
+	debugMode := false.
 	messagesProcesses := Dictionary new.
+	handlers := OrderedCollection new.
+	self addHandlersFromPragmasIn: DAPHandlers new.
+	
 ]
 
 { #category : #context }
