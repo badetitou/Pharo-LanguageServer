@@ -73,18 +73,18 @@ DAPServer >> handleJSON: aJSON [
 
 { #category : #starting }
 DAPServer >> handleRequest: request toClient: clientSocket [
-	| jrpcMessage |
-	jrpcMessage := [ self parseJSON: request ]
+	| dapMessage |
+	dapMessage := [ self parseJSON: request ]
 		on: Error
 		do: [ :err | err return: err asJRPCResponse ].
-	^ self messageProcess: jrpcMessage id
+	^ self messageProcess: (dapMessage at: #seq)
 		put:
 			([ self
-				sendData: (self handleJSON: jrpcMessage)
+				sendData: (self handleJSON: dapMessage)
 				toClient: clientSocket.
-			self removeMessageProcess: jrpcMessage id ]
+			self removeMessageProcess: (dapMessage at: #seq) ]
 				forkAt: Processor lowIOPriority
-				named: jrpcMessage method)
+				named: (dapMessage at: #command) )
 ]
 
 { #category : #initialize }
@@ -101,7 +101,7 @@ DAPServer >> messageProcess: anId	put: aProcess [
 
 { #category : #starting }
 DAPServer >> parseJSON: aJSONString [
-	1h
+	^ STONJSON fromString:  aJSONString.
 ]
 
 { #category : #accessing }
