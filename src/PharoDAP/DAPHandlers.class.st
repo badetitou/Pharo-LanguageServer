@@ -6,3 +6,10 @@ Class {
 	#superclass : #Object,
 	#category : #PharoDAP
 }
+
+{ #category : #'as yet unclassified' }
+DAPHandlers >> dapInitialize [
+	<dap: #'initialize'>
+	1h.
+	^ DAPInitializeResponse new
+]

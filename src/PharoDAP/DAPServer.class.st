@@ -108,6 +108,23 @@ DAPServer >> handleJSON: aJSON [
 	^ dapResponse beConvertedBy: self
 ]
 
+{ #category : #'handlers management' }
+DAPServer >> handleRequest: aDAPRequest [
+	^ [ | handler result |
+	handler := self handlerFor: aDAPRequest.
+	handler checkParametersForRequest: aDAPRequest.
+	result := handler executeWithArguments: aDAPRequest params.
+	DAPResponse new
+		request_seq: aDAPRequest seq;
+		command: aDAPRequest command;
+		body: result ]
+		on: Error
+		do: [ :dapError | 
+			self debugMode
+				ifTrue: [ dapError pass ]
+				ifFalse: [ dapError return: (aDAPRequest convertErrorToResponse: dapError) ] ]
+]
+
 { #category : #starting }
 DAPServer >> handleRequest: request toClient: clientSocket [
 	| dapMessage |
@@ -122,6 +139,15 @@ DAPServer >> handleRequest: request toClient: clientSocket [
 			self removeMessageProcess: (dapMessage at: #seq) ]
 				forkAt: Processor lowIOPriority
 				named: (dapMessage at: #command) )
+]
+
+{ #category : #'handlers management' }
+DAPServer >> handlerFor: aDAPRequest [
+	aDAPRequest command isString
+		ifFalse: [ JRPCIncorrectJSON signal ].
+	^ handlers
+		detect: [ :handler | handler methodName = aDAPRequest command ]
+		ifNone: [ DAPNonExistentHandler signal: aDAPRequest command ]
 ]
 
 { #category : #initialize }

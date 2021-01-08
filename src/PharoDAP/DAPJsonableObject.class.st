@@ -1,5 +1,5 @@
 Class {
 	#name : #DAPJsonableObject,
 	#superclass : #Object,
-	#category : #PharoDAP
+	#category : #'PharoDAP-Structure'
 }
