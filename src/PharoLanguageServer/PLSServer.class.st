@@ -308,6 +308,13 @@ PLSServer >> start [
 				named: 'JRPC TCP connection' ]
 ]
 
+{ #category : #dap }
+PLSServer >> startDapServer: dapPort [
+	<jrpc: #'dap:startServer'>
+	DAPServer new port: dapPort.
+	^ 'DAP Started'
+]
+
 { #category : #stopping }
 PLSServer >> stop [
 	serverLoop := false.
