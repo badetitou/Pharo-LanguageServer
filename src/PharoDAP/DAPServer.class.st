@@ -97,6 +97,18 @@ DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [
 				body: DAPSetExceptionBreakpointsResponse new).
 ]
 
+{ #category : #dap }
+DAPServer >> dapThreads: aDAPThreadsRequest [ 
+	<dap: #threads>
+	self
+		sendMessage:
+			(DAPThreadsResponse new
+			seq: self nextSeq;
+				request_seq: aDAPThreadsRequest seq;
+				command: aDAPThreadsRequest command;
+				yourself).
+]
+
 { #category : #accessing }
 DAPServer >> debugMode [
 	^ debugMode

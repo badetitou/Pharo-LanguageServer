@@ -10,11 +10,14 @@ Class {
 
 { #category : #'instance creation' }
 DAPRequest class >> newFromJSON: aJSONObject [
-	^ self new
+	| deserializeMe |
+	deserializeMe := self new
 		seq: (aJSONObject at: #seq);
-		command: (aJSONObject at: #command);
-		arguments: (aJSONObject at: #arguments);
-		yourself
+		command: (aJSONObject at: #command).
+	aJSONObject
+		at: #arguments
+		ifPresent: [ :args | deserializeMe arguments: args ].
+	^ deserializeMe
 ]
 
 { #category : #accessing }
