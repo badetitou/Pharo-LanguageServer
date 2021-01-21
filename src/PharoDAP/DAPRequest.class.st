@@ -27,11 +27,6 @@ DAPRequest >> arguments: anObject [
 	arguments := anObject
 ]
 
-{ #category : #initialization }
-DAPRequest >> beHandledBy: aDAPRequestProcessor [
-	aDAPRequestProcessor handleRequest: self
-]
-
 { #category : #accessing }
 DAPRequest >> command [
 	^ command

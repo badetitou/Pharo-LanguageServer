@@ -10,7 +10,9 @@ Class {
 		'serverContext',
 		'messagesProcesses',
 		'handlers',
-		'debugMode'
+		'debugMode',
+		'socketClient',
+		'current_seq'
 	],
 	#category : #PharoDAP
 }
@@ -38,6 +40,63 @@ DAPServer >> context [
 	^ serverContext
 ]
 
+{ #category : #'handlers management' }
+DAPServer >> convertDAPJsonableObjectToJSON: aDAPJsonableObject [
+	^ String streamContents: [ :stream |
+		self convertDAPJsonableObjectToJSON: aDAPJsonableObject asDAPJSON on: stream ]
+]
+
+{ #category : #'handlers management' }
+DAPServer >> convertDAPJsonableObjectToJSON: aDAPJsonableObject on: stream [
+	STONJSON put: aDAPJsonableObject onStream: stream
+]
+
+{ #category : #dap }
+DAPServer >> dapDisconnect: arguments [
+	<dap: #disconnect>
+	^ DAPDisconnectResponse new
+]
+
+{ #category : #dap }
+DAPServer >> dapInitialize: aDAPRequest [
+	"Send that I receive  the initialize"
+
+	<dap: #initialize>
+	self
+		sendMessage:
+			(DAPResponse new
+				seq: self nextSeq;
+				request_seq: aDAPRequest seq;
+				command: aDAPRequest command;
+				body: DAPInitializeResponse new).
+	self sendMessage: DAPInitializedEvent new
+]
+
+{ #category : #dap }
+DAPServer >> dapLaunch: aDAPLaunchRequest [
+	<dap: #launch>
+	self
+		sendMessage:
+			(DAPResponse new
+				seq: self nextSeq;
+				request_seq: aDAPLaunchRequest seq;
+				command: aDAPLaunchRequest command;
+				body: DAPLaunchResponse new).
+	self sendMessage: DAPTerminatedEvent new
+]
+
+{ #category : #dap }
+DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [ 
+	<dap: #setExceptionBreakpoints>
+	self
+		sendMessage:
+			(DAPResponse new
+				seq: self nextSeq;
+				request_seq: aDAPSetExceptionBreakpointsRequest  seq;
+				command: aDAPSetExceptionBreakpointsRequest  command;
+				body: DAPSetExceptionBreakpointsResponse new).
+]
+
 { #category : #accessing }
 DAPServer >> debugMode [
 	^ debugMode
@@ -60,7 +119,7 @@ DAPServer >> extractLengthOf: aData [
 DAPServer >> extractRequestFrom: clientSocket [
 	| length startingPoint endPoint result |
 	"data is the current buffer state"
-	data ifEmpty: [ data := clientSocket receiveData ].
+	[ data isEmpty ] whileTrue: [ data := clientSocket receiveData ].
 	length := self extractLengthOf: data.
 	startingPoint := data indexOf: ${.
 	endPoint := data findCloseBracesFor: startingPoint.
@@ -97,27 +156,10 @@ DAPServer >> getHeaderFor: answer into: aStream [
 ]
 
 { #category : #starting }
-DAPServer >> handleJSON: aDAPRequest [
-	| dapResponse |
-	dapResponse := [ aDAPRequest beHandledBy: self ]
-		on: Error
-		do: [ :error | 
-			self debugMode
-				ifTrue: [ error pass ]
-				ifFalse: [ error return: error asDAPResponse ] ].
-	^ dapResponse beConvertedBy: self
-]
-
-{ #category : #'handlers management' }
 DAPServer >> handleRequest: aDAPRequest [
-	^ [ | handler result |
+	[ | handler |
 	handler := self handlerFor: aDAPRequest.
-	handler checkParametersForRequest: aDAPRequest.
-	result := handler executeWithArguments: aDAPRequest params.
-	DAPResponse new
-		request_seq: aDAPRequest seq;
-		command: aDAPRequest command;
-		body: result ]
+	handler executeWithArguments: aDAPRequest ]
 		on: Error
 		do: [ :dapError | 
 			self debugMode
@@ -131,14 +173,13 @@ DAPServer >> handleRequest: request toClient: clientSocket [
 	dapMessage := [ self parseJSON: request ]
 		on: Error
 		do: [ :err | err return: err asJRPCResponse ].
-	^ self messageProcess: (dapMessage at: #seq)
+	self
+		messageProcess: dapMessage seq
 		put:
-			([ self
-				sendData: (self handleJSON: dapMessage)
-				toClient: clientSocket.
-			self removeMessageProcess: (dapMessage at: #seq) ]
+			([ self handleRequest: dapMessage.
+			self removeMessageProcess: dapMessage seq ]
 				forkAt: Processor lowIOPriority
-				named: (dapMessage at: #command) )
+				named: dapMessage command)
 ]
 
 { #category : #'handlers management' }
@@ -154,16 +195,22 @@ DAPServer >> handlerFor: aDAPRequest [
 DAPServer >> initialize [
 	serverContext := PLSContext new.
 	data := ''.
+	current_seq := 0.
 	debugMode := false.
 	messagesProcesses := Dictionary new.
 	handlers := OrderedCollection new.
-	self addHandlersFromPragmasIn: DAPHandlers new.
+	self addHandlersFromPragmasIn: self.
 	
 ]
 
 { #category : #context }
 DAPServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
+]
+
+{ #category : #accessing }
+DAPServer >> nextSeq [
+	^ current_seq := current_seq + 1
 ]
 
 { #category : #starting }
@@ -205,18 +252,25 @@ DAPServer >> sendData: answer toClient: clientSocket [
 ]
 
 { #category : #starting }
+DAPServer >> sendMessage: aDAPMessage [
+	self sendData: (aDAPMessage beConvertedBy: self) toClient: socketClient
+]
+
+{ #category : #starting }
 DAPServer >> start [
 	tcpServer := Socket newTCP.
 	tcpServer listenOn: self port backlogSize: 10.
 	serverLoop := true.
 	(tcpServer waitForAcceptFor: 60)
 		ifNotNil: [ :clientSocket | 
+			socketClient := clientSocket.
 			process := [ [ serverLoop ]
 				whileTrue: [ | request |
 					request := self extractRequestFrom: clientSocket.
 					self handleRequest: request toClient: clientSocket ] ]
 				forkAt: Processor lowIOPriority
-				named: 'JRPC TCP connection' ]
+				named: 'DAP TCP connection' ]
+		ifNil: [ DAPError signal: 'DAPServer started but nobody join me' ]
 ]
 
 { #category : #stopping }

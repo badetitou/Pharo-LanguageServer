@@ -26,19 +26,10 @@ DAPHandler >> checkParametersForRequest: aDAPRequestObject [
 
 { #category : #accessing }
 DAPHandler >> executeWithArguments: anArrayOrDictionary [
-	| arguments |
-	arguments := anArrayOrDictionary.
-	
-	anArrayOrDictionary ifNil: [ 
-		arguments := #() ].
-	
-	anArrayOrDictionary isDictionary
-		ifTrue: [
-			arguments := (anArrayOrDictionary associations sorted: [ :a :b |
-				(self parametersNames indexOf: a key) < (self parametersNames indexOf: b key) ])
-					collect: #value ].
-		
-	^ self send: self messageSelector to: self receiver with: arguments
+	^ self
+		send: self messageSelector
+		to: self receiver
+		with: anArrayOrDictionary
 ]
 
 { #category : #accessing }
@@ -84,5 +75,5 @@ DAPHandler >> receiver: anObject [
 
 { #category : #accessing }
 DAPHandler >> send: aSelector to: aReceiver with: arguments [
-	^ aReceiver perform: aSelector withArguments: arguments
+	^ aReceiver perform: aSelector with: arguments
 ]

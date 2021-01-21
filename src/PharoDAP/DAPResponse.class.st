@@ -12,6 +12,18 @@ Class {
 }
 
 { #category : #accessing }
+DAPResponse >> asDAPJSON [
+	| dic |
+	dic := super asDAPJSON.
+	self body ifNotNil: [ dic add: #body -> self body asDAPJSON ].
+	self command ifNotNil: [ dic add: #command -> self command ].
+	self message ifNotNil: [ dic add: #message -> self message ].
+	self request_seq ifNotNil: [ dic add: #request_seq -> self request_seq ].
+	self success ifNotNil: [ dic add: #success -> self success ].
+	^ dic
+]
+
+{ #category : #accessing }
 DAPResponse >> body [
 	^ body
 ]
@@ -34,7 +46,8 @@ DAPResponse >> command: anObject [
 { #category : #initialization }
 DAPResponse >> initialize [
 	super initialize.
-	type := 'response'
+	type := 'response'.
+	success := true
 ]
 
 { #category : #accessing }
