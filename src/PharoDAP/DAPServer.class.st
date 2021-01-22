@@ -12,7 +12,9 @@ Class {
 		'debugMode',
 		'socketClient',
 		'current_seq',
-		'compiler'
+		'compiler',
+		'currentException',
+		'threads'
 	],
 	#category : #PharoDAP
 }
@@ -76,11 +78,11 @@ DAPServer >> dapInitialize: aDAPRequest [
 	<dap: #initialize>
 	self
 		sendMessage:
-			(DAPResponse new
+			(DAPInitializeResponse new
 				seq: self nextSeq;
 				request_seq: aDAPRequest seq;
 				command: aDAPRequest command;
-				body: DAPInitializeResponse new).
+				body: DAPCapabilities new).
 	self sendMessage: DAPInitializedEvent new
 ]
 
@@ -96,9 +98,13 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 				body: DAPLaunchResponse new).
 	compiler
 		source: (aDAPLaunchRequest arguments at: #program) asFileReference contents.
-	
-	compiler evaluate.
-
+	self threads at: aDAPLaunchRequest seq put: aDAPLaunchRequest seq.
+	[ compiler evaluate ]
+		on: Exception
+		do: [ :exception | 
+			currentException := exception.
+			currentException freeze.
+			self handleException ].
 	self sendMessage: DAPTerminatedEvent new
 ]
 
@@ -115,15 +121,43 @@ DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [
 ]
 
 { #category : #dap }
-DAPServer >> dapThreads: aDAPThreadsRequest [ 
+DAPServer >> dapStackTrace: aDAPStackTraceRequest [
+	<dap: #stackTrace>
+	| response |
+	response := DAPStackTraceResponse new
+		seq: self nextSeq;
+		request_seq: aDAPStackTraceRequest seq;
+		command: aDAPStackTraceRequest command;
+		yourself.
+	response stackFrames
+		addAll:
+			((currentException signalerContext stackOfSize: 10)
+				collect: [ :stack | 
+					DAPStackFrame new
+						id: stack hash;
+						name: stack printString;
+						yourself ]).
+	self sendMessage: response
+]
+
+{ #category : #dap }
+DAPServer >> dapThreads: aDAPThreadsRequest [
 	<dap: #threads>
-	self
-		sendMessage:
-			(DAPThreadsResponse new
-			seq: self nextSeq;
-				request_seq: aDAPThreadsRequest seq;
-				command: aDAPThreadsRequest command;
-				yourself).
+	| response |
+	response := DAPThreadsResponse new
+		seq: self nextSeq;
+		request_seq: aDAPThreadsRequest seq;
+		command: aDAPThreadsRequest command;
+		yourself.
+	response threads
+		addAll:
+			(self threads associations
+				collect: [ :assoc | 
+					DAPThread new
+						id: assoc key;
+						name: assoc value printString;
+						yourself ]).
+	self sendMessage: response
 ]
 
 { #category : #accessing }
@@ -185,6 +219,19 @@ DAPServer >> getHeaderFor: answer into: aStream [
 		<< String crlf
 ]
 
+{ #category : #'debugger support' }
+DAPServer >> handleException [
+	self
+		sendMessage:
+			(DAPStoppedEvent new
+				seq: self nextSeq;
+				description: currentException printString;
+				threadId: self threads associations anyOne key;
+				reason: 'exception';
+				yourself).
+	1h.
+]
+
 { #category : #starting }
 DAPServer >> handleRequest: aDAPRequest [
 	[ | handler |
@@ -230,6 +277,7 @@ DAPServer >> initialize [
 	messagesProcesses := Dictionary new.
 	handlers := OrderedCollection new.
 	compiler := self compilerFor: nil.
+	threads := Dictionary new.
 	self addHandlersFromPragmasIn: self.
 	
 ]
@@ -306,4 +354,14 @@ DAPServer >> stop [
 	process isTerminated
 		ifTrue: [ ^ self ].
 	process terminate
+]
+
+{ #category : #accessing }
+DAPServer >> threads [
+	^ threads
+]
+
+{ #category : #accessing }
+DAPServer >> threads: anObject [
+	threads := anObject
 ]

@@ -21,3 +21,13 @@ DAPThreadsResponse >> initialize [
 	body := Dictionary new.
 	threads := OrderedCollection new.
 ]
+
+{ #category : #accessing }
+DAPThreadsResponse >> threads [
+	^ threads
+]
+
+{ #category : #accessing }
+DAPThreadsResponse >> threads: anObject [
+	threads := anObject
+]
