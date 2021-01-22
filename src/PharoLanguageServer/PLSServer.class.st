@@ -314,12 +314,10 @@ PLSServer >> start [
 ]
 
 { #category : #dap }
-PLSServer >> startDapServer: dapPort [
+PLSServer >> startDapServer [
 	<jrpc: #'dap:startServer'>
-	DAPServer new
-		port: dapPort;
+	^ DAPServer new
 		start.
-	^ 'DAP Started'
 ]
 
 { #category : #stopping }

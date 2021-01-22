@@ -2,7 +2,6 @@ Class {
 	#name : #DAPServer,
 	#superclass : #Object,
 	#instVars : [
-		'port',
 		'tcpServer',
 		'serverLoop',
 		'process',
@@ -12,7 +11,8 @@ Class {
 		'handlers',
 		'debugMode',
 		'socketClient',
-		'current_seq'
+		'current_seq',
+		'compiler'
 	],
 	#category : #PharoDAP
 }
@@ -35,14 +35,14 @@ DAPServer >> addHandlersFromPragmasIn: handlerInstance [
 						yourself) ]
 ]
 
-{ #category : #'handlers management' }
+{ #category : #'debugger support' }
 DAPServer >> compilerFor: fileURI [
-	| compiler |
-	compiler := SmalltalkImage current compiler
+	| compi |
+	compi := SmalltalkImage current compiler
 		transformDoit;
 		failBlock: [ nil ];
 		yourself.
-	^ compiler
+	^ compi
 ]
 
 { #category : #context }
@@ -87,8 +87,6 @@ DAPServer >> dapInitialize: aDAPRequest [
 { #category : #dap }
 DAPServer >> dapLaunch: aDAPLaunchRequest [
 	<dap: #launch>
-	| compiler |
-	compiler := self compilerFor: nil.
 	self
 		sendMessage:
 			(DAPResponse new
@@ -98,7 +96,9 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 				body: DAPLaunchResponse new).
 	compiler
 		source: (aDAPLaunchRequest arguments at: #program) asFileReference contents.
+	
 	compiler evaluate.
+
 	self sendMessage: DAPTerminatedEvent new
 ]
 
@@ -229,6 +229,7 @@ DAPServer >> initialize [
 	debugMode := false.
 	messagesProcesses := Dictionary new.
 	handlers := OrderedCollection new.
+	compiler := self compilerFor: nil.
 	self addHandlersFromPragmasIn: self.
 	
 ]
@@ -248,16 +249,6 @@ DAPServer >> parseJSON: aJSONString [
 	| jsonObject |
 	jsonObject := STONJSON fromString: aJSONString.
 	^ DAPRequest newFromJSON: jsonObject
-]
-
-{ #category : #accessing }
-DAPServer >> port [
-	^ port
-]
-
-{ #category : #accessing }
-DAPServer >> port: anObject [
-	port := anObject
 ]
 
 { #category : #context }
@@ -289,9 +280,9 @@ DAPServer >> sendMessage: aDAPMessage [
 { #category : #starting }
 DAPServer >> start [
 	tcpServer := Socket newTCP.
-	tcpServer listenOn: self port backlogSize: 10.
+	tcpServer listenOn: 0 backlogSize: 10.
 	serverLoop := true.
-	(tcpServer waitForAcceptFor: 60)
+	[ (tcpServer waitForAcceptFor: 60)
 		ifNotNil: [ :clientSocket | 
 			socketClient := clientSocket.
 			process := [ [ serverLoop ]
@@ -300,7 +291,10 @@ DAPServer >> start [
 						ifNotEmpty: [ self handleRequest: request toClient: clientSocket ] ] ]
 				forkAt: Processor lowIOPriority
 				named: 'DAP TCP connection' ]
-		ifNil: [ DAPError signal: 'DAPServer started but nobody join me' ]
+		ifNil: [ DAPError signal: 'DAPServer started but nobody join me' ] ]
+		forkAt: Processor lowIOPriority
+		named: 'DAP started'.
+	^ tcpServer localPort
 ]
 
 { #category : #stopping }
