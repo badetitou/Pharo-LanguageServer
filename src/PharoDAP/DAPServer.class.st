@@ -35,6 +35,16 @@ DAPServer >> addHandlersFromPragmasIn: handlerInstance [
 						yourself) ]
 ]
 
+{ #category : #'handlers management' }
+DAPServer >> compilerFor: fileURI [
+	| compiler |
+	compiler := SmalltalkImage current compiler
+		transformDoit;
+		failBlock: [ nil ];
+		yourself.
+	^ compiler
+]
+
 { #category : #context }
 DAPServer >> context [
 	^ serverContext
@@ -54,6 +64,8 @@ DAPServer >> convertDAPJsonableObjectToJSON: aDAPJsonableObject on: stream [
 { #category : #dap }
 DAPServer >> dapDisconnect: arguments [
 	<dap: #disconnect>
+	socketClient close.
+	serverLoop := false.
 	^ DAPDisconnectResponse new
 ]
 
@@ -75,6 +87,8 @@ DAPServer >> dapInitialize: aDAPRequest [
 { #category : #dap }
 DAPServer >> dapLaunch: aDAPLaunchRequest [
 	<dap: #launch>
+	| compiler |
+	compiler := self compilerFor: nil.
 	self
 		sendMessage:
 			(DAPResponse new
@@ -82,6 +96,9 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 				request_seq: aDAPLaunchRequest seq;
 				command: aDAPLaunchRequest command;
 				body: DAPLaunchResponse new).
+	compiler
+		source: (aDAPLaunchRequest arguments at: #program) asFileReference contents.
+	compiler evaluate.
 	self sendMessage: DAPTerminatedEvent new
 ]
 
@@ -131,7 +148,8 @@ DAPServer >> extractLengthOf: aData [
 DAPServer >> extractRequestFrom: clientSocket [
 	| length startingPoint endPoint result |
 	"data is the current buffer state"
-	[ data isEmpty ] whileTrue: [ data := clientSocket receiveData ].
+	[ data isEmpty and: [ serverLoop ] ] whileTrue: [ data := clientSocket receiveData ].
+	data ifEmpty: [ ^ '' ].
 	length := self extractLengthOf: data.
 	startingPoint := data indexOf: ${.
 	endPoint := data findCloseBracesFor: startingPoint.
@@ -278,8 +296,8 @@ DAPServer >> start [
 			socketClient := clientSocket.
 			process := [ [ serverLoop ]
 				whileTrue: [ | request |
-					request := self extractRequestFrom: clientSocket.
-					self handleRequest: request toClient: clientSocket ] ]
+					(request := self extractRequestFrom: clientSocket)
+						ifNotEmpty: [ self handleRequest: request toClient: clientSocket ] ] ]
 				forkAt: Processor lowIOPriority
 				named: 'DAP TCP connection' ]
 		ifNil: [ DAPError signal: 'DAPServer started but nobody join me' ]
