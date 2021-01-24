@@ -158,7 +158,12 @@ DAPServer >> dapScopes: aDAPScopesRequest [
 	variablesReferenceCache
 		at: scope hash
 		put:
-			{(#scope -> scope).
+			{(#scope
+				->
+					(DAPTScope new
+						scope: scope;
+						inCache: variablesReferenceCache;
+						yourself)).
 			(#context -> stack)} asDictionary.
 	response := DAPScopesResponse new
 		seq: self nextSeq;
@@ -227,22 +232,16 @@ DAPServer >> dapVariables: aDAPVariablesRequest [
 	| variablesReference scope context |
 	variablesReference := aDAPVariablesRequest arguments
 		at: #variablesReference.
-	scope := ((variablesReferenceCache at: variablesReference) at: #scope).
-	context := ((variablesReferenceCache at: variablesReference) at: #context).
+	scope := (variablesReferenceCache at: variablesReference) at: #scope.
+	context := (variablesReferenceCache at: variablesReference)
+		at: #context.
 	self
 		sendMessage:
 			(DAPVariablesResponse new
 				seq: self nextSeq;
 				request_seq: aDAPVariablesRequest seq;
 				command: aDAPVariablesRequest command;
-				variables:
-					(scope tempVars
-						collect: [ :tempVar | 
-							DAPVariable new
-								name: tempVar name;
-								value: (tempVar readFromContext: context scope: scope) printString;
-								variablesReference: 0;
-								yourself ]);
+				variables: (scope getDAPVariablesInContent: context);
 				yourself)
 ]
 
