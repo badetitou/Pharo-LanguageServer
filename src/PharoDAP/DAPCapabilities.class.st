@@ -41,3 +41,30 @@ Class {
 	],
 	#category : #'PharoDAP-Types'
 }
+
+{ #category : #converting }
+DAPCapabilities >> asDAPJSON [
+	| dic |
+	dic := super asDAPJSON.
+	self supportsDelayedStackTraceLoading
+		ifNotNil: [ dic
+				at: #supportsDelayedStackTraceLoading
+				put: self supportsDelayedStackTraceLoading ].
+	^ dic
+]
+
+{ #category : #initialization }
+DAPCapabilities >> initialize [
+	super initialize.
+	supportsDelayedStackTraceLoading := true.
+]
+
+{ #category : #accessing }
+DAPCapabilities >> supportsDelayedStackTraceLoading [
+	^ supportsDelayedStackTraceLoading
+]
+
+{ #category : #accessing }
+DAPCapabilities >> supportsDelayedStackTraceLoading: anObject [
+	supportsDelayedStackTraceLoading := anObject
+]

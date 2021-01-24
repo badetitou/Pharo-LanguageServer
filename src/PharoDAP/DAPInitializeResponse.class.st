@@ -3,8 +3,3 @@ Class {
 	#superclass : #DAPResponse,
 	#category : #'PharoDAP-Structure'
 }
-
-{ #category : #accessing }
-DAPInitializeResponse >> asDAPJSON [
-	^ Dictionary new
-]
