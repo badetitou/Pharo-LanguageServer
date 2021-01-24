@@ -41,6 +41,11 @@ DAPRequest >> command: anObject [
 ]
 
 { #category : #initialization }
+DAPRequest >> convertErrorToResponse: anError [
+	^ DAPErrorResponse new 
+]
+
+{ #category : #initialization }
 DAPRequest >> initialize [
 	super initialize.
 	type := 'request'
