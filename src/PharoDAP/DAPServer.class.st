@@ -228,7 +228,7 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 						name: stack printString;
 						source:
 							(DAPSource new
-								name: stack sourceCode;
+								name: stack method printString;
 								sourceReference: stack method hash;
 								yourself);
 						line: (positions at: #line);
