@@ -18,12 +18,15 @@ Class {
 
 { #category : #initialization }
 DAPStackFrame >> asDAPJSON [
-	^ super asDAPJSON
+	| dic |
+	dic := super asDAPJSON
 		at: #id put: self id;
 		at: #name put: self name;
 		at: #line put: self line;
 		at: #column put: self column;
-		yourself
+		yourself.
+	self source ifNotNil: [ dic at: #source put: self source asDAPJSON ].
+	^ dic
 ]
 
 { #category : #accessing }
@@ -71,4 +74,14 @@ DAPStackFrame >> name [
 { #category : #accessing }
 DAPStackFrame >> name: anObject [
 	name := anObject
+]
+
+{ #category : #accessing }
+DAPStackFrame >> source [
+	^ source
+]
+
+{ #category : #accessing }
+DAPStackFrame >> source: anObject [
+	source := anObject
 ]

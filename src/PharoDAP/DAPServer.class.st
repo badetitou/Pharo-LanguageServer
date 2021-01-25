@@ -15,7 +15,8 @@ Class {
 		'compiler',
 		'currentException',
 		'threads',
-		'variablesReferenceCache'
+		'variablesReferenceCache',
+		'sourcesReferenceCache'
 	],
 	#category : #PharoDAP
 }
@@ -187,6 +188,21 @@ DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [
 ]
 
 { #category : #dap }
+DAPServer >> dapSource: aDAPSourceRequest [
+	<dap: #source>
+	self
+		sendMessage:
+			(DAPSourceResponse new
+				seq: self nextSeq;
+				request_seq: aDAPSourceRequest seq;
+				command: aDAPSourceRequest command;
+				content:
+					(sourcesReferenceCache
+						at: (aDAPSourceRequest arguments at: #sourceReference)) sourceCode;
+				yourself)
+]
+
+{ #category : #dap }
 DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 	<dap: #stackTrace>
 	| response |
@@ -198,10 +214,17 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 	response stackFrames
 		addAll:
 			((currentException signalerContext stackOfSize: 10)
-				collect: [ :stack | 
+				collect: [ :stack |
+					"put reference to source in the cache"
+					sourcesReferenceCache at: stack method hash put: stack method.
+					"create the stack frame with its source"
 					DAPStackFrame new
 						id: stack hash;
 						name: stack printString;
+						source: (DAPSource new
+							name: (stack method printString, '.st') "we add .st to notify the client that this source is a st type";
+							sourceReference: stack method hash;
+							yourself);
 						yourself ]).
 	self sendMessage: response
 ]
@@ -364,6 +387,7 @@ DAPServer >> initialize [
 	compiler := self compilerFor: nil.
 	threads := Dictionary new.
 	variablesReferenceCache := Dictionary new.
+	sourcesReferenceCache := Dictionary new.
 	self addHandlersFromPragmasIn: self.
 	
 ]
@@ -392,7 +416,8 @@ DAPServer >> removeMessageProcess: anId [
 
 { #category : #cache }
 DAPServer >> resetCache [
-	variablesReferenceCache removeAll
+	variablesReferenceCache removeAll.
+	sourcesReferenceCache removeAll
 ]
 
 { #category : #context }
