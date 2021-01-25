@@ -14,3 +14,8 @@ DAPSourceResponse >> initialize [
 	super initialize.
 	body := Dictionary new
 ]
+
+{ #category : #initialization }
+DAPSourceResponse >> mimeType: string [
+	self body at: #mimeType put: string 
+]

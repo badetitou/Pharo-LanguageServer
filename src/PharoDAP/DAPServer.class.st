@@ -198,7 +198,9 @@ DAPServer >> dapSource: aDAPSourceRequest [
 				command: aDAPSourceRequest command;
 				content:
 					(sourcesReferenceCache
-						at: (aDAPSourceRequest arguments at: #sourceReference)) sourceCode;
+						at: (aDAPSourceRequest arguments at: #sourceReference))
+						sourceCode;
+				mimeType: 'pharo';
 				yourself)
 ]
 
@@ -222,7 +224,7 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 						id: stack hash;
 						name: stack printString;
 						source: (DAPSource new
-							name: (stack method printString, '.st') "we add .st to notify the client that this source is a st type";
+							name: (stack method printString) "we add .st to notify the client that this source is a st type";
 							sourceReference: stack method hash;
 							yourself);
 						yourself ]).
