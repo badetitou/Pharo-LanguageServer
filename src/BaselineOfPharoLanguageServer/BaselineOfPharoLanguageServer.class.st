@@ -31,5 +31,8 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 	spec
 		package: 'PharoLanguageServer' with: [ spec requires: #('JRPC') ];
 		package: 'PharoLanguageServer-Tests'
-			with: [ spec requires: #('PharoLanguageServer') ]
+			with: [ spec requires: #('PharoLanguageServer' 'PLS-DAP-Helper') ];
+		package: 'PharoDAP'
+			with: [ spec requires: #('PharoLanguageServer' 'PLS-DAP-Helper') ];
+		package: 'PLS-DAP-Helper'
 ]

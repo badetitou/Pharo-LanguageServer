@@ -216,17 +216,23 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 	response stackFrames
 		addAll:
 			((currentException signalerContext stackOfSize: 10)
-				collect: [ :stack |
+				collect: [ :stack | 
+					| positions |
 					"put reference to source in the cache"
 					sourcesReferenceCache at: stack method hash put: stack method.
+					positions := stack sourceCode
+						toLineColumn: stack sourceNodeExecuted start.
 					"create the stack frame with its source"
 					DAPStackFrame new
 						id: stack hash;
 						name: stack printString;
-						source: (DAPSource new
-							name: (stack method printString) "we add .st to notify the client that this source is a st type";
-							sourceReference: stack method hash;
-							yourself);
+						source:
+							(DAPSource new
+								name: stack sourceCode;
+								sourceReference: stack method hash;
+								yourself);
+						line: (positions at: #line);
+						column: (positions at: #column);
 						yourself ]).
 	self sendMessage: response
 ]
