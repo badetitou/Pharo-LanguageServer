@@ -16,7 +16,9 @@ Class {
 		'currentException',
 		'threads',
 		'variablesReferenceCache',
-		'sourcesReferenceCache'
+		'sourcesReferenceCache',
+		'context',
+		'debugSession'
 	],
 	#category : #PharoDAP
 }
@@ -75,7 +77,7 @@ DAPServer >> dapContinue: aDAPContinueRequest [
 				request_seq: aDAPContinueRequest seq;
 				command: aDAPContinueRequest command;
 				yourself).
-	currentException resume
+	debugSession resume
 ]
 
 { #category : #dap }
@@ -89,8 +91,8 @@ DAPServer >> dapDisconnect: arguments [
 { #category : #dap }
 DAPServer >> dapEvaluate: aDAPEvaluateRequest [
 	<dap: #evaluate>
-	| context expression localCompiler |
-	context := (currentException signalerContext stackOfSize: 10)
+	| contexts expression localCompiler |
+	contexts := (debugSession stackOfSize: 10)
 		detect:
 			[ :aStack | aStack hash = (aDAPEvaluateRequest arguments at: #frameId) ]
 		ifNone: [ nil ].
@@ -136,20 +138,40 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 	compiler
 		source: (aDAPLaunchRequest arguments at: #program) asFileReference contents.
 	self threads at: aDAPLaunchRequest seq put: aDAPLaunchRequest seq.
-	[ compiler evaluate ]
-		on: Exception
-		do: [ :exception | 
-			currentException := exception.
-			currentException freeze.
-			self handleException ].
+	Smalltalk tools debuggerTool: self.
+	compiler evaluate.
+	Smalltalk tools cleanUp.
+	GTGenericStackDebugger register.
 	self sendMessage: DAPTerminatedEvent new
+]
+
+{ #category : #dap }
+DAPServer >> dapNext: aDAPNextRequest [
+	"Send that I receive  the initialize"
+
+	<dap: #next>
+	self
+		sendMessage:
+			(DAPNextResponse new
+				seq: self nextSeq;
+				request_seq: aDAPNextRequest seq;
+				command: aDAPNextRequest command).
+	debugSession stepThrough.
+	self
+		sendMessage:
+			(DAPStoppedEvent new
+				seq: self nextSeq;
+				description: 'step';
+				threadId: self threads associations anyOne key;
+				reason: 'step';
+				yourself).
 ]
 
 { #category : #dap }
 DAPServer >> dapScopes: aDAPScopesRequest [
 	<dap: #scopes>
 	| stack scope dapScope response |
-	stack := (currentException signalerContext stackOfSize: 10)
+	stack := (debugSession stackOfSize: 10)
 		detect: [ :aStack | aStack hash = (aDAPScopesRequest arguments at: #frameId) ].
 	scope := stack sourceNodeExecuted scope.
 	dapScope := DAPScope new
@@ -215,7 +237,7 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 		yourself.
 	response stackFrames
 		addAll:
-			((currentException signalerContext stackOfSize: 10)
+			((debugSession stackOfSize: 10)
 				collect: [ :stack | 
 					| positions |
 					"put reference to source in the cache"
@@ -235,6 +257,50 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 						column: (positions at: #column);
 						yourself ]).
 	self sendMessage: response
+]
+
+{ #category : #dap }
+DAPServer >> dapStepIn: aDAPStepInRequest [
+	"Send that I receive  the initialize"
+
+	<dap: #stepIn>
+	self
+		sendMessage:
+			(DAPStepInResponse new
+				seq: self nextSeq;
+				request_seq: aDAPStepInRequest seq;
+				command: aDAPStepInRequest command).
+	debugSession stepInto.
+	self
+		sendMessage:
+			(DAPStoppedEvent new
+				seq: self nextSeq;
+				description: 'step';
+				threadId: self threads associations anyOne key;
+				reason: 'step';
+				yourself).
+]
+
+{ #category : #dap }
+DAPServer >> dapStepOut: aDAPStepOutRequest [
+	"Send that I receive  the initialize"
+
+	<dap: #stepOut>
+	self
+		sendMessage:
+			(DAPStepOutResponse new
+				seq: self nextSeq;
+				request_seq: aDAPStepOutRequest seq;
+				command: aDAPStepOutRequest command).
+	debugSession stepOver.
+	self
+		sendMessage:
+			(DAPStoppedEvent new
+				seq: self nextSeq;
+				description: 'step';
+				threadId: self threads associations anyOne key;
+				reason: 'step';
+				yourself).
 ]
 
 { #category : #dap }
@@ -336,16 +402,18 @@ DAPServer >> getHeaderFor: answer into: aStream [
 ]
 
 { #category : #'debugger support' }
-DAPServer >> handleException [
+DAPServer >> handleException: exception ofProcess: aProcess [
+	debugSession := DebugSession new
+		process: aProcess
+		context: exception signalerContext.
 	self
 		sendMessage:
 			(DAPStoppedEvent new
 				seq: self nextSeq;
-				description: currentException printString;
+				description: exception printString;
 				threadId: self threads associations anyOne key;
 				reason: 'exception';
-				yourself).
-	1h.
+				yourself)
 ]
 
 { #category : #starting }
@@ -400,6 +468,11 @@ DAPServer >> initialize [
 	
 ]
 
+{ #category : #'debugger support' }
+DAPServer >> isObsolete [
+	^ true
+]
+
 { #category : #context }
 DAPServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
@@ -408,6 +481,18 @@ DAPServer >> messageProcess: anId	put: aProcess [
 { #category : #accessing }
 DAPServer >> nextSeq [
 	^ current_seq := current_seq + 1
+]
+
+{ #category : #'debugger support' }
+DAPServer >> openOn: aDebugSession withFullView: bool andNotification: notification [
+	debugSession := aDebugSession.
+	self
+		sendMessage:
+			(DAPStoppedEvent new
+				seq: self nextSeq;
+				threadId: self threads associations anyOne key;
+				reason: 'exception';
+				yourself)
 ]
 
 { #category : #starting }
