@@ -128,7 +128,6 @@ DAPServer >> dapInitialize: aDAPRequest [
 { #category : #dap }
 DAPServer >> dapLaunch: aDAPLaunchRequest [
 	<dap: #launch>
-	| oldDebugger |
 	self
 		sendMessage:
 			(DAPResponse new
@@ -139,10 +138,10 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 	compiler
 		source: (aDAPLaunchRequest arguments at: #program) asFileReference contents.
 	self threads at: aDAPLaunchRequest seq put: aDAPLaunchRequest seq.
-	oldDebugger := Smalltalk tools recentDebuggerTools.
 	Smalltalk tools debuggerTool: self.
 	compiler evaluate.
-	Smalltalk tools debuggerTool: oldDebugger.
+	Smalltalk tools cleanUp.
+	GTGenericStackDebugger register.
 	self sendMessage: DAPTerminatedEvent new
 ]
 
