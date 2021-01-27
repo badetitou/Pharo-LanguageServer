@@ -356,6 +356,34 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 	^ { #contents -> hover contents } asDictionary
 ]
 
+{ #category : #'lsp - signature help' }
+PLSServer >> textDocumentSignatureHelpWithPosition: position textDocument: textDocument anContext: context [
+	<jrpc: #'textDocument/signatureHelp'>
+	| text positionChar selector |
+	text := (self context textItem: (textDocument at: #uri)) at: #text.
+	positionChar := text plsToPosition: position.
+	selector := ((RBParser parseFaultyExpression: text)
+		bestNodeFor: (Interval from: positionChar to: positionChar))
+		selector.
+	^ PLSSignatureHelp new
+		signatures:
+			((SystemNavigation new allImplementorsOf: selector)
+				collect: [ :implementor | 
+					PLSSignatureInformation new
+						label: implementor printString;
+						documentation: implementor compiledMethod comment;
+						parameters:
+							(implementor argumentNames
+								collect: [ :name | 
+									PLSParameterInformation new
+										label: name;
+										yourself ]
+								as: Array);
+						yourself ]
+				as: Array);
+		yourself
+]
+
 { #category : #'lsp - text synchronisation' }
 PLSServer >> willSave: textDocument reason: reason [
 	<jrpc: #'textDocument/willSave'>

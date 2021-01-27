@@ -10,7 +10,8 @@ PLSServerCapabilities >> asJRPCJSON [
 	(#textDocumentSync -> self textDocumentSync asJRPCJSON).
 	(#hoverProvider -> self hoverProvider asJRPCJSON).
 	(#documentFormattingProvider
-		-> self documentFormattingProvider asJRPCJSON)} asDictionary
+		-> self documentFormattingProvider asJRPCJSON).
+	(#signatureHelpProvider -> self signatureHelp asJRPCJSON)} asDictionary
 ]
 
 { #category : #'as yet unclassified' }
@@ -27,6 +28,14 @@ PLSServerCapabilities >> documentFormattingProvider [
 { #category : #converting }
 PLSServerCapabilities >> hoverProvider [
 	^ PLSHoverOptions new
+]
+
+{ #category : #'as yet unclassified' }
+PLSServerCapabilities >> signatureHelp [
+	^ PLSSignatureHelpClientCapabilities new
+		triggerCharacters: ':';
+		retriggerCharacters: ':';
+		yourself
 ]
 
 { #category : #converting }

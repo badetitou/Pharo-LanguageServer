@@ -18,6 +18,22 @@ String >> findCloseBracesFor: startIndex [
 ]
 
 { #category : #'*PharoLanguageServer' }
+String >> plsToPosition: aLineCharacter [
+	^ (((self lines first: (aLineCharacter at: #line)) sum: #size)
+		+ aLineCharacter
+		at:
+			#character)
+				+
+					((self includes: Character lf)
+						ifTrue: [ aLineCharacter at: #line ]
+						ifFalse: [ 0 ])
+				+
+					((self includes: Character cr)
+						ifTrue: [ aLineCharacter at: #line ]
+						ifFalse: [ 0 ])
+]
+
+{ #category : #'*PharoLanguageServer' }
 String >> toPLSSnippet [
 	| idx number |
 	idx := 1.
