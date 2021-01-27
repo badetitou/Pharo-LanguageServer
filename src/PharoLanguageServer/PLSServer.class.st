@@ -359,12 +359,14 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 { #category : #'lsp - signature help' }
 PLSServer >> textDocumentSignatureHelpWithPosition: position textDocument: textDocument anContext: context [
 	<jrpc: #'textDocument/signatureHelp'>
-	| text positionChar selector |
+	| text positionChar selector node |
 	text := (self context textItem: (textDocument at: #uri)) at: #text.
 	positionChar := text plsToPosition: position.
-	selector := ((RBParser parseFaultyExpression: text)
-		bestNodeFor: (Interval from: positionChar to: positionChar))
-		selector.
+	node := (RBParser parseFaultyExpression: text)
+		bestNodeFor: (Interval from: positionChar to: positionChar).
+	selector := node isMessage
+		ifTrue: [ node selector ]
+		ifFalse: [ '' ].
 	^ PLSSignatureHelp new
 		signatures:
 			((SystemNavigation new allImplementorsOf: selector)
