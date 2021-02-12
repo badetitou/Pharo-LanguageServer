@@ -53,7 +53,7 @@ PLSServer >> commandPharoPrintIt: line [
 	| compiler answer | 
 	compiler := self compilerFor: nil.
 	answer := compiler evaluate: line.
-	^ answer printString
+	^ answer plsPrintString
 ]
 
 { #category : #commands }

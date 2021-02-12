@@ -34,5 +34,6 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 			with: [ spec requires: #('PharoLanguageServer' 'PLS-DAP-Helper') ];
 		package: 'PharoDAP'
 			with: [ spec requires: #('PharoLanguageServer' 'PLS-DAP-Helper') ];
-		package: 'PLS-DAP-Helper'
+		package: 'PLS-DAP-Helper'.
+	spec for: #'pharo8.x' do: [ spec package: 'PLS-Pharo8-Extension' ]
 ]
