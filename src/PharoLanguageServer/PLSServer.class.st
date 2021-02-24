@@ -88,7 +88,10 @@ PLSServer >> defaultPort [
 PLSServer >> didChange: textDocument contentChanges: contentChanges [
 	<jrpc: #'textDocument/didChange'>
 	| document |
-	document := self context textItem: (textDocument at: #uri).
+	document := self context
+		textItem: (textDocument at: #uri)
+		ifAbsent: [ self didOpen: textDocument.
+			textDocument ].
 	document at: #version put: (textDocument at: #version).
 	contentChanges
 		do:

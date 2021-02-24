@@ -55,6 +55,11 @@ PLSContext >> textItem: aURI [
 ]
 
 { #category : #'text item' }
+PLSContext >> textItem: aURI ifAbsent: aBlock [ 
+	^ self textItems at: aURI ifAbsent: aBlock
+]
+
+{ #category : #'text item' }
 PLSContext >> textItem: aURI put: aTextItem [
 	^ self textItems at: aURI put: aTextItem
 ]
