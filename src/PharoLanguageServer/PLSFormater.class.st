@@ -9,7 +9,6 @@ Class {
 
 { #category : #accessing }
 PLSFormater >> formated [
-1h.
 	^ self formatterClass format: (self parserClass parseFaultyExpression: self sourceCode)
 ]
 
