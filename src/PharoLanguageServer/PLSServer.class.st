@@ -115,7 +115,7 @@ PLSServer >> didSave: textDocument text: text [
 	<jrpc: #'textDocument/didSave'>
 	"Install the code in the image if the code is part of a tonel file"
 	((textDocument at: #uri) endsWith: 'class.st')
-		ifTrue: [ (TonelParser parseString: text) do: #load ]
+		ifTrue: [ (TonelParser parseString: text asByteArray utf8Decoded) do: #load ]
 ]
 
 { #category : #starting }
@@ -189,8 +189,8 @@ PLSServer >> getDatafromPosition: startingPoint fromSocket: clientSocket in: exi
 
 { #category : #starting }
 PLSServer >> getHeaderFor: answer into: aStream [
-	aStream << 'Content-Length: ' << answer size asString << String crlf
-		<< String crlf
+	aStream << 'Content-Length: ' << answer utf8Encoded size asString << String crlf << 'Content-Type: application/vscode-jsonrpc; charset=utf-8'
+		<< String crlf << String crlf
 ]
 
 { #category : #starting }
@@ -258,13 +258,14 @@ PLSServer >> resetContext [
 
 { #category : #starting }
 PLSServer >> sendData: answer toClient: clientSocket [
+
 	answer
 		ifNotEmpty: [ clientSocket
 				sendData:
 					(String
-						streamContents: [ :contentStream | 
-							self getHeaderFor: answer into: contentStream.
-							contentStream << answer ]) ]
+						streamContents:
+							[ :contentStream | self getHeaderFor: answer into: contentStream ]).
+			clientSocket sendData: answer utf8Encoded  ]
 ]
 
 { #category : #lsp }

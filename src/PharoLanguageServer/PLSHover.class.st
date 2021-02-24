@@ -18,7 +18,7 @@ PLSHover >> contents [
 		at: word asSymbol
 		ifPresent: [ :class | 
 			class isClass
-				ifTrue: [ class comment ]
+				ifTrue: [ class comment" asByteArray utf8Decoded" ]
 				ifFalse: [ '' ] ]
 		ifAbsent: [ "nil will be replace by the text URI in the future"
 			((self context compilationBindingsAt: nil) hasBindingOf: word)
