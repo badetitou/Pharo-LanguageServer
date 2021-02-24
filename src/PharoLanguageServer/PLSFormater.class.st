@@ -4,12 +4,18 @@ Class {
 	#instVars : [
 		'sourceCode'
 	],
-	#category : #PharoLanguageServer
+	#category : #'PharoLanguageServer-Structure-Formater'
 }
 
 { #category : #accessing }
 PLSFormater >> formated [
+1h.
 	^ self formatterClass format: (self parserClass parseFaultyExpression: self sourceCode)
+]
+
+{ #category : #accessing }
+PLSFormater >> formatedMethod [
+	^ self formatterClass format: (self parserClass parseMethod: self sourceCode)
 ]
 
 { #category : #accessing }

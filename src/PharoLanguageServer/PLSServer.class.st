@@ -163,7 +163,9 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 		line: lines size;
 		character: lines last size;
 		yourself.
-	formatter := PLSFormater new sourceCode: codeSource.
+	((textDocument at: #uri) endsWith: 'class.st')
+		ifFalse: [ formatter := PLSFormater new sourceCode: codeSource ]
+		ifTrue: [ formatter := PLSTonelFormater new sourceCode: codeSource ].
 	^ {(PLSTextEdit new
 		newText: formatter formated;
 		range:
