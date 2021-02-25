@@ -13,6 +13,13 @@ BaselineOfPharoLanguageServer >> baseline: spec [
 ]
 
 { #category : #baselines }
+BaselineOfPharoLanguageServer >> customProjectAttributes [
+    self class environment at: #RTView ifAbsent: [ ^ #(#WithRoassal2) ].
+
+    ^ #()
+]
+
+{ #category : #baselines }
 BaselineOfPharoLanguageServer >> defineDependencies: spec [
 	spec
 		baseline: 'JRPC'
@@ -35,5 +42,5 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 		package: 'PharoDAP'
 			with: [ spec requires: #('PharoLanguageServer' 'PLS-DAP-Helper') ];
 		package: 'PLS-DAP-Helper'.
-	spec for: #'pharo8.x' do: [ spec package: 'PLS-Pharo8-Extension' ]
+	spec for: #'WithRoassal2' do: [ spec package: 'PLS-Pharo8-Extension' ]
 ]
