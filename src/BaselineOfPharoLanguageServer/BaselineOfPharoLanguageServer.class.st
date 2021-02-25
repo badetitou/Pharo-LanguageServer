@@ -14,7 +14,7 @@ BaselineOfPharoLanguageServer >> baseline: spec [
 
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> customProjectAttributes [
-    self class environment at: #RTView ifAbsent: [ ^ #(#WithRoassal2) ].
+    self class environment at: #RTView ifPresent: [ ^ #(#WithRoassal2) ].
 
     ^ #()
 ]
