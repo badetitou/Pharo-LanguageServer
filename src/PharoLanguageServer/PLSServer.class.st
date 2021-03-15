@@ -42,6 +42,16 @@ PLSServer >> cancelRequest: id [
 ]
 
 { #category : #commands }
+PLSServer >> commandNotebookPrintIt: line [
+	<jrpc: #'command:notebookPrintIt'>
+	| compiler answer |
+	compiler := self compilerFor: nil.
+	answer := compiler evaluate: line.
+	^ {(#mimetype -> answer plsMimeType).
+	(#content -> answer plsPrintString)} asDictionary
+]
+
+{ #category : #commands }
 PLSServer >> commandPharoLanguageServerVersion [
 	<jrpc: #'command:version'>
 	^ '1.0.0'
