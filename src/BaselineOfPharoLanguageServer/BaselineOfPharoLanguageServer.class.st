@@ -15,7 +15,7 @@ BaselineOfPharoLanguageServer >> baseline: spec [
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> customProjectAttributes [
     self class environment at: #RTView ifPresent: [ ^ #(#WithRoassal2) ].
-
+	self class environment at: #RSCanvas ifPresent: [ ^ #(#WithRoassal3) ].
     ^ #()
 ]
 
@@ -35,12 +35,12 @@ BaselineOfPharoLanguageServer >> defineGroups: spec [
 
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> definePackages: spec [
+
 	spec
-		package: 'PharoLanguageServer' with: [ spec requires: #('JRPC') ];
-		package: 'PharoLanguageServer-Tests'
-			with: [ spec requires: #('PharoLanguageServer' 'PLS-DAP-Helper') ];
-		package: 'PharoDAP'
-			with: [ spec requires: #('PharoLanguageServer' 'PLS-DAP-Helper') ];
+		package: 'PharoLanguageServer' with: [ spec requires: #( 'JRPC' ) ];
+		package: 'PharoLanguageServer-Tests' with: [ spec requires: #( 'PharoLanguageServer' 'PLS-DAP-Helper' ) ];
+		package: 'PharoDAP' with: [ spec requires: #( 'PharoLanguageServer' 'PLS-DAP-Helper' ) ];
 		package: 'PLS-DAP-Helper'.
-	spec for: #'WithRoassal2' do: [ spec package: 'PLS-Pharo8-Extension' ]
+	spec for: #WithRoassal2 do: [ spec package: 'PLS-Pharo8-Extension' ].
+	spec for: #WithRoassal3 do: [ spec package: 'PLS-Pharo9-Extension' ]
 ]
