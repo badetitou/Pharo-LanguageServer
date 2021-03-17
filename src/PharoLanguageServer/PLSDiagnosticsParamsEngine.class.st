@@ -2,7 +2,8 @@ Class {
 	#name : #PLSDiagnosticsParamsEngine,
 	#superclass : #Object,
 	#instVars : [
-		'document'
+		'document',
+		'requestor'
 	],
 	#category : #'PharoLanguageServer-Structure-Diagnostic'
 }
@@ -21,9 +22,12 @@ PLSDiagnosticsParamsEngine >> computeDiagnostics [
 	| ast diagnostics source |
 	source := document at: 'text'.
 	ast := self class compiler
+		transformDoit;
 		source: source;
 		noPattern: false;
-		options: #(+ optionParseErrors + optionSkipSemanticWarnings);
+		failBlock: [ nil ];
+		requestor: self requestor;
+		options: #(+ optionParseErrors);
 		parse.
 	diagnostics := OrderedCollection new.
 	ast
@@ -53,4 +57,14 @@ PLSDiagnosticsParamsEngine >> document [
 { #category : #accessing }
 PLSDiagnosticsParamsEngine >> document: anObject [
 	document := anObject
+]
+
+{ #category : #accessing }
+PLSDiagnosticsParamsEngine >> requestor [
+	^ requestor
+]
+
+{ #category : #accessing }
+PLSDiagnosticsParamsEngine >> requestor: anObject [
+	requestor := anObject
 ]
