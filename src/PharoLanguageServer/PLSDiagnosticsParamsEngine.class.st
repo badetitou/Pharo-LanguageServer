@@ -18,26 +18,31 @@ PLSDiagnosticsParamsEngine class >> document: aDocument [
 
 { #category : #accessing }
 PLSDiagnosticsParamsEngine >> computeDiagnostics [
-	| ast diagnostics |
+	| ast diagnostics source |
+	source := document at: 'text'.
 	ast := self class compiler
-		source: (document at: 'text');
+		source: source;
 		noPattern: false;
 		options: #(+ optionParseErrors + optionSkipSemanticWarnings);
 		parse.
 	diagnostics := OrderedCollection new.
-	ast acceptVisitor: (RBParseErrorNodeVisitor new
-		visitBlock:
-			[ :aErrorBlock | 
-			diagnostics
-				add:
-					(PLSDiagnostic new
-						message: aErrorBlock errorMessage;
-						range: (PLSRange start: aErrorBlock start end: aErrorBlock stop)) ]).
+	ast
+		acceptVisitor:
+			(RBParseErrorNodeVisitor new
+				visitBlock: [ :aErrorBlock | 
+					diagnostics
+						add:
+							(PLSDiagnostic new
+								message: aErrorBlock errorMessage;
+								range:
+									(PLSRange
+										start: (source toLineCharacter: aErrorBlock start)
+										end: (source toLineCharacter: aErrorBlock stop))) ]).
 	^ PLSPublishDiagnosticsParams new
 		diagnostics: diagnostics;
 		uri: (document at: 'uri');
 		version: (document at: 'version');
-		yourself 
+		yourself
 ]
 
 { #category : #accessing }

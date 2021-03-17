@@ -34,6 +34,16 @@ String >> plsToPosition: aLineCharacter [
 ]
 
 { #category : #'*PharoLanguageServer' }
+String >> toLineCharacter: position [
+	"given a position, return a dictionnary with the line and character of the cursor at this position"
+
+	| copy |
+	copy := (self copyFrom: 1 to: position) lines.
+	^ {(#line -> copy size).
+	(#column -> copy last size)} asDictionary
+]
+
+{ #category : #'*PharoLanguageServer' }
 String >> toPLSSnippet [
 	| idx number |
 	idx := 1.
