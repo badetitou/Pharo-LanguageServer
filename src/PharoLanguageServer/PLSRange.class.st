@@ -18,6 +18,14 @@ Class {
 	#category : #'PharoLanguageServer-Structure'
 }
 
+{ #category : #'as yet unclassified' }
+PLSRange class >> start: start end: end [
+	^ self new
+		start: start;
+		end: end;
+		yourself
+]
+
 { #category : #converting }
 PLSRange >> asJRPCJSON [
 	^ {(#start -> self start asJRPCJSON).

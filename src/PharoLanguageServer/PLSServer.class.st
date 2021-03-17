@@ -22,7 +22,8 @@ Class {
 		'process',
 		'serverContext',
 		'data',
-		'messagesProcesses'
+		'messagesProcesses',
+		'socketClient'
 	],
 	#category : #PharoLanguageServer
 }
@@ -95,7 +96,12 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 	document at: #version put: (textDocument at: #version).
 	contentChanges
 		do:
-			[ :change | change keysAndValuesDo: [ :key :value | document at: key put: value ] ]
+			[ :change | change keysAndValuesDo: [ :key :value | document at: key put: value ] ].
+	^ self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+			(((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
+				params: (PLSDiagnosticsParamsEngine document: document) computeDiagnostics)) asJRPCJSON)
+		toClient: socketClient
 ]
 
 { #category : #'lsp - text synchronisation' }
@@ -310,7 +316,8 @@ PLSServer >> start [
 	tcpServer listenOn: self port backlogSize: 10.
 	serverLoop := true.
 	(tcpServer waitForAcceptFor: 60)
-		ifNotNil: [ :clientSocket | 
+		ifNotNil: [ :clientSocket |
+			socketClient := clientSocket.
 			process := [ [ serverLoop ]
 				whileTrue: [ | request |
 					request := self extractRequestFrom: clientSocket.
