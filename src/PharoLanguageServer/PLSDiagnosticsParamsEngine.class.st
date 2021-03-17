@@ -24,7 +24,7 @@ PLSDiagnosticsParamsEngine >> computeDiagnostics [
 	ast := self class compiler
 		transformDoit;
 		source: source;
-		noPattern: false;
+		noPattern: true;
 		failBlock: [ nil ];
 		requestor: self requestor;
 		options: #(+ optionParseErrors);

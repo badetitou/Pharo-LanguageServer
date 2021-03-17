@@ -19,17 +19,17 @@ String >> findCloseBracesFor: startIndex [
 
 { #category : #'*PharoLanguageServer' }
 String >> plsToPosition: aLineCharacter [
-	^ (((self lines first: (aLineCharacter at: #line)) sum: #size)
+	^ (((self lines first: ((aLineCharacter at: #line) + 1)) sum: #size)
 		+ aLineCharacter
 		at:
 			#character)
 				+
 					((self includes: Character lf)
-						ifTrue: [ aLineCharacter at: #line ]
+						ifTrue: [ ((aLineCharacter at: #line) + 1) ]
 						ifFalse: [ 0 ])
 				+
 					((self includes: Character cr)
-						ifTrue: [ aLineCharacter at: #line ]
+						ifTrue: [ ((aLineCharacter at: #line) + 1) ]
 						ifFalse: [ 0 ])
 ]
 
@@ -41,9 +41,9 @@ String >> toLineCharacter: position [
 	copy := (self copyFrom: 1 to: (position min: self size)) lines.
 	copy
 		ifEmpty: [ ^ {(#line -> 0).
-			(#column -> 0)} asDictionary ].
+			(#character -> 0)} asDictionary ].
 	^ {(#line -> copy size).
-	(#column -> copy last size)} asDictionary
+	(#character -> copy last size)} asDictionary
 ]
 
 { #category : #'*PharoLanguageServer' }

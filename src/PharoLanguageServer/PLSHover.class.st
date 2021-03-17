@@ -12,7 +12,7 @@ Class {
 { #category : #accessing }
 PLSHover >> contents [
 	| word |
-	word := self source wordAt: self position + 1.
+	word := self source wordAt: self position.
 	"can be a class"
 	^ Smalltalk globals
 		at: word asSymbol
