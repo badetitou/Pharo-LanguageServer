@@ -427,7 +427,8 @@ PLSServer >> textDocumentSignatureHelpWithPosition: position textDocument: textD
 	positionChar := text plsToPosition: position.
 	node := (RBParser parseFaultyExpression: text)
 		bestNodeFor: (Interval from: positionChar to: positionChar).
-	selector := node isMessage
+	"Node can be nil with this piece of code: `true :` (the ':' is not correctly parsed, so node becomes nil)"
+	selector := (node isNotNil and: [ node isMessage ])
 		ifTrue: [ node selector ]
 		ifFalse: [ '' ].
 	^ PLSSignatureHelp new
