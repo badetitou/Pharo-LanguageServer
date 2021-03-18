@@ -40,8 +40,8 @@ String >> toLineCharacter: position [
 	| copy |
 	copy := (self copyFrom: 1 to: (position min: self size)) lines.
 	copy
-		ifEmpty: [ ^ {(#line -> 0).
-			(#character -> 0)} asDictionary ].
+		ifEmpty: [ ^ {(#line -> 1).
+			(#character -> 1)} asDictionary ].
 	^ {(#line -> copy size).
 	(#character -> copy last size)} asDictionary
 ]
@@ -77,10 +77,11 @@ String >> wordAt: anIndex [
 	
 	"('word before index.hello' wordAt: 15)  >>> 'index'"
 
-	| sepBefore sepAfter tokBefore tokAfter |
+	| sepBefore sepAfter tokBefore tokAfter index |
+	index := (anIndex max: 1).
 	tokBefore := false.
-	sepBefore := anIndex.
-	sepAfter := anIndex.
+	sepBefore := index.
+	sepAfter := index.
 	[ sepBefore > 0 and: [ ((self at: sepBefore) isSeparator or: [ (self at: sepBefore) isOtherPunctuation ]) not ] ]
 		whileTrue: [ tokBefore := true.
 			sepBefore := sepBefore - 1 ].
