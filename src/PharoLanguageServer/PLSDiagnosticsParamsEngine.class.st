@@ -1,3 +1,6 @@
+"
+I create a Publish Diagnotics Params from the document and the current requestor (that defines variables)
+"
 Class {
 	#name : #PLSDiagnosticsParamsEngine,
 	#superclass : #Object,

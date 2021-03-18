@@ -1,3 +1,7 @@
+"
+I am the Diagnotic structure.
+I report an error with an error message, at a position, with a message
+"
 Class {
 	#name : #PLSDiagnostic,
 	#superclass : #Object,
