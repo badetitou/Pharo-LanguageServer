@@ -13,8 +13,8 @@ PLSStringTest >> testToLineCharacter0 [
 	self
 		assert: (string toLineCharacter: 0)
 		equals:
-			{(#line -> 1).
-			#character ->1} asDictionary 
+			{(#line -> 0).
+			#character -> 0} asDictionary 
 ]
 
 { #category : #tests }
@@ -26,7 +26,7 @@ PLSStringTest >> testToLineCharacterEndBeginSecondLine [
 	self
 		assert: (string toLineCharacter: 7)
 		equals:
-			{(#line -> 2).
+			{(#line -> 1).
 			#character -> 1} asDictionary 
 ]
 
@@ -37,9 +37,9 @@ PLSStringTest >> testToLineCharacterEndFirstLine [
 	world
 	'.
 	self
-		assert: (string toLineCharacter: 5)
+		assert: (string toLineCharacter: 6)
 		equals:
-			{(#line -> 1).
+			{(#line -> 0).
 			#character -> 5} asDictionary 
 ]
 
@@ -49,8 +49,8 @@ PLSStringTest >> testToLineCharacterEndSecondLine [
 	string := 'hello
 	world'.
 	self
-		assert: (string toLineCharacter: 13)
+		assert: (string toLineCharacter: 12)
 		equals:
-			{(#line -> 2).
+			{(#line -> 1).
 			#character -> 6} asDictionary 
 ]

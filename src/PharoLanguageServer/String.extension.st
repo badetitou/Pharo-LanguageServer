@@ -40,10 +40,10 @@ String >> toLineCharacter: position [
 	| copy |
 	copy := (self copyFrom: 1 to: (position min: self size)) lines.
 	copy
-		ifEmpty: [ ^ {(#line -> 1).
-			(#character -> 1)} asDictionary ].
-	^ {(#line -> copy size).
-	(#character -> copy last size)} asDictionary
+		ifEmpty: [ ^ {(#line -> 0).
+			(#character -> 0)} asDictionary ].
+	^ {(#line -> (copy size - 1)).
+	(#character -> (copy last size))} asDictionary
 ]
 
 { #category : #'*PharoLanguageServer' }
