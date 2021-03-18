@@ -43,7 +43,7 @@ String >> toLineCharacter: position [
 		ifEmpty: [ ^ {(#line -> 0).
 			(#character -> 0)} asDictionary ].
 	^ {(#line -> (copy size - 1)).
-	(#character -> (copy last size))} asDictionary
+	(#character -> (copy last size max: 0))} asDictionary
 ]
 
 { #category : #'*PharoLanguageServer' }
@@ -62,10 +62,10 @@ String >> toPLSSnippet [
 						nextPutAll: number printString;
 						nextPut: Character space.
 					number := number + 1.
-					idx := foundIdx + 3 ].
+					idx := foundIdx + 1].
 			idx <= self size
 				ifTrue:
-					[ stream next: self size - idx + 1 putAll: self startingAt: idx ] ])
+					[ stream next: self size - idx + 1 putAll: self startingAt: idx ] ]) trimRight 
 		, '$0'
 ]
 
