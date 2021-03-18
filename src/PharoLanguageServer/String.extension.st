@@ -19,18 +19,31 @@ String >> findCloseBracesFor: startIndex [
 
 { #category : #'*PharoLanguageServer' }
 String >> plsToPosition: aLineCharacter [
-	^ (((self lines first: (aLineCharacter at: #line)) sum: #size)
+	^ (((self lines first: ((aLineCharacter at: #line) + 1)) sum: #size)
 		+ aLineCharacter
 		at:
 			#character)
 				+
 					((self includes: Character lf)
-						ifTrue: [ aLineCharacter at: #line ]
+						ifTrue: [ ((aLineCharacter at: #line) + 1) ]
 						ifFalse: [ 0 ])
 				+
 					((self includes: Character cr)
-						ifTrue: [ aLineCharacter at: #line ]
+						ifTrue: [ ((aLineCharacter at: #line) + 1) ]
 						ifFalse: [ 0 ])
+]
+
+{ #category : #'*PharoLanguageServer' }
+String >> toLineCharacter: position [
+	"given a position, return a dictionnary with the line and character of the cursor at this position"
+
+	| copy |
+	copy := (self copyFrom: 1 to: (position min: self size)) lines.
+	copy
+		ifEmpty: [ ^ {(#line -> 1).
+			(#character -> 1)} asDictionary ].
+	^ {(#line -> copy size).
+	(#character -> copy last size)} asDictionary
 ]
 
 { #category : #'*PharoLanguageServer' }
@@ -64,10 +77,11 @@ String >> wordAt: anIndex [
 	
 	"('word before index.hello' wordAt: 15)  >>> 'index'"
 
-	| sepBefore sepAfter tokBefore tokAfter |
+	| sepBefore sepAfter tokBefore tokAfter index |
+	index := (anIndex max: 1).
 	tokBefore := false.
-	sepBefore := anIndex.
-	sepAfter := anIndex.
+	sepBefore := index.
+	sepAfter := index.
 	[ sepBefore > 0 and: [ ((self at: sepBefore) isSeparator or: [ (self at: sepBefore) isOtherPunctuation ]) not ] ]
 		whileTrue: [ tokBefore := true.
 			sepBefore := sepBefore - 1 ].

@@ -22,7 +22,8 @@ Class {
 		'process',
 		'serverContext',
 		'data',
-		'messagesProcesses'
+		'messagesProcesses',
+		'socketClient'
 	],
 	#category : #PharoLanguageServer
 }
@@ -105,19 +106,59 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 	document at: #version put: (textDocument at: #version).
 	contentChanges
 		do:
-			[ :change | change keysAndValuesDo: [ :key :value | document at: key put: value ] ]
+			[ :change | change keysAndValuesDo: [ :key :value | document at: key put: value ] ].
+	(self isTonelDocument: textDocument)
+		ifFalse: [ self
+				sendData:
+					(self
+						convertJRPCJsonableObjectToJSON:
+							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
+								params:
+									((PLSDiagnosticsParamsEngine document: document)
+										requestor: (self context compilationBindingsAt: (textDocument at: #uri)))
+										computeDiagnostics) asJRPCJSON)
+				toClient: socketClient ]
 ]
 
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didClose: textDocument [
 	<jrpc: #'textDocument/didClose'>
-	self context removeItem: (textDocument at: #uri)
+	| document |
+	document := self context removeItem: (textDocument at: #uri).
+	
+	(self isTonelDocument: textDocument)
+		ifFalse: [ self
+				sendData:
+					(self
+						convertJRPCJsonableObjectToJSON:
+							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
+								params:
+									(PLSPublishDiagnosticsParams new
+										diagnostics: {};
+										uri: (document at: 'uri');
+										version: (document at: 'version');
+										yourself)) asJRPCJSON)
+				toClient: socketClient ]
 ]
 
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didOpen: textDocument [
 	<jrpc: #'textDocument/didOpen'>
-	self context textItem: (textDocument at: #uri) put: textDocument 
+	| document |
+	document := self context
+		textItem: (textDocument at: #uri)
+		put: textDocument.
+	(self isTonelDocument: textDocument)
+		ifFalse: [ self
+				sendData:
+					(self
+						convertJRPCJsonableObjectToJSON:
+							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
+								params:
+									((PLSDiagnosticsParamsEngine document: document)
+										requestor: (self context compilationBindingsAt: (textDocument at: #uri)))
+										computeDiagnostics) asJRPCJSON)
+				toClient: socketClient ]
 ]
 
 { #category : #'lsp - text synchronisation' }
@@ -176,9 +217,9 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 		line: lines size;
 		character: lines last size;
 		yourself.
-	((textDocument at: #uri) endsWith: 'class.st')
-		ifFalse: [ formatter := PLSFormater new sourceCode: codeSource ]
-		ifTrue: [ formatter := PLSTonelFormater new sourceCode: codeSource ].
+	formatter := (self isTonelDocument: textDocument)
+		ifFalse: [ PLSFormater new sourceCode: codeSource ]
+		ifTrue: [ PLSTonelFormater new sourceCode: codeSource ].
 	^ {(PLSTextEdit new
 		newText: formatter formated;
 		range:
@@ -227,6 +268,11 @@ PLSServer >> initialize [
 	serverContext := PLSContext new.
 	data := ''.
 	messagesProcesses := Dictionary new.
+]
+
+{ #category : #'lsp - formatting' }
+PLSServer >> isTonelDocument: textDocument [
+	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
 { #category : #context }
@@ -320,7 +366,8 @@ PLSServer >> start [
 	tcpServer listenOn: self port backlogSize: 10.
 	serverLoop := true.
 	(tcpServer waitForAcceptFor: 60)
-		ifNotNil: [ :clientSocket | 
+		ifNotNil: [ :clientSocket |
+			socketClient := clientSocket.
 			process := [ [ serverLoop ]
 				whileTrue: [ | request |
 					request := self extractRequestFrom: clientSocket.
