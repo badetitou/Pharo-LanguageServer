@@ -113,13 +113,42 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didClose: textDocument [
 	<jrpc: #'textDocument/didClose'>
-	self context removeItem: (textDocument at: #uri)
+	| document |
+	document := self context removeItem: (textDocument at: #uri).
+	
+	(self isTonelDocument: textDocument)
+		ifFalse: [ self
+				sendData:
+					(self
+						convertJRPCJsonableObjectToJSON:
+							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
+								params:
+									(PLSPublishDiagnosticsParams new
+										diagnostics: {};
+										uri: (document at: 'uri');
+										version: (document at: 'version');
+										yourself)) asJRPCJSON)
+				toClient: socketClient ]
 ]
 
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didOpen: textDocument [
 	<jrpc: #'textDocument/didOpen'>
-	self context textItem: (textDocument at: #uri) put: textDocument 
+	| document |
+	document := self context
+		textItem: (textDocument at: #uri)
+		put: textDocument.
+	(self isTonelDocument: textDocument)
+		ifFalse: [ self
+				sendData:
+					(self
+						convertJRPCJsonableObjectToJSON:
+							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
+								params:
+									((PLSDiagnosticsParamsEngine document: document)
+										requestor: (self context compilationBindingsAt: (textDocument at: #uri)))
+										computeDiagnostics) asJRPCJSON)
+				toClient: socketClient ]
 ]
 
 { #category : #'lsp - text synchronisation' }
