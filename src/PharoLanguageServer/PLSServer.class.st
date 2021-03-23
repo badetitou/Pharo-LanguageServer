@@ -47,7 +47,7 @@ PLSServer >> commandNotebookPrintIt: line [
 	<jrpc: #'command:notebookPrintIt'>
 	| compiler answer |
 	compiler := self compilerFor: nil.
-	answer := compiler evaluate: line.
+	answer := [ compiler evaluate: line ] on: Exception do: [ :error | error ].
 	^ {(#mimetype -> answer plsMimeType).
 	(#content -> answer plsPrintString)} asDictionary
 ]
