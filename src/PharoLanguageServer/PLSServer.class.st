@@ -303,9 +303,21 @@ PLSServer >> parseJSON: aJSONString [
 ]
 
 { #category : #pls }
+PLSServer >> plsGetClassContent: class [
+	<jrpc: #'pls:classContent'>
+	| className |
+	className := (class substrings: '.') first.
+	^ String
+		streamContents:
+			[ :stream | TonelWriter exportClass: (self class environment at: className asSymbol) on: stream ]
+]
+
+{ #category : #pls }
 PLSServer >> plsGetClasses: package [
 	<jrpc: #'pls:classes'>
-	^ [package asPackage classes collect: #name as: Array] on: Error do: [ { } asArray ]
+	^ [ package asPackage classes collect: [:class | class name , '.class.st' ] as: Array ]
+		on: Error
+		do: [ {} asArray ]
 ]
 
 { #category : #pls }
