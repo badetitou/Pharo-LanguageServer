@@ -33,6 +33,16 @@ PLSServer class >> defaultPort [
 	^ 4000
 ]
 
+{ #category : #defaults }
+PLSServer class >> reset [
+	<script>
+	PLSServer
+		allInstancesDo: [ :inst | 
+			[ inst stop ]
+				on: Error
+				do: [ Transcript crShow: 'one server not stopped' ] ]
+]
+
 { #category : #lsp }
 PLSServer >> cancelRequest: id [
 	<jrpc: #'$/cancelRequest' >
@@ -290,6 +300,12 @@ PLSServer >> onInitializeTrace: trace processId: processId clientInfo: clientInf
 PLSServer >> parseJSON: aJSONString [
 	^ self messageProcessor parseSupposedJRPCMessageObjectFromString: aJSONString.
 	
+]
+
+{ #category : #pls }
+PLSServer >> plsGetClasses: package [
+	<jrpc: #'pls:classes'>
+	^ [package asPackage classes collect: #name as: Array] on: Error do: [ { } asArray ]
 ]
 
 { #category : #pls }
