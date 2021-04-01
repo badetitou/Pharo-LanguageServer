@@ -292,6 +292,13 @@ PLSServer >> parseJSON: aJSONString [
 	
 ]
 
+{ #category : #pls }
+PLSServer >> plsGetPackages [
+	<jrpc: #'pls:packages'>
+	^ (RPackageOrganizer default packages collect: #name)
+		asArray
+]
+
 { #category : #stopping }
 PLSServer >> port [
 	^ port ifNil: [ port := self defaultPort ]
