@@ -398,7 +398,8 @@ PLSServer >> showMessage: aString ofType: aMessageType toClient: aClient [
 { #category : #starting }
 PLSServer >> start [
 	tcpServer := Socket newTCP.
-	tcpServer listenOn: self port backlogSize: 10.
+	tcpServer listenOn: 0 backlogSize: 10.
+	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
 	serverLoop := true.
 	(tcpServer waitForAcceptFor: 60)
 		ifNotNil: [ :clientSocket |
