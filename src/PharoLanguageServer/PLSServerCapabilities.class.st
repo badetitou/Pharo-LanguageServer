@@ -11,7 +11,13 @@ PLSServerCapabilities >> asJRPCJSON [
 	(#hoverProvider -> self hoverProvider asJRPCJSON).
 	(#documentFormattingProvider
 		-> self documentFormattingProvider asJRPCJSON).
-	(#signatureHelpProvider -> self signatureHelp asJRPCJSON)} asDictionary
+	(#signatureHelpProvider -> self signatureHelp asJRPCJSON).
+	(#codeLensProvider -> self codeLens asJRPCJSON)} asDictionary
+]
+
+{ #category : #'as yet unclassified' }
+PLSServerCapabilities >> codeLens [
+	^ PLSCodeLensOptions new
 ]
 
 { #category : #'as yet unclassified' }

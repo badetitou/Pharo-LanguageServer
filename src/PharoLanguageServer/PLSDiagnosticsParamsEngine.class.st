@@ -23,7 +23,7 @@ PLSDiagnosticsParamsEngine class >> document: aDocument [
 { #category : #accessing }
 PLSDiagnosticsParamsEngine >> computeDiagnostics [
 	| ast diagnostics source |
-	source := document at: 'text'.
+	source := document text.
 	ast := self class compiler
 		transformDoit;
 		source: source;
@@ -47,8 +47,8 @@ PLSDiagnosticsParamsEngine >> computeDiagnostics [
 										end: (source toLineCharacter: aErrorBlock stop))) ]).
 	^ PLSPublishDiagnosticsParams new
 		diagnostics: diagnostics;
-		uri: (document at: 'uri');
-		version: (document at: 'version');
+		uri: (document uri);
+		version: (document version);
 		yourself
 ]
 

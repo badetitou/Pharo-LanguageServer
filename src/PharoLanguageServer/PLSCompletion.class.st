@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'completionContext',
 		'source',
-		'position'
+		'position',
+		'sourceClass'
 	],
 	#category : #PharoLanguageServer
 }
@@ -23,7 +24,7 @@ PLSCompletion >> completionContext: anObject [
 PLSCompletion >> entries [
 	completionContext := CompletionContext
 		engine: PLSCompletionEngine new
-		class: nil
+		class: self sourceClass
 		source: self source
 		position: self position.
 	^ self completionContext entries
@@ -64,4 +65,14 @@ PLSCompletion >> source [
 { #category : #initialization }
 PLSCompletion >> source: aSource [
 	source := aSource
+]
+
+{ #category : #accessing }
+PLSCompletion >> sourceClass [
+	^ sourceClass
+]
+
+{ #category : #accessing }
+PLSCompletion >> sourceClass: anObject [
+	sourceClass := anObject
 ]

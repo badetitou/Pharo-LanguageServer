@@ -52,6 +52,24 @@ PLSServer >> cancelRequest: id [
 		ifAbsent: [ Error signal ]
 ]
 
+{ #category : #'lsp - code lens' }
+PLSServer >> codeLenResolves: range command: command data: aData [
+	<jrpc: #'codeLens/resolve'>
+	^ PLSCodeLens new
+		range: range;
+		command: command;
+		data: aData;
+		yourself
+]
+
+{ #category : #'lsp - code lens' }
+PLSServer >> codeLensTextDocument: textDocument [
+	<jrpc: #'textDocument/codeLens'>
+	(self isTonelDocument: textDocument)
+		ifFalse: [ ^ {} asJRPCJSON ].
+	self context textItem: (textDocument at: #uri).
+]
+
 { #category : #commands }
 PLSServer >> commandNotebookPrintIt: line [
 	<jrpc: #'command:notebookPrintIt'>
@@ -113,10 +131,8 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 		textItem: (textDocument at: #uri)
 		ifAbsent: [ self didOpen: textDocument.
 			textDocument ].
-	document at: #version put: (textDocument at: #version).
-	contentChanges
-		do:
-			[ :change | change keysAndValuesDo: [ :key :value | document at: key put: value ] ].
+	document version: (textDocument at: #version).
+	document text: (contentChanges anyOne at: #text).
 	(self isTonelDocument: textDocument)
 		ifFalse: [ self
 				sendData:
@@ -135,7 +151,6 @@ PLSServer >> didClose: textDocument [
 	<jrpc: #'textDocument/didClose'>
 	| document |
 	document := self context removeItem: (textDocument at: #uri).
-	
 	(self isTonelDocument: textDocument)
 		ifFalse: [ self
 				sendData:
@@ -145,8 +160,8 @@ PLSServer >> didClose: textDocument [
 								params:
 									(PLSPublishDiagnosticsParams new
 										diagnostics: {};
-										uri: (document at: 'uri');
-										version: (document at: 'version');
+										uri: document uri;
+										version: document version;
 										yourself)) asJRPCJSON)
 				toClient: socketClient ]
 ]
@@ -157,7 +172,7 @@ PLSServer >> didOpen: textDocument [
 	| document |
 	document := self context
 		textItem: (textDocument at: #uri)
-		put: textDocument.
+		put: (PLSDocument from: textDocument).
 	(self isTonelDocument: textDocument)
 		ifFalse: [ self
 				sendData:
@@ -220,8 +235,7 @@ PLSServer >> extractRequestFrom: clientSocket [
 PLSServer >> formatTextDocument: textDocument withOptions: options [
 	<jrpc: #'textDocument/formatting'>
 	| codeSource formatter lines endPosition |
-	codeSource := (self context textItem: (textDocument at: #uri))
-		at: #text.
+	codeSource := (self context textItem: (textDocument at: #uri)) text.
 	lines := codeSource lines.
 	endPosition := PLSPosition new
 		line: lines size;
@@ -435,9 +449,15 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 	<jrpc: #'textDocument/completion'>
 	| completionList completionTool |
 	completionTool := PLSCompletion new
-		source: ((self context textItem: (textDocument at: #uri)) at: #text);
+		source: (self context textItem: (textDocument at: #uri)) text;
 		position: position;
 		yourself.
+	(self isTonelDocument: textDocument)
+		ifTrue: [ completionTool
+				sourceClass:
+					((PLSTonelParser
+						parseString: ((self context textItem: (textDocument at: #uri)) at: #text))
+						detect: #isClassDefinition) actualClass ].
 	completionList := PLSCompletionList new.
 	completionList completionItems: completionTool entries asArray.
 	^ completionList
@@ -449,7 +469,7 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 	| hover |
 	hover := PLSHover new
 		context: self context;
-		source: ((self context textItem: (textDocument at: #uri)) at: #text);
+		source: (self context textItem: (textDocument at: #uri)) text;
 		position: position;
 		yourself.
 	^ { #contents -> hover contents } asDictionary
@@ -459,7 +479,7 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 PLSServer >> textDocumentSignatureHelpWithPosition: position textDocument: textDocument anContext: context [
 	<jrpc: #'textDocument/signatureHelp'>
 	| text positionChar selector node |
-	text := (self context textItem: (textDocument at: #uri)) at: #text.
+	text := (self context textItem: (textDocument at: #uri)) text.
 	positionChar := text plsToPosition: position.
 	node := (RBParser parseFaultyExpression: text)
 		bestNodeFor: (Interval from: positionChar to: positionChar).
