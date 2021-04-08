@@ -36,7 +36,7 @@ PLSDiagnosticsParamsEngine >> computeDiagnostics [
 	ast
 		acceptVisitor:
 			(RBParseErrorNodeVisitor new
-				visitBlock: [ :aErrorBlock | 
+				visitBlock: [ :aErrorBlock |
 					diagnostics
 						add:
 							(PLSDiagnostic new

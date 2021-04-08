@@ -55,19 +55,13 @@ PLSServer >> cancelRequest: id [
 { #category : #'lsp - code lens' }
 PLSServer >> codeLenResolves: range command: command data: aData [
 	<jrpc: #'codeLens/resolve'>
-	^ PLSCodeLens new
-		range: range;
-		command: command;
-		data: aData;
-		yourself
+	self flag: 'Not use in this version. All is done by codeLensTextDocument:'
 ]
 
 { #category : #'lsp - code lens' }
 PLSServer >> codeLensTextDocument: textDocument [
 	<jrpc: #'textDocument/codeLens'>
-	(self isTonelDocument: textDocument)
-		ifFalse: [ ^ {} asJRPCJSON ].
-	self context textItem: (textDocument at: #uri).
+	^ (self context textItem: (textDocument at: #uri)) codeLens
 ]
 
 { #category : #commands }
@@ -317,6 +311,20 @@ PLSServer >> parseJSON: aJSONString [
 ]
 
 { #category : #pls }
+PLSServer >> plsExecuteClass: class test: testMethod [
+	<jrpc: #'pls:executeClassTest'>
+	| result |
+	result := (self class environment at: class asSymbol)
+		run: testMethod asSymbol.
+	^ result printString
+	"{(#failures -> (result failures collect: #printString as: Array)).
+	(#errors -> (result errors collect: #printString as: Array)).
+	(#skipped -> (result skipped collect: #printString as: Array)).
+	(#passed -> (result passed collect: #printString as: Array))}
+		asDictionary"
+]
+
+{ #category : #pls }
 PLSServer >> plsGetClassContent: class [
 	<jrpc: #'pls:classContent'>
 	| className |
@@ -455,8 +463,8 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 	(self isTonelDocument: textDocument)
 		ifTrue: [ completionTool
 				sourceClass:
-					((PLSTonelParser
-						parseString: ((self context textItem: (textDocument at: #uri)) at: #text))
+					(([PLSTonelParser
+						parseString: (self context textItem: (textDocument at: #uri)) text] on: Error do: [^ {}])
 						detect: #isClassDefinition) actualClass ].
 	completionList := PLSCompletionList new.
 	completionList completionItems: completionTool entries asArray.

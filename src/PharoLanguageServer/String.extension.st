@@ -38,7 +38,7 @@ String >> toLineCharacter: position [
 	"given a position, return a dictionnary with the line and character of the cursor at this position"
 
 	| copy |
-	copy := (self copyFrom: 1 to: (position min: self size)) lines.
+	copy := (self first: (position min: self size)) lines.
 	copy
 		ifEmpty: [ ^ {(#line -> 0).
 			(#character -> 0)} asDictionary ].

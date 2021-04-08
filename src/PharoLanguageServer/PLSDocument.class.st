@@ -29,6 +29,11 @@ PLSDocument class >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
+{ #category : #accessing }
+PLSDocument >> codeLens [
+	^ {}
+]
+
 { #category : #testing }
 PLSDocument >> isScriptDocument [
 	^ false
