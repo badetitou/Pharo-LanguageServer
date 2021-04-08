@@ -11,6 +11,14 @@ Class {
 	#category : #'PharoLanguageServer-Structure'
 }
 
+{ #category : #'as yet unclassified' }
+PLSPosition class >> line: line character: character [
+	^ self new
+		line: line;
+		character: character;
+		yourself
+]
+
 { #category : #accessing }
 PLSPosition >> asJRPCJSON [
 	^ {(#line -> self line asJRPCJSON).
