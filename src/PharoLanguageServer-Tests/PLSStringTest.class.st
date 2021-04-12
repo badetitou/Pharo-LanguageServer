@@ -5,6 +5,54 @@ Class {
 }
 
 { #category : #tests }
+PLSStringTest >> testPlsToPositionNoLine [
+	self
+		assert:
+			(''
+				plsToPosition:
+					{(#line -> 0).
+					(#character -> 0)} asDictionary)
+		equals: 0
+]
+
+{ #category : #tests }
+PLSStringTest >> testPlsToPositionOneEmptyLine [
+	self
+		assert:
+			('   '
+				plsToPosition:
+					{(#line -> 0).
+					(#character -> 0)} asDictionary)
+		equals: 0
+]
+
+{ #category : #tests }
+PLSStringTest >> testPlsToPositionSeveralLines [
+	self
+		assert:
+			('
+			
+			'
+				plsToPosition:
+					{(#line -> 0).
+					(#character -> 0)} asDictionary)
+		equals: 0
+]
+
+{ #category : #tests }
+PLSStringTest >> testPlsToPositionSomeChar [
+	self
+		assert:
+			('Object.
+
+hello := true.'
+				plsToPosition:
+					{(#line -> 2).
+					(#character -> 14)} asDictionary)
+		equals: 23
+]
+
+{ #category : #tests }
 PLSStringTest >> testToLineCharacter0 [
 	| string |
 	string := 'hello

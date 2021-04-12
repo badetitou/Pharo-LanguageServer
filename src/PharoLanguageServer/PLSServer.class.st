@@ -486,9 +486,10 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 	(self isTonelDocument: textDocument)
 		ifTrue: [ completionTool
 				sourceClass:
-					(([PLSTonelParser
-						parseString: (self context textItem: (textDocument at: #uri)) text] on: Error do: [^ {}])
-						detect: #isClassDefinition) actualClass ].
+					(([ PLSTonelParser
+						parseString: (self context textItem: (textDocument at: #uri)) text ]
+						on: Error
+						do: [ ^ {} ]) detect: #isClassDefinition) actualClass ].
 	completionList := PLSCompletionList new.
 	completionList completionItems: completionTool entries asArray.
 	^ completionList
