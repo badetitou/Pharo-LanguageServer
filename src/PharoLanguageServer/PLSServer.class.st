@@ -81,10 +81,11 @@ PLSServer >> commandPharoLanguageServerVersion [
 ]
 
 { #category : #commands }
-PLSServer >> commandPharoPrintIt: line [
+PLSServer >> commandPharoPrintIt: line textDocument: textDocumentURI [
 	<jrpc: #'command:printIt'>
+	"This textDocumentURI from VSCode is strange"
 	| compiler answer | 
-	compiler := self compilerFor: nil.
+	compiler := self compilerFor: (textDocumentURI at: #external).
 	answer := compiler evaluate: line.
 	^ answer plsPrintString
 ]
@@ -102,7 +103,7 @@ PLSServer >> compilerFor: fileURI [
 	compiler := SmalltalkImage current compiler
 		transformDoit;
 		failBlock: [ nil ];
-		requestor: (self context compilationBindingsAt: fileURI);
+		requestor: (self context textItem: fileURI) binder;
 		yourself.
 	^ compiler
 ]
@@ -135,7 +136,7 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
 								params:
 									((PLSDiagnosticsParamsEngine document: document)
-										requestor: (self context compilationBindingsAt: (textDocument at: #uri)))
+										requestor: document binder)
 										computeDiagnostics) asJRPCJSON)
 				toClient: socketClient ]
 ]
@@ -175,7 +176,7 @@ PLSServer >> didOpen: textDocument [
 							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
 								params:
 									((PLSDiagnosticsParamsEngine document: document)
-										requestor: (self context compilationBindingsAt: (textDocument at: #uri)))
+										requestor: document binder)
 										computeDiagnostics) asJRPCJSON)
 				toClient: socketClient ]
 ]
@@ -498,10 +499,11 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 { #category : #'lsp - hover' }
 PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument [
 	<jrpc: #'textDocument/hover'>
-	| hover |
+	| hover document |
+	document := (self context textItem: (textDocument at: #uri)). 
 	hover := PLSHover new
 		context: self context;
-		source: (self context textItem: (textDocument at: #uri)) text;
+		source: document;
 		position: position;
 		yourself.
 	^ { #contents -> hover contents } asDictionary

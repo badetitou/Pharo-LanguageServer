@@ -5,7 +5,8 @@ Class {
 		'version',
 		'text',
 		'languageId',
-		'uri'
+		'uri',
+		'binder'
 	],
 	#category : #'PharoLanguageServer-Document'
 }
@@ -44,9 +45,19 @@ PLSDocument class >> isURIFromTonelDocument: textDocumentURI [
 		or: [ textDocumentURI endsWith: 'extension.st' ]
 ]
 
+{ #category : #accessing }
+PLSDocument >> binder [
+	^ binder
+]
+
 { #category : #'lsp - accessing' }
 PLSDocument >> codeLens [
 	^ {}
+]
+
+{ #category : #accessing }
+PLSDocument >> initialize [
+	binder := PLSBinder new
 ]
 
 { #category : #testing }

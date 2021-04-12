@@ -6,22 +6,15 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'textItems',
-		'messageProcesses',
-		'compilationBindings'
+		'messageProcesses'
 	],
 	#category : #PharoLanguageServer
 }
-
-{ #category : #'compilation bindings' }
-PLSContext >> compilationBindingsAt: aKey [
-	^ compilationBindings at: aKey ifAbsentPut: PLSBinder new
-]
 
 { #category : #initialization }
 PLSContext >> initialize [
 	textItems := Dictionary new.
 	messageProcesses := Dictionary new.
-	compilationBindings := Dictionary new.
 ]
 
 { #category : #'message processing' }
