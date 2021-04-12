@@ -19,7 +19,7 @@ PLSScriptDocument >> isScriptDocument [
 	^ true
 ]
 
-{ #category : #testing }
+{ #category : #'lsp - accessing' }
 PLSScriptDocument >> nodeAt: aPosition [
 	| positionChar |
 	positionChar := self text plsToPosition: aPosition.

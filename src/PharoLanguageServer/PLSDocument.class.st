@@ -25,11 +25,26 @@ PLSDocument class >> fromDocumentDictionary: aDocumentDictionary [
 ]
 
 { #category : #'instance creation' }
+PLSDocument class >> fromURI: aTextDocumentURI [
+	"this is a backup solution"
+
+	^ (self isURIFromTonelDocument: aTextDocumentURI)
+		ifTrue: [ PLSTonelDocument new uri: aTextDocumentURI; yourself ]
+		ifFalse: [ PLSScriptDocument new uri: aTextDocumentURI; yourself ]
+]
+
+{ #category : #'instance creation' }
 PLSDocument class >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
-{ #category : #accessing }
+{ #category : #'instance creation' }
+PLSDocument class >> isURIFromTonelDocument: textDocumentURI [
+	^ (textDocumentURI endsWith: 'class.st')
+		or: [ textDocumentURI endsWith: 'extension.st' ]
+]
+
+{ #category : #'lsp - accessing' }
 PLSDocument >> codeLens [
 	^ {}
 ]
@@ -54,9 +69,14 @@ PLSDocument >> languageId: anObject [
 	languageId := anObject
 ]
 
-{ #category : #accessing }
+{ #category : #'lsp - accessing' }
 PLSDocument >> nodeAt: aPosition [
 	self subclassResponsibility 
+]
+
+{ #category : #'lsp - accessing' }
+PLSDocument >> symbols [
+	^ {}
 ]
 
 { #category : #accessing }

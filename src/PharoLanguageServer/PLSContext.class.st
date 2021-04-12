@@ -51,7 +51,7 @@ PLSContext >> removeMessageProcess: anId [
 
 { #category : #'text item' }
 PLSContext >> textItem: aURI [
-	^ self textItems at: aURI
+	^ self textItems at: aURI ifAbsentPut: [ PLSDocument fromURI: aURI ]
 ]
 
 { #category : #'text item' }

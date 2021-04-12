@@ -49,7 +49,7 @@ PLSServer >> cancelRequest: id [
 	self context messageProcesses
 		at: id
 		ifPresent: [ :process2 | process2 terminate ]
-		ifAbsent: [ Error signal ]
+		ifAbsent: [ ]
 ]
 
 { #category : #'lsp - code lens' }
@@ -186,6 +186,14 @@ PLSServer >> didSave: textDocument text: text [
 	"Install the code in the image if the code is part of a tonel file"
 	((textDocument at: #uri) endsWith: 'class.st')
 		ifTrue: [ (TonelParser parseString: text asByteArray utf8Decoded) do: #load ]
+]
+
+{ #category : #'lsp - document symbol' }
+PLSServer >> documentSymbol: textDocument [
+	<jrpc: #'textDocument/documentSymbol'>
+	| document |
+	document := self context textItem: (textDocument at: #uri).
+	^ document symbols
 ]
 
 { #category : #starting }

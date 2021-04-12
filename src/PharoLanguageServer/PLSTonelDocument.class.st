@@ -14,7 +14,7 @@ PLSTonelDocument class >> fromDocumentDictionary: aDocumentDictionary [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : #'lsp - accessing' }
 PLSTonelDocument >> codeLens [
 	| parsed className |
 	[ parsed := self parsed ]
@@ -64,4 +64,41 @@ PLSTonelDocument >> isTonelDocument [
 { #category : #private }
 PLSTonelDocument >> parsed [
 	^ PLSTonelParser parseString: self text
+]
+
+{ #category : #'lsp - accessing' }
+PLSTonelDocument >> symbols [
+	| parsed classDef children |
+	[ parsed := self parsed ]
+		on: Error
+		do: [ ^ {} ].
+	classDef := parsed detect: #isClassDefinition ifNone: [ ^ {} ].
+	children := (parsed
+		select: [ :el | el isMethodDefinition and: [ el selector beginsWith: #test ] ]
+		thenCollect: [ :methodDef | 
+			PLSDocumentSymbol new
+				name: methodDef selector;
+				kind: PLSSymbolKind method;
+				range:
+					(PLSRange
+						start: (self text toLineCharacter: methodDef startPos + 1)
+						end: (self text toLineCharacter: methodDef endPos + 1));
+				selectionRange:
+					(PLSRange
+						start: (self text toLineCharacter: methodDef startPos + 1)
+						end: (self text toLineCharacter: methodDef endPos + 1));
+				yourself ]) asArray.
+	^ {(PLSDocumentSymbol new
+		name: classDef name;
+		kind: PLSSymbolKind classID;
+		range:
+			(PLSRange
+				start: (PLSPosition line: 0 character: 0)
+				end: (self text toLineCharacter: self text size) );
+		selectionRange:
+			(PLSRange
+				start: (PLSPosition line: 0 character: 0)
+				end: (PLSPosition line: 6 character: 1));
+		children: children;
+		yourself)}
 ]

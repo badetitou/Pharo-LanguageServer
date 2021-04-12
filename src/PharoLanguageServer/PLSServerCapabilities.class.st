@@ -13,7 +13,8 @@ PLSServerCapabilities >> asJRPCJSON [
 		-> self documentFormattingProvider asJRPCJSON).
 	(#signatureHelpProvider -> self signatureHelp asJRPCJSON).
 	(#codeLensProvider -> self codeLens asJRPCJSON).
-	(#typeDefinitionProvider -> self typeDefinitionOptions asJRPCJSON)} asDictionary
+	(#typeDefinitionProvider -> self typeDefinitionOptions asJRPCJSON).
+	(#documentSymbolProvider -> self documentSymbolProvider asJRPCJSON)} asDictionary
 ]
 
 { #category : #'as yet unclassified' }
@@ -30,6 +31,11 @@ PLSServerCapabilities >> completionProvider [
 PLSServerCapabilities >> documentFormattingProvider [
 	^ PLSDocumentFormattingOptions new
 		
+]
+
+{ #category : #converting }
+PLSServerCapabilities >> documentSymbolProvider [
+	^ PLSDocumentSymbolOptions new
 ]
 
 { #category : #converting }
