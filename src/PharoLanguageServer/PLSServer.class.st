@@ -325,6 +325,19 @@ PLSServer >> plsExecuteClass: class test: testMethod [
 ]
 
 { #category : #pls }
+PLSServer >> plsExecuteClassTests: className [
+	<jrpc: #'pls:executeClassTests'>
+	| result |
+	result := (self class environment at: className asSymbol) suite run.
+	^ result printString
+	"{(#failures -> (result failures collect: #printString as: Array)).
+	(#errors -> (result errors collect: #printString as: Array)).
+	(#skipped -> (result skipped collect: #printString as: Array)).
+	(#passed -> (result passed collect: #printString as: Array))}
+		asDictionary"
+]
+
+{ #category : #pls }
 PLSServer >> plsGetClassContent: class [
 	<jrpc: #'pls:classContent'>
 	| className |

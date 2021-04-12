@@ -16,17 +16,20 @@ PLSTonelDocument class >> fromDocumentDictionary: aDocumentDictionary [
 
 { #category : #accessing }
 PLSTonelDocument >> codeLens [
-	| parsed |
-	[parsed := self parsed] on: Error do: [ ^ {  } ] .
+	| parsed className |
+	[ parsed := self parsed ]
+		on: Error
+		do: [ ^ {} ].
 	parsed
 		detect: #isClassDefinition
-		ifFound: [ :classDef | 
+		ifFound: [ :classDef |
+			className := classDef name. 
 			(classDef name endsWith: #Test)
 				ifFalse: [ ^ {} ] ]
 		ifNone: [ ^ {} ].
-	^ (parsed
+	^ ((parsed
 		select: [ :el | el isMethodDefinition and: [ el selector beginsWith: #test ] ]
-		thenCollect: [ :methodDef |
+		thenCollect: [ :methodDef | 
 			PLSCodeLens new
 				range:
 					(PLSRange
@@ -36,8 +39,21 @@ PLSTonelDocument >> codeLens [
 					(PLSCommand new
 						title: #'Run Test';
 						command: #'pharo.executeTest';
-						arguments: {methodDef className . methodDef selector} yourself);
-				yourself ]) asArray
+						arguments:
+							{methodDef className.
+							methodDef selector} yourself);
+				yourself ]) asOrderedCollection 
+		,
+			{(PLSCodeLens new
+				range:
+					(PLSRange
+						start: (self text toLineCharacter: 0)
+						end: (self text toLineCharacter: 0));
+				command:
+					(PLSCommand new
+						title: #'Run Class Tests';
+						command: #'pharo.executeClassTests';
+						arguments: {className}))}) asArray
 ]
 
 { #category : #testing }
