@@ -18,3 +18,11 @@ PLSScriptDocument class >> fromDocumentDictionary: aDocumentDictionary [
 PLSScriptDocument >> isScriptDocument [
 	^ true
 ]
+
+{ #category : #testing }
+PLSScriptDocument >> nodeAt: aPosition [
+	| positionChar |
+	positionChar := self text plsToPosition: aPosition.
+	^ (RBParser parseFaultyExpression: self text)
+		bestNodeFor: (Interval from: positionChar to: positionChar)
+]

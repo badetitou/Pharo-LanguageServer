@@ -19,7 +19,7 @@ String >> findCloseBracesFor: startIndex [
 
 { #category : #'*PharoLanguageServer' }
 String >> plsToPosition: aLineCharacter [
-	^ (((self lines first: ((aLineCharacter at: #line) + 1)) sum: #size)
+	^ (((self lines first: ((aLineCharacter at: #line))) sum: #size)
 		+ aLineCharacter
 		at:
 			#character)

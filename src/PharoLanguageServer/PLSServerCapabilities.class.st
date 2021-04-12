@@ -12,7 +12,8 @@ PLSServerCapabilities >> asJRPCJSON [
 	(#documentFormattingProvider
 		-> self documentFormattingProvider asJRPCJSON).
 	(#signatureHelpProvider -> self signatureHelp asJRPCJSON).
-	(#codeLensProvider -> self codeLens asJRPCJSON)} asDictionary
+	(#codeLensProvider -> self codeLens asJRPCJSON).
+	(#typeDefinitionProvider -> self typeDefinitionOptions asJRPCJSON)} asDictionary
 ]
 
 { #category : #'as yet unclassified' }
@@ -53,4 +54,9 @@ PLSServerCapabilities >> textDocumentSync [
 		willSaveWaitUntil: false;
 		change: PLSTextDocumentSyncKind full;
 		yourself
+]
+
+{ #category : #converting }
+PLSServerCapabilities >> typeDefinitionOptions [
+	^ PLSTypeDefinitionOptions new
 ]

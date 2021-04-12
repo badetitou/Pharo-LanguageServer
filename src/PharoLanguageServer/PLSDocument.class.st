@@ -55,6 +55,11 @@ PLSDocument >> languageId: anObject [
 ]
 
 { #category : #accessing }
+PLSDocument >> nodeAt: aPosition [
+	self subclassResponsibility 
+]
+
+{ #category : #accessing }
 PLSDocument >> text [
 	^ text
 ]

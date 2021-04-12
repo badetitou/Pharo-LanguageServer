@@ -341,7 +341,7 @@ PLSServer >> plsExecuteClassTests: className [
 PLSServer >> plsGetClassContent: class [
 	<jrpc: #'pls:classContent'>
 	| className |
-	className := (class substrings: '/.') second.
+	className := ((class substrings: '/' )last  withoutSuffix: '.st') withoutSuffix: '.class'.
 	^ String
 		streamContents:
 			[ :stream | TonelWriter exportClass: (self class environment at: className asSymbol) on: stream ]
@@ -526,6 +526,28 @@ PLSServer >> textDocumentSignatureHelpWithPosition: position textDocument: textD
 								as: Array);
 						yourself ]
 				as: Array);
+		yourself
+]
+
+{ #category : #'lsp - type definition' }
+PLSServer >> typeDefinitionAt: position in: textDocument [
+	<jrpc: #'textDocument/typeDefinition'>
+	| document canBeClass aClass |
+	document := self context textItem: (textDocument at: #uri).
+	canBeClass := document nodeAt: position.
+	aClass := self class environment
+		at: canBeClass name asSymbol
+		ifAbsent: [ ^ {} ].
+	aClass isClass
+		ifFalse: [ ^ {} ].
+	^ PLSLocation new
+		uri:
+			'pharoImage://' , aClass package name , '/' , aClass name
+				, '.class.st';
+		range:
+			(PLSRange
+				start: (PLSPosition line: 0 character: 0)
+				end: (PLSPosition line: 0 character: 0));
 		yourself
 ]
 
