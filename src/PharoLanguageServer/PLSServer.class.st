@@ -328,7 +328,7 @@ PLSServer >> plsExecuteClass: class test: testMethod [
 PLSServer >> plsGetClassContent: class [
 	<jrpc: #'pls:classContent'>
 	| className |
-	className := (class substrings: '.') first.
+	className := (class substrings: '/.') second.
 	^ String
 		streamContents:
 			[ :stream | TonelWriter exportClass: (self class environment at: className asSymbol) on: stream ]
@@ -337,7 +337,9 @@ PLSServer >> plsGetClassContent: class [
 { #category : #pls }
 PLSServer >> plsGetClasses: package [
 	<jrpc: #'pls:classes'>
-	^ [ package asPackage classes collect: [:class | class name , '.class.st' ] as: Array ]
+	^ [ package asPackage classes
+		collect: [ :class | package , '/' , class name , '.class.st' ]
+		as: Array ]
 		on: Error
 		do: [ {} asArray ]
 ]
