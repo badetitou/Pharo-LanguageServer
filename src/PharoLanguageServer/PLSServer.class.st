@@ -1,14 +1,10 @@
 "
-server := PLSServer new
-	debugMode: true;
-	enableLogging: true.
+I am the server. 
+I also include all the pharo language features.
 
-server start.
+Methods in `lsp` protocol are standard language server protocol feature.
 
-server stop.
-
-
-server messageProcessor 
+Methods in `pls` protocol are pharo language server feature.
 "
 Class {
 	#name : #PLSServer,
@@ -30,7 +26,7 @@ Class {
 
 { #category : #defaults }
 PLSServer class >> defaultPort [
-	^ 4000
+	^ 0
 ]
 
 { #category : #defaults }
@@ -50,6 +46,28 @@ PLSServer >> cancelRequest: id [
 		at: id
 		ifPresent: [ :process2 | process2 terminate ]
 		ifAbsent: [ ]
+]
+
+{ #category : #'pls - variables' }
+PLSServer >> childrenVariables: variableReference in: textDocument [
+	<jrpc: #'pls:childrenVariables'>
+	| document references currentVariable |
+	document := self context
+		textItem: (textDocument at: #uri at: #external).
+	references := Stack newFrom: (variableReference substrings: '/').
+	currentVariable := document binder compilationBindings
+		at: references pop.
+	[ references isEmpty ]
+		whileFalse: [ | goTo |
+			goTo := references pop.
+			currentVariable := currentVariable instVarNamed: goTo asSymbol ].
+	^ (currentVariable class allInstVarNames
+		collectWithIndex: [ :name :idx | 
+			PLSVariable new
+				name: name;
+				value: (currentVariable instVarAt: idx) printString;
+				variableReference: variableReference , '/' , name;
+				yourself ]) asArray
 ]
 
 { #category : #'lsp - code lens' }
@@ -195,6 +213,22 @@ PLSServer >> documentSymbol: textDocument [
 	| document |
 	document := self context textItem: (textDocument at: #uri).
 	^ document symbols
+]
+
+{ #category : #'pls - variables' }
+PLSServer >> documentVariables: textDocument [
+	<jrpc: #'pls:documentVariables'>
+	| document |
+	document := self context
+		textItem: (textDocument at: #uri at: #external).
+	^ (document binder compilationBindings associations
+		collect: [ :assoc |
+			  PLSVariable new
+				name: assoc key printString;
+				value: assoc value printString;
+				variableReference: assoc key;
+				yourself ]
+		as: Array) asJRPCJSON
 ]
 
 { #category : #starting }
@@ -444,7 +478,7 @@ PLSServer >> showMessage: aString ofType: aMessageType toClient: aClient [
 { #category : #starting }
 PLSServer >> start [
 	tcpServer := Socket newTCP.
-	tcpServer listenOn: 0 backlogSize: 10.
+	tcpServer listenOn: self port backlogSize: 10.
 	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
 	serverLoop := true.
 	(tcpServer waitForAcceptFor: 60)
@@ -453,6 +487,7 @@ PLSServer >> start [
 			process := [ [ serverLoop ]
 				whileTrue: [ | request |
 					request := self extractRequestFrom: clientSocket.
+					request printString record.
 					self handleRequest: request toClient: clientSocket ] ]
 				forkAt: Processor lowIOPriority
 				named: 'JRPC TCP connection' ]
@@ -461,6 +496,7 @@ PLSServer >> start [
 { #category : #dap }
 PLSServer >> startDapServer [
 	<jrpc: #'dap:startServer'>
+	'Begin DAP Server.' record.
 	^ DAPServer new
 		start.
 ]

@@ -14,6 +14,16 @@ PLSBinder >> bindingOf: aName [
 	^ compilationBindings associationAt: aName
 ]
 
+{ #category : #accessing }
+PLSBinder >> compilationBindings [
+	^ compilationBindings
+]
+
+{ #category : #accessing }
+PLSBinder >> compilationBindings: anObject [
+	compilationBindings := anObject
+]
+
 { #category : #binding }
 PLSBinder >> hasBindingOf: aString [
 	^ compilationBindings includesKey: aString

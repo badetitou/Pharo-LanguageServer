@@ -128,6 +128,8 @@ DAPServer >> dapInitialize: aDAPRequest [
 { #category : #dap }
 DAPServer >> dapLaunch: aDAPLaunchRequest [
 	<dap: #launch>
+	
+	'Launch.' record.
 	self
 		sendMessage:
 			(DAPResponse new
@@ -139,7 +141,9 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 		source: (aDAPLaunchRequest arguments at: #program) asFileReference contents.
 	self threads at: aDAPLaunchRequest seq put: aDAPLaunchRequest seq.
 	Smalltalk tools debuggerTool: self.
+	'Begin Evaluate.' record.
 	compiler evaluate.
+	'End Evaluate.' record.
 	Smalltalk tools cleanUp.
 	GTGenericStackDebugger register.
 	self sendMessage: DAPTerminatedEvent new
@@ -326,11 +330,11 @@ DAPServer >> dapThreads: aDAPThreadsRequest [
 { #category : #dap }
 DAPServer >> dapVariables: aDAPVariablesRequest [
 	<dap: #variables>
-	| variablesReference scope context |
+	| variablesReference scope context2 |
 	variablesReference := aDAPVariablesRequest arguments
 		at: #variablesReference.
 	scope := (variablesReferenceCache at: variablesReference) at: #scope.
-	context := (variablesReferenceCache at: variablesReference)
+	context2 := (variablesReferenceCache at: variablesReference)
 		at: #context.
 	self
 		sendMessage:
@@ -338,7 +342,7 @@ DAPServer >> dapVariables: aDAPVariablesRequest [
 				seq: self nextSeq;
 				request_seq: aDAPVariablesRequest seq;
 				command: aDAPVariablesRequest command;
-				variables: (scope getDAPVariablesInContent: context);
+				variables: (scope getDAPVariablesInContent: context2);
 				yourself)
 ]
 
