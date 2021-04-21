@@ -17,8 +17,10 @@ PLSUIManager class >> withPLSServer: aPLSServer [
 
 { #category : #'default actions' }
 PLSUIManager >> inform: aStringOrText [
-
-	plsServer showMessage: aStringOrText printString ofType: PLSMessageType info
+	plsServer
+		ifNotNil: [ plsServer
+				showMessage: aStringOrText printString
+				ofType: PLSMessageType info ]
 ]
 
 { #category : #accessing }
