@@ -471,7 +471,12 @@ PLSServer >> showMessage: aString ofType: messageType [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
 
 	self
-		sendData: (PLSShowMessage message: aString type: messageType)
+		sendData:
+			(self
+				convertJRPCJsonableObjectToJSON:
+					((JRPCNotificationObject method: 'window/showMessage')
+						params: (PLSShowMessage message: aString type: messageType))
+						asJRPCJSON)
 		toClient: socketClient
 ]
 
