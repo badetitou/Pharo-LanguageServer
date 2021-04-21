@@ -336,6 +336,11 @@ PLSServer >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
+{ #category : #accessing }
+PLSServer >> log: everything [
+	everything printString record
+]
+
 { #category : #context }
 PLSServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
@@ -461,33 +466,29 @@ PLSServer >> setTraceNotification: value [
 	<jrpc: #'$/setTraceNotification'>
 ]
 
-{ #category : #lsp }
-PLSServer >> showMessage: aString ofType: aMessageType toClient: aClient [
+{ #category : #'lsp - message' }
+PLSServer >> showMessage: aString ofType: messageType [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
 
 	self
-		sendData:
-			(self convertJRPCJsonableObjectToJSON: (JRPCNotificationObject new
-				method: 'window/showMessage';
-				params:
-					{(#message -> aString).
-					(#type -> aMessageType)} asDictionary) asJRPCJSON)
-		toClient: aClient
+		sendData: (PLSShowMessage message: aString type: messageType)
+		toClient: socketClient
 ]
 
 { #category : #starting }
 PLSServer >> start [
+	PLSUIManager withPLSServer: self.
 	tcpServer := Socket newTCP.
 	tcpServer listenOn: self port backlogSize: 10.
 	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
 	serverLoop := true.
 	(tcpServer waitForAcceptFor: 60)
-		ifNotNil: [ :clientSocket |
+		ifNotNil: [ :clientSocket | 
 			socketClient := clientSocket.
 			process := [ [ serverLoop ]
 				whileTrue: [ | request |
 					request := self extractRequestFrom: clientSocket.
-					request printString record.
+					self log: request.
 					self handleRequest: request toClient: clientSocket ] ]
 				forkAt: Processor lowIOPriority
 				named: 'JRPC TCP connection' ]

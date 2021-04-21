@@ -1,7 +1,7 @@
 Class {
 	#name : #PLSMessageType,
 	#superclass : #Object,
-	#category : #'PharoLanguageServer-Structure'
+	#category : #'PharoLanguageServer-Structure-Message'
 }
 
 { #category : #'error handling' }
