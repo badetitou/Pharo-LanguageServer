@@ -26,7 +26,10 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 			with: [ spec
 				repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
 				loads: #('Deployment') ];
-		import: 'JRPC'
+		import: 'JRPC'.
+	spec
+		baseline: 'TinyLogger'
+		with: [ spec repository: 'github://jecisc/TinyLogger:v1.x.x/src' ]
 ]
 
 { #category : #baselines }
@@ -36,7 +39,8 @@ BaselineOfPharoLanguageServer >> defineGroups: spec [
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> definePackages: spec [
 	spec
-		package: 'PharoLanguageServer' with: [ spec requires: #('JRPC') ];
+		package: 'PharoLanguageServer'
+			with: [ spec requires: #('JRPC' 'TinyLogger') ];
 		package: 'PharoLanguageServer-Tests'
 			with: [ spec requires: #('PharoLanguageServer') ];
 		package: 'PharoDAP'
