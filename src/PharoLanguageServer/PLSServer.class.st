@@ -67,6 +67,7 @@ PLSServer >> childrenVariables: variableReference in: textDocument [
 				name: name;
 				value: (currentVariable instVarAt: idx) printString;
 				variableReference: variableReference , '/' , name;
+				isDirectory: (currentVariable instVarAt: idx) class allInstVarNames isNotEmpty;
 				yourself ]) asArray
 ]
 
@@ -227,6 +228,7 @@ PLSServer >> documentVariables: textDocument [
 				name: assoc key printString;
 				value: assoc value printString;
 				variableReference: assoc key;
+				isDirectory: assoc value class allInstVarNames isNotEmpty;
 				yourself ]
 		as: Array) asJRPCJSON
 ]

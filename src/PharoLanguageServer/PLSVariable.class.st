@@ -4,7 +4,8 @@ Class {
 	#instVars : [
 		'name',
 		'value',
-		'variableReference'
+		'variableReference',
+		'isDirectory'
 	],
 	#category : #'PharoLanguageServer-Structure-Variables'
 }
@@ -13,7 +14,19 @@ Class {
 PLSVariable >> asJRPCJSON [
 	^ {(#name -> self name asJRPCJSON).
 	(#value -> self value1 asJRPCJSON).
-	(#variableReference -> self variableReference asJRPCJSON)} asDictionary
+	(#variableReference -> self variableReference asJRPCJSON).
+	(#isDirectory -> self isDirectory asJRPCJSON)} asDictionary
+]
+
+{ #category : #accessing }
+PLSVariable >> isDirectory [
+	"Does this variable has subvariables"
+	^ isDirectory
+]
+
+{ #category : #accessing }
+PLSVariable >> isDirectory: anObject [
+	isDirectory := anObject
 ]
 
 { #category : #accessing }
