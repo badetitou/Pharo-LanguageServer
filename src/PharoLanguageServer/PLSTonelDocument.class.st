@@ -28,7 +28,7 @@ PLSTonelDocument >> codeLens [
 				ifFalse: [ ^ {} ] ]
 		ifNone: [ ^ {} ].
 	^ ((parsed
-		select: [ :el | el isMethodDefinition and: [ el selector beginsWith: #test ] ]
+		select: [ :el | el isMethodDefinition and: [ el isErrorDefinition not and: [ el selector beginsWith: #test ] ] ]
 		thenCollect: [ :methodDef | 
 			PLSCodeLens new
 				range:
@@ -56,6 +56,25 @@ PLSTonelDocument >> codeLens [
 						arguments: {className}))}) asArray
 ]
 
+{ #category : #'lsp - accessing' }
+PLSTonelDocument >> diagnostics [
+	| diagnostics |
+	diagnostics := self parsed
+		select: [ :el | el isMethodDefinition and: [ el isErrorDefinition ] ]
+		thenCollect: [ :errorDef | 
+			PLSDiagnostic new
+				message: #'error in method definition';
+				range:
+					(PLSRange
+						start: (self text toLineCharacter: errorDef startPos)
+						end: (self text toLineCharacter: errorDef endPos)) ].
+	^ (PLSPublishDiagnosticsParams new
+		diagnostics: diagnostics asJRPCJSON;
+		uri: self uri;
+		version: self version;
+		yourself) asJRPCJSON
+]
+
 { #category : #testing }
 PLSTonelDocument >> isTonelDocument [
 	^ true
@@ -74,7 +93,7 @@ PLSTonelDocument >> symbols [
 		do: [ ^ {} ].
 	classDef := parsed detect: #isClassDefinition ifNone: [ ^ {} ].
 	children := (parsed
-		select: [ :el | el isMethodDefinition and: [ el selector beginsWith: #test ] ]
+		select: [ :el | el isMethodDefinition and: [ el isErrorDefinition not and: [ el selector beginsWith: #test ] ] ]
 		thenCollect: [ :methodDef | 
 			PLSDocumentSymbol new
 				name: methodDef selector;

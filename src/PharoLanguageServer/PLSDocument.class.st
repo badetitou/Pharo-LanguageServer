@@ -55,6 +55,11 @@ PLSDocument >> codeLens [
 	^ {}
 ]
 
+{ #category : #'lsp - accessing' }
+PLSDocument >> diagnostics [
+	self subclassResponsibility
+]
+
 { #category : #accessing }
 PLSDocument >> initialize [
 	binder := PLSBinder new

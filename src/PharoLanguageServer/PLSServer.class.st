@@ -147,17 +147,13 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 			textDocument ].
 	document version: (textDocument at: #version).
 	document text: (contentChanges anyOne at: #text).
-	(self isTonelDocument: textDocument)
-		ifFalse: [ self
-				sendData:
-					(self
-						convertJRPCJsonableObjectToJSON:
-							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
-								params:
-									((PLSDiagnosticsParamsEngine document: document)
-										requestor: document binder)
-										computeDiagnostics) asJRPCJSON)
-				toClient: socketClient ]
+	self
+		sendData:
+			(self
+				convertJRPCJsonableObjectToJSON:
+					((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
+						params: document diagnostics) asJRPCJSON  )
+		toClient: socketClient
 ]
 
 { #category : #'lsp - text synchronisation' }
@@ -205,7 +201,7 @@ PLSServer >> didSave: textDocument text: text [
 	<jrpc: #'textDocument/didSave'>
 	"Install the code in the image if the code is part of a tonel file"
 	((textDocument at: #uri) endsWith: 'class.st')
-		ifTrue: [ (TonelParser parseString: text asByteArray utf8Decoded) do: #load ]
+		ifTrue: [ (PLSTonelParser parseString: text asByteArray utf8Decoded) do: #load ]
 ]
 
 { #category : #'lsp - document symbol' }
