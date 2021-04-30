@@ -6,16 +6,21 @@ Class {
 
 { #category : #'private factory' }
 PLSTonelParser >> methodDef [
-	^ self newMethodDefinitionFrom: { 
-		stream position.
-		self separator.
-		self try: [ self metadata ]. 
-		self separator. 
-		self method.
-		stream position.
-		self methodBody.
-		stream position.
-	}
+	^ [ self
+		newMethodDefinitionFrom:
+			{stream position.
+			self separator.
+			(self try: [ self metadata ]).
+			self separator.
+			self method.
+			stream position.
+			self methodBody.
+			stream position} ]
+		on: Error
+		do: [ ^ PLSErroredMCMethodDefinition new
+				startPos: stream position;
+				endPos: stream position;
+				yourself ]
 ]
 
 { #category : #'private factory' }

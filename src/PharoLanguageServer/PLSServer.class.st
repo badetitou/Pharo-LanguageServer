@@ -147,17 +147,13 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 			textDocument ].
 	document version: (textDocument at: #version).
 	document text: (contentChanges anyOne at: #text).
-	(self isTonelDocument: textDocument)
-		ifFalse: [ self
-				sendData:
-					(self
-						convertJRPCJsonableObjectToJSON:
-							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
-								params:
-									((PLSDiagnosticsParamsEngine document: document)
-										requestor: document binder)
-										computeDiagnostics) asJRPCJSON)
-				toClient: socketClient ]
+	self
+		sendData:
+			(self
+				convertJRPCJsonableObjectToJSON:
+					((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
+						params: document diagnostics) asJRPCJSON  )
+		toClient: socketClient
 ]
 
 { #category : #'lsp - text synchronisation' }

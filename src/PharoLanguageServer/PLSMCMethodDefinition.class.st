@@ -30,6 +30,11 @@ PLSMCMethodDefinition >> endPos: anObject [
 ]
 
 { #category : #accessing }
+PLSMCMethodDefinition >> isErrorDefinition [
+	^ false
+]
+
+{ #category : #accessing }
 PLSMCMethodDefinition >> startPos [
 	^ startPos
 ]

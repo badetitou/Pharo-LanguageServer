@@ -14,6 +14,12 @@ PLSScriptDocument class >> fromDocumentDictionary: aDocumentDictionary [
 		yourself
 ]
 
+{ #category : #'lsp - accessing' }
+PLSScriptDocument >> diagnostics [
+	^ ((PLSDiagnosticsParamsEngine document: self) requestor: self binder)
+		computeDiagnostics asJRPCJSON
+]
+
 { #category : #testing }
 PLSScriptDocument >> isScriptDocument [
 	^ true
