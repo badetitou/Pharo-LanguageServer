@@ -24,6 +24,22 @@ PLSTonelParser >> methodDef [
 ]
 
 { #category : #'private factory' }
+PLSTonelParser >> methodDefList [
+	| result |
+	self separator.	"to arrive to the end of the file in case there are no methods"
+	result := Array new writeStream.
+	[ stream atEnd ]
+		whileFalse: [ | methodDef |
+			methodDef := self methodDef.
+			result nextPut: methodDef.
+			methodDef isErrorDefinition
+				ifTrue: [ ^ result contents ].
+			"skip possible spaces at the end"
+			self separator ].
+	^ result contents
+]
+
+{ #category : #'private factory' }
 PLSTonelParser >> newClassDefinitionFrom: anArray [
 	| metadata |
 
