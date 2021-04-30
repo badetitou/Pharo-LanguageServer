@@ -201,7 +201,7 @@ PLSServer >> didSave: textDocument text: text [
 	<jrpc: #'textDocument/didSave'>
 	"Install the code in the image if the code is part of a tonel file"
 	((textDocument at: #uri) endsWith: 'class.st')
-		ifTrue: [ (TonelParser parseString: text asByteArray utf8Decoded) do: #load ]
+		ifTrue: [ (PLSTonelParser parseString: text asByteArray utf8Decoded) do: #load ]
 ]
 
 { #category : #'lsp - document symbol' }
