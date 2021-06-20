@@ -484,6 +484,7 @@ PLSServer >> start [
 	tcpServer := Socket newTCP.
 	tcpServer listenOn: self port backlogSize: 10.
 	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
+	Stdio stdout flush.
 	serverLoop := true.
 	(tcpServer waitForAcceptFor: 60)
 		ifNotNil: [ :clientSocket | 
@@ -507,13 +508,14 @@ PLSServer >> startDapServer [
 
 { #category : #stopping }
 PLSServer >> stop [
+
 	serverLoop := false.
 	tcpServer closeAndDestroy.
-	
+
 	"Ensure process finishes."
-	process isTerminated
-		ifTrue: [ ^ self ].
-	process terminate
+	process ifNotNil: [ 
+		process isTerminated ifTrue: [ ^ self ].
+		process terminate ]
 ]
 
 { #category : #'lsp - completion' }
