@@ -58,21 +58,34 @@ PLSTonelDocument >> codeLens [
 
 { #category : #'lsp - accessing' }
 PLSTonelDocument >> diagnostics [
-	| diagnostics |
-	diagnostics := self parsed
-		select: [ :el | el isMethodDefinition and: [ el isErrorDefinition ] ]
-		thenCollect: [ :errorDef | 
-			PLSDiagnostic new
-				message: #'error in method definition';
-				range:
-					(PLSRange
-						start: (self text toLineCharacter: errorDef startPos)
-						end: (self text toLineCharacter: errorDef endPos)) ].
+
+	| diagnostics parsed |
+	parsed := self parsed.
+	diagnostics := (parsed
+		                select: [ :el | el isMethodDefinition and: [ el isErrorDefinition ] ]
+		                thenCollect: [ :errorDef | 
+			                PLSDiagnostic new
+				                message: #'error in method definition';
+				                range: (PLSRange start: (self text toLineCharacter: errorDef startPos) end: (self text toLineCharacter: errorDef endPos)) ])
+		               asOrderedCollection.
+	diagnostics addAll: (parsed
+			 select: [ :el | el isMethodDefinition and: [ el isErrorDefinition not ] ]
+			 thenCollect: [ :el | 
+				 ((PLSDiagnosticsParamsEngine new
+					   document: self;
+					   source: el source;
+					   sourceIsMethod: true;
+					   yourself) requestor: self binder) computeDiagnostics diagnostics collect: [ :diag | 
+					 | lineCharMethod |
+					 lineCharMethod := self text toLineCharacter: el startPos.
+					 diag range start at: #line put: (diag range start at: #line) + (lineCharMethod at: #line) + 2.
+					 diag range end at: #line put: (diag range end at: #line) + (lineCharMethod at: #line) + 2.
+					 diag ] ]).
 	^ (PLSPublishDiagnosticsParams new
-		diagnostics: diagnostics asJRPCJSON;
-		uri: self uri;
-		version: self version;
-		yourself) asJRPCJSON
+		   diagnostics: diagnostics flattened asArray asJRPCJSON;
+		   uri: self uri;
+		   version: self version;
+		   yourself) asJRPCJSON
 ]
 
 { #category : #testing }
