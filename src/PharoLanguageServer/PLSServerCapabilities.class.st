@@ -11,7 +11,7 @@ PLSServerCapabilities >> asJRPCJSON [
 		  (#completionProvider -> self completionProvider asJRPCJSON).
 		  (#textDocumentSync -> self textDocumentSync asJRPCJSON).
 		  (#hoverProvider -> self hoverProvider asJRPCJSON).
-		  (#documentFormattingProvider -> self documentFormattingProvider asJRPCJS ON).
+		  (#documentFormattingProvider -> self documentFormattingProvider asJRPCJSON).
 		  (#signatureHelpProvider -> self signatureHelp asJRPCJSON).
 		  (#codeLensProvider -> self codeLens asJRPCJSON).
 		  (#typeDefinitionProvider -> self typeDefinitionOptions asJRPCJSON).
