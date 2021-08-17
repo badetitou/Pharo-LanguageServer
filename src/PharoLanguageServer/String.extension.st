@@ -70,9 +70,12 @@ String >> plsLinesDo: aBlock [
 
 	self
 		plsLineIndicesDo: [ :start :endWithoutDelimiters :end |
-			endWithoutDelimiters = start
+			| begin |
+			"endWithoutDelimiters = start
 				ifTrue: [ aBlock value: '' ]
-				ifFalse: [ aBlock value: (self copyFrom: start to: end) ] ]
+				ifFalse: [" 
+					begin := (start = 0) ifTrue: [ 1 ] ifFalse: [ start ].  
+					aBlock value: (self copyFrom: begin to: end) "]" ]
 ]
 
 { #category : #'*PharoLanguageServer' }

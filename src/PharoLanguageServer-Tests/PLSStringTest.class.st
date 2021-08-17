@@ -5,6 +5,36 @@ Class {
 }
 
 { #category : #tests }
+PLSStringTest >> testPlsLines [
+
+	| strings |
+	strings := '[' plsLines.
+	self assert: strings first equals: '['.
+	self assert: strings size equals: 1
+]
+
+{ #category : #tests }
+PLSStringTest >> testPlsLinesEmpty [
+
+	| strings |
+	strings := '' plsLines.
+	self assert: strings first equals: ''.
+	self assert: strings size equals: 1
+]
+
+{ #category : #tests }
+PLSStringTest >> testPlsLinesTwoEmpty [
+
+	| strings |
+	strings := '
+' plsLines.
+	self assert: strings first equals: '
+'.
+	self assert: strings second equals: ''.
+	self assert: strings size equals: 2
+]
+
+{ #category : #tests }
 PLSStringTest >> testPlsToPositionNoLine [
 	self
 		assert:
