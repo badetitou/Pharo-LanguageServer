@@ -20,6 +20,7 @@ PLSServerCapabilities >> asJRPCJSON [
 { #category : #'as yet unclassified' }
 PLSServerCapabilities >> codeLens [
 	^ PLSCodeLensOptions new
+
 ]
 
 { #category : #'as yet unclassified' }

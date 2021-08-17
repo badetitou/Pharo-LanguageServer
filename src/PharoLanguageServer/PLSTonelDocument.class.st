@@ -80,6 +80,27 @@ PLSTonelDocument >> isTonelDocument [
 	^ true
 ]
 
+{ #category : #'lsp - accessing' }
+PLSTonelDocument >> nodeAt: aPosition [
+
+	| charPos parsed methodDefinition |
+	charPos := self text plsToPosition: aPosition.
+	[ parsed := self parsed ]
+		on: Error
+		do: [ 
+			^ RGDefinition new
+				  name: '';
+				  yourself ].
+	methodDefinition := parsed
+		                    detect: [ :el | el isMethodDefinition and: [ el startPos < charPos and: [ el endPos > charPos ] ] ]
+		                    ifNone: [ 
+			                    ^ RGDefinition new
+				                      name: '';
+				                      yourself ].
+	^ (RBParser parseFaultyExpression: methodDefinition source) bestNodeFor:
+		  (Interval from: methodDefinition endPos - charPos to: methodDefinition endPos - charPos)
+]
+
 { #category : #private }
 PLSTonelDocument >> parsed [
 	^ PLSTonelParser parseString: self text

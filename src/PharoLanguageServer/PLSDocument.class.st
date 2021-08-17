@@ -87,7 +87,7 @@ PLSDocument >> languageId: anObject [
 
 { #category : #'lsp - accessing' }
 PLSDocument >> nodeAt: aPosition [
-	self subclassResponsibility 
+	self parsed
 ]
 
 { #category : #'lsp - accessing' }

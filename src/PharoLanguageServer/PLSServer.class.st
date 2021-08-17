@@ -484,6 +484,7 @@ PLSServer >> start [
 	tcpServer := Socket newTCP.
 	tcpServer listenOn: self port backlogSize: 10.
 	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
+	Stdio stdout flush.
 	serverLoop := true.
 	(tcpServer waitForAcceptFor: 60)
 		ifNotNil: [ :clientSocket | 
@@ -507,13 +508,14 @@ PLSServer >> startDapServer [
 
 { #category : #stopping }
 PLSServer >> stop [
+
 	serverLoop := false.
 	tcpServer closeAndDestroy.
-	
+
 	"Ensure process finishes."
-	process isTerminated
-		ifTrue: [ ^ self ].
-	process terminate
+	process ifNotNil: [ 
+		process isTerminated ifTrue: [ ^ self ].
+		process terminate ]
 ]
 
 { #category : #'lsp - completion' }
@@ -586,6 +588,8 @@ PLSServer >> typeDefinitionAt: position in: textDocument [
 	| document canBeClass aClass |
 	document := self context textItem: (textDocument at: #uri).
 	canBeClass := document nodeAt: position.
+	canBeClass ifNil: [ ^ {  } ].
+	((canBeClass isKindOf: RBProgramNode) not or: [ canBeClass isVariable not ]) ifTrue: [ ^ {  } ].
 	aClass := self class environment
 		at: canBeClass name asSymbol
 		ifAbsent: [ ^ {} ].
