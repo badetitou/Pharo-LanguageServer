@@ -127,7 +127,7 @@ PLSTonelDocument >> symbols [
 		do: [ ^ {} ].
 	classDef := parsed detect: #isClassDefinition ifNone: [ ^ {} ].
 	children := (parsed
-		select: [ :el | el isMethodDefinition and: [ el isErrorDefinition not and: [ el selector beginsWith: #test ] ] ]
+		select: [ :el | el isMethodDefinition and: [ el isErrorDefinition not ] ]
 		thenCollect: [ :methodDef | 
 			PLSDocumentSymbol new
 				name: methodDef selector;
