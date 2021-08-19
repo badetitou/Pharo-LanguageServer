@@ -41,28 +41,3 @@ DAPContext >> removeItem: aURI [
 DAPContext >> removeMessageProcess: anId [
 	anId ifNotNil: [ self messageProcesses removeKey: anId ]
 ]
-
-{ #category : #'text item' }
-DAPContext >> textItem: aURI [
-	^ self textItems at: aURI ifAbsentPut: [ PLSDocument fromURI: aURI ]
-]
-
-{ #category : #'text item' }
-DAPContext >> textItem: aURI ifAbsent: aBlock [ 
-	^ self textItems at: aURI ifAbsent: aBlock
-]
-
-{ #category : #'text item' }
-DAPContext >> textItem: aURI put: aTextItem [
-	^ self textItems at: aURI put: aTextItem
-]
-
-{ #category : #'text item' }
-DAPContext >> textItems [
-	^ textItems
-]
-
-{ #category : #'text item' }
-DAPContext >> textItems: anObject [
-	textItems := anObject
-]
