@@ -34,17 +34,17 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> defineGroups: spec [
+
+	spec group: 'DAP' with: #( 'PharoDAP' )
 ]
 
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> definePackages: spec [
+
 	spec
-		package: 'PharoLanguageServer'
-			with: [ spec requires: #('JRPC' 'TinyLogger') ];
-		package: 'PharoLanguageServer-Tests'
-			with: [ spec requires: #('PharoLanguageServer') ];
-		package: 'PharoDAP'
-			with: [ spec requires: #('PharoLanguageServer') ].
+		package: 'PharoLanguageServer' with: [ spec requires: #( 'JRPC' 'TinyLogger' ) ];
+		package: 'PharoLanguageServer-Tests' with: [ spec requires: #( 'PharoLanguageServer' ) ];
+		package: 'PharoDAP' with: [ spec requires: #( 'TinyLogger' ) ].
 	spec for: #WithRoassal2 do: [ spec package: 'PLS-Pharo8-Extension' ].
 	spec for: #WithRoassal3 do: [ spec package: 'PLS-Pharo9-Extension' ]
 ]
