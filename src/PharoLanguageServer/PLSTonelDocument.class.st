@@ -110,8 +110,9 @@ PLSTonelDocument >> nodeAt: aPosition [
 			                    ^ RGDefinition new
 				                      name: '';
 				                      yourself ].
-	^ (RBParser parseFaultyExpression: methodDefinition source) bestNodeFor:
-		  (Interval from: methodDefinition endPos - charPos to: methodDefinition endPos - charPos)
+	^ (RBParser parseFaultyExpression: methodDefinition source) bestNodeFor: (Interval
+			   from: charPos - methodDefinition bodyStartPos + methodDefinition selector size - 1
+			   to: charPos - methodDefinition bodyStartPos + methodDefinition selector size - 1)
 ]
 
 { #category : #private }
