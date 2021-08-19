@@ -314,7 +314,7 @@ PLSServer >> handleRequest: request toClient: clientSocket [
 			([ self
 				sendData: (self handleJSON: jrpcMessage)
 				toClient: clientSocket.
-			self removeMessageProcess: jrpcMessage id ]
+			[self removeMessageProcess: jrpcMessage id] on: KeyNotFound do: [  ] ]
 				forkAt: Processor lowIOPriority
 				named: jrpcMessage method)
 ]
