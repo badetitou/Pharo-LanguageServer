@@ -450,7 +450,7 @@ DAPServer >> handleRequest: request toClient: clientSocket [
 { #category : #'handlers management' }
 DAPServer >> handlerFor: aDAPRequest [
 	aDAPRequest command isString
-		ifFalse: [ JRPCIncorrectJSON signal ].
+		ifFalse: [ DAPIncorrectJSON signal ].
 	^ handlers
 		detect: [ :handler | handler methodName = aDAPRequest command ]
 		ifNone: [ DAPNonExistentHandler signal: aDAPRequest command ]
@@ -458,7 +458,7 @@ DAPServer >> handlerFor: aDAPRequest [
 
 { #category : #initialize }
 DAPServer >> initialize [
-	serverContext := PLSContext new.
+	serverContext := DAPContext new.
 	data := ''.
 	current_seq := 0.
 	debugMode := true.
@@ -519,7 +519,7 @@ DAPServer >> resetCache [
 
 { #category : #context }
 DAPServer >> resetContext [
-	serverContext := PLSContext new
+	serverContext := DAPContext new
 ]
 
 { #category : #starting }
