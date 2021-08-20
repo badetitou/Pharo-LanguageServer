@@ -92,14 +92,14 @@ DAPServer >> dapDisconnect: arguments [
 { #category : #dap }
 DAPServer >> dapEvaluate: aDAPEvaluateRequest [
 	<dap: #evaluate>
-	| contexts expression localCompiler |
-	contexts := (debugSession stackOfSize: 10)
+	| localContext expression localCompiler |
+	localContext := (debugSession stackOfSize: 10)
 		detect:
 			[ :aStack | aStack hash = (aDAPEvaluateRequest arguments at: #frameId) ]
 		ifNone: [ nil ].
 	expression := '^ ' , (aDAPEvaluateRequest arguments at: #expression).
 	localCompiler := (self compilerFor: nil)
-		context: context;
+		context: localContext;
 		yourself.
 	self
 		sendMessage:
@@ -107,7 +107,7 @@ DAPServer >> dapEvaluate: aDAPEvaluateRequest [
 				seq: self nextSeq;
 				request_seq: aDAPEvaluateRequest seq;
 				command: aDAPEvaluateRequest command;
-				result: ([(localCompiler evaluate: expression)] on: Exception do: [ 'error' ]) printString;
+				result: ([(localCompiler evaluate: expression)] on: Exception do: [ :err | err printString ]) printString;
 				variablesReference: 0)
 ]
 
