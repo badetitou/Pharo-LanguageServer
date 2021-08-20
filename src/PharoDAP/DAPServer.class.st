@@ -84,6 +84,7 @@ DAPServer >> dapContinue: aDAPContinueRequest [
 DAPServer >> dapDisconnect: arguments [
 	<dap: #disconnect>
 	self sendMessage: DAPDisconnectResponse new.
+	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
 	socketClient close.
 	serverLoop := false
 ]
