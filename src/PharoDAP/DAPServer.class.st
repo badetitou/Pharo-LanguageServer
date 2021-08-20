@@ -127,25 +127,23 @@ DAPServer >> dapInitialize: aDAPRequest [
 
 { #category : #dap }
 DAPServer >> dapLaunch: aDAPLaunchRequest [
+
 	<dap: #launch>
-	
+	| strategy |
 	'Launch.' record.
-	self
-		sendMessage:
-			(DAPResponse new
-				seq: self nextSeq;
-				request_seq: aDAPLaunchRequest seq;
-				command: aDAPLaunchRequest command;
-				body: DAPLaunchResponse new).
-	compiler
-		source: (aDAPLaunchRequest arguments at: #program) asFileReference contents.
+	self sendMessage: (DAPResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPLaunchRequest seq;
+			 command: aDAPLaunchRequest command;
+			 body: DAPLaunchResponse new).
+	compiler source: (aDAPLaunchRequest arguments at: #program) asFileReference contents.
 	self threads at: aDAPLaunchRequest seq put: aDAPLaunchRequest seq.
-	Smalltalk tools debuggerTool: self.
+	strategy := OupsDebuggerSelectionStrategy debuggerSelectionStrategy.
+	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: (DAPOupsDebuggerSelector with: { self }).
 	'Begin Evaluate.' record.
 	compiler evaluate.
 	'End Evaluate.' record.
-	Smalltalk tools cleanUp.
-	GTGenericStackDebugger register.
+	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: strategy.
 	self sendMessage: DAPTerminatedEvent new
 ]
 
@@ -215,19 +213,18 @@ DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [
 
 { #category : #dap }
 DAPServer >> dapSource: aDAPSourceRequest [
+
 	<dap: #source>
-	self
-		sendMessage:
-			(DAPSourceResponse new
-				seq: self nextSeq;
-				request_seq: aDAPSourceRequest seq;
-				command: aDAPSourceRequest command;
-				content:
-					(sourcesReferenceCache
-						at: (aDAPSourceRequest arguments at: #sourceReference))
-						sourceCode;
-				mimeType: 'pharo';
-				yourself)
+	self sendMessage: (DAPSourceResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPSourceRequest seq;
+			 command: aDAPSourceRequest command;
+			 content: (sourcesReferenceCache
+					  at: (aDAPSourceRequest arguments at: #sourceReference)
+					  ifPresent: [ :code | code sourceCode ]
+					  ifAbsent: [ 'Debugger cannot get block source code yet' ]);
+			 mimeType: 'pharo';
+			 yourself)
 ]
 
 { #category : #dap }
@@ -354,6 +351,20 @@ DAPServer >> debugMode [
 { #category : #accessing }
 DAPServer >> debugMode: anObject [
 	debugMode := anObject
+]
+
+{ #category : #'debugger support' }
+DAPServer >> debugSession: aDebugSession [
+	Transcript crShow: 'Hello instance'.
+	debugSession := aDebugSession.
+	self
+		sendMessage:
+			(DAPStoppedEvent new
+				seq: self nextSeq;
+				description: aDebugSession exception printString;
+				threadId: self threads associations anyOne key;
+				reason: 'exception';
+				yourself)
 ]
 
 { #category : #starting }
