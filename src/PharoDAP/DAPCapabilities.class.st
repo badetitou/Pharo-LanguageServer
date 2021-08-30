@@ -57,6 +57,9 @@ DAPCapabilities >> asDAPJSON [
 DAPCapabilities >> initialize [
 	super initialize.
 	supportsDelayedStackTraceLoading := true.
+	supportsConfigurationDoneRequest := true.
+	supportsDataBreakpoints := true.
+	supportsConditionalBreakpoints := true.
 ]
 
 { #category : #accessing }

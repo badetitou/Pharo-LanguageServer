@@ -11,7 +11,7 @@ DAPTVariableScope >> getDAPVariablesInContent: context [
 			| result |
 			result := context object: self scope instVarAt: index.
 			self inCache
-				at: result hash
+				at: (DAPServer pluggableHashBlock value:result) 
 				put:
 					{(#context -> context).
 					(#scope
@@ -26,6 +26,6 @@ DAPTVariableScope >> getDAPVariablesInContent: context [
 				variablesReference:
 					(result class allInstVarNames
 						ifEmpty: [ 0 ]
-						ifNotEmpty: [ result hash ]);
+						ifNotEmpty: [ DAPServer pluggableHashBlock value:result ]);
 				yourself ]
 ]

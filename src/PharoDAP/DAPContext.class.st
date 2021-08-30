@@ -34,7 +34,7 @@ DAPContext >> messageProcessesAt: anId put: aProcess [
 
 { #category : #'text item' }
 DAPContext >> removeItem: aURI [
-	^ self textItems removeKey: aURI
+	^ textItems removeKey: aURI
 ]
 
 { #category : #'message processing' }
