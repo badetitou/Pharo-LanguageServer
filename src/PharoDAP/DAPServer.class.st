@@ -23,23 +23,8 @@ Class {
 		'initialized',
 		'pluggableEvaluationBlock'
 	],
-	#classInstVars : [
-		'pluggableHashBlock'
-	],
 	#category : #PharoDAP
 }
-
-{ #category : #accessing }
-DAPServer class >> pluggableHashBlock [
-
-	^ pluggableHashBlock ifNil:[ pluggableHashBlock := [	:object|	 object hash ] ] 
-]
-
-{ #category : #accessing }
-DAPServer class >> pluggableHashBlock: aOneArgBlock [
-
-	pluggableHashBlock := aOneArgBlock
-]
 
 { #category : #'handlers management' }
 DAPServer >> addHandler: aDAPHandler [
@@ -152,7 +137,7 @@ DAPServer >> dapEvaluate: aDAPEvaluateRequest [
 	| localContext expression localCompiler |
 	localContext := (debugSession stackOfSize: 10)
 		detect:
-			[ :aStack | (self class pluggableHashBlock value: aStack) = (aDAPEvaluateRequest arguments at: #frameId) ]
+			[ :aStack | aStack hash = (aDAPEvaluateRequest arguments at: #frameId) ]
 		ifNone: [ nil ].
 	expression := '^ ' , (aDAPEvaluateRequest arguments at: #expression).
 	localCompiler := (self compilerFor: nil)
@@ -231,17 +216,15 @@ DAPServer >> dapNext: aDAPNextRequest [
 DAPServer >> dapScopes: aDAPScopesRequest [
 	<dap: #scopes>
 	| stack scope dapScope response |
-(debugSession stackOfSize: 10) inspect.
-(aDAPScopesRequest arguments at: #frameId)  inspect.
 	stack := (debugSession stackOfSize: 10)
-		detect: [ :aStack | (self class pluggableHashBlock value:aStack) = (aDAPScopesRequest arguments at: #frameId) ].
+		detect: [ :aStack | aStack hash = (aDAPScopesRequest arguments at: #frameId) ].
 	scope := stack sourceNodeExecuted scope.
 	dapScope := DAPScope new
 		name: scope printString;
-		variablesReference: (self class pluggableHashBlock value:scope);
+		variablesReference: scope hash;
 		yourself.
 	variablesReferenceCache
-		at: (self class pluggableHashBlock value:scope)
+		at: scope hash
 		put:
 			{(#scope
 				->
@@ -320,7 +303,7 @@ DAPServer >> dapSource: aDAPSourceRequest [
 			 command: aDAPSourceRequest command;
 			 content: (sourcesReferenceCache
 					  at: (aDAPSourceRequest arguments at: #sourceReference)
-					  ifPresent: [ :code | code sourceCode ]
+					  ifPresent: [ :code |code sourceCode ]
 					  ifAbsent: [ 'Debugger cannot get block source code yet' ]);
 			 mimeType: 'pharo';
 			 yourself)
@@ -336,23 +319,24 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 		request_seq: aDAPStackTraceRequest seq;
 		command: aDAPStackTraceRequest command;
 		yourself.
+	
 	response stackFrames
 		addAll:
 			((debugSession stackOfSize: 10)
 				collect: [ :stack | 
 					| positions |
 					"put reference to source in the cache"
-					sourcesReferenceCache at:  (self class pluggableHashBlock value: stack method) put: stack method.
+					sourcesReferenceCache at:  stack method hash put: stack method.
 					positions := stack sourceCode
 						toLineColumn: stack sourceNodeExecuted start.
 					"create the stack frame with its source"
 					DAPStackFrame new
-						id: (self class pluggableHashBlock value: stack);
+						id: stack hash;
 						name: stack printString;
 						source:
 							(DAPSource new
 								name: stack method printString;
-								sourceReference: (self class pluggableHashBlock value: stack method);
+								sourceReference: stack method hash;
 								yourself);
 						line: (positions at: #line);
 						column: (positions at: #column);
