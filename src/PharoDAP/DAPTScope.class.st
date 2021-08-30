@@ -10,7 +10,32 @@ Class {
 
 { #category : #'as yet unclassified' }
 DAPTScope >> getDAPVariablesInContent: context [
-	^ self scope tempVars
+	| localVars bindingVars |
+
+	bindingVars := OrderedDictionary new.
+	(context receiver respondsTo:#bindings) ifTrue:[
+		context receiver bindings associationsDo:[ : aBindingVar |
+			
+		self inCache
+				at: aBindingVar value hash
+				put:
+					{(#context -> context).
+					(#scope
+						->
+							(DAPTVariableScope new
+								scope: aBindingVar value;
+								inCache: self inCache;
+								yourself))} asDictionary.
+		bindingVars at:aBindingVar key put: (DAPVariable new
+				name: aBindingVar key;
+				value: aBindingVar value printString;
+				variablesReference:
+					(aBindingVar value class  allInstVarNames
+						ifEmpty: [ 0 ]
+						ifNotEmpty: [ aBindingVar value hash ]);
+				yourself) 
+		] ].
+	localVars :=self scope tempVars
 		collect: [ :tempVar | 
 			| result |
 			result := tempVar readFromLocalContext: context.
@@ -25,7 +50,6 @@ DAPTScope >> getDAPVariablesInContent: context [
 								inCache: self inCache;
 								yourself))} asDictionary.
 
-
 			"Create a DAP variable with the variable name and value"
 			DAPVariable new
 				name: tempVar name;
@@ -34,7 +58,12 @@ DAPTScope >> getDAPVariablesInContent: context [
 					(result class allInstVarNames
 						ifEmpty: [ 0 ]
 						ifNotEmpty: [ tempVar hash ]);
-				yourself ]
+				yourself ].
+	^ localVars addAll: bindingVars;yourself 
+		
+	
+
+
 ]
 
 { #category : #accessing }
