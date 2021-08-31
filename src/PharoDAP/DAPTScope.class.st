@@ -28,7 +28,7 @@ DAPTScope >> getDAPVariablesInContent: context [
 								yourself))} asDictionary.
 		bindingVars at:aBindingVar key put: (DAPVariable new
 				name: aBindingVar key;
-				value: aBindingVar value printString;
+				value: ([aBindingVar value printString] on:Exception do:['?']);
 				variablesReference:
 					(aBindingVar value class  allInstVarNames
 						ifEmpty: [ 0 ]
@@ -53,7 +53,7 @@ DAPTScope >> getDAPVariablesInContent: context [
 			"Create a DAP variable with the variable name and value"
 			DAPVariable new
 				name: tempVar name;
-				value: result printString;
+				value: ([result printString] on:Exception do:['?']);
 				variablesReference:
 					(result class allInstVarNames
 						ifEmpty: [ 0 ]

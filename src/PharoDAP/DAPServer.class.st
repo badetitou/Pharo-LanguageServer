@@ -546,7 +546,7 @@ DAPServer >> handleRequest: request toClient: clientSocket [
 		on: Error
 		do: [ :err | err return: err asJRPCResponse ].
 	self
-		messageProcessAt: dapMessage seq
+		messageProcess: dapMessage seq
 		put:
 			([ self handleRequest: dapMessage.
 			self removeMessageProcess: dapMessage seq ]
@@ -592,12 +592,12 @@ DAPServer >> isRunning [
 ]
 
 { #category : #context }
-DAPServer >> messageProcessAt: anId [	
+DAPServer >> messageProcess: anId [	
 	^ self context messageProcessesAt: anId 
 ]
 
 { #category : #context }
-DAPServer >> messageProcessAt: anId	put: aProcess [
+DAPServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
 ]
 

@@ -22,7 +22,7 @@ DAPTVariableScope >> getDAPVariablesInContent: context [
 								yourself))} asDictionary.
 			DAPVariable new
 				name: ivName;
-				value: result printString;
+				value: ([result printString] on:Exception do:['?']);
 				variablesReference:
 					(result class allInstVarNames
 						ifEmpty: [ 0 ]
