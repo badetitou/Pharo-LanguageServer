@@ -28,6 +28,11 @@ DAPContext >> messageProcesses: anObject [
 ]
 
 { #category : #'message processing' }
+DAPContext >> messageProcessesAt: anId [ 
+	^ anId ifNotNil: [ self messageProcesses at: anId ifAbsent:[ nil ] ] 
+]
+
+{ #category : #'message processing' }
 DAPContext >> messageProcessesAt: anId put: aProcess [
 	anId ifNotNil: [ self messageProcesses at: anId put: aProcess ]
 ]
