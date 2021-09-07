@@ -21,7 +21,9 @@ Class {
 		'debugSession',
 		'breakpoints',
 		'initialized',
-		'pluggableEvaluationBlock'
+		'pluggableEvaluationBlock',
+		'strategy',
+		'pluggableEvaluationBlockSender'
 	],
 	#category : #PharoDAP
 }
@@ -172,7 +174,7 @@ DAPServer >> dapInitialize: aDAPRequest [
 DAPServer >> dapLaunch: aDAPLaunchRequest [
 
 	<dap: #launch>
-	| strategy source |
+	| source compiledMethod |
 	'Launch.' record.
 	self sendMessage: (DAPResponse new
 			 seq: self nextSeq;
@@ -184,9 +186,14 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 	strategy := OupsDebuggerSelectionStrategy debuggerSelectionStrategy.
 	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: (DAPOupsDebuggerSelector with: { self }).
 	'Begin Evaluate.' record.
-	self pluggableEvaluationBlock value: source.
+	compiledMethod := self pluggableCompilationBlock value: source.
+	self 
+		setBreakpoints: (aDAPLaunchRequest arguments at: #program)
+		inCompiledMethod: compiledMethod.
+	compiledMethod  valueWithReceiver: self arguments:{self}. 
 	'End Evaluate.' record.
-	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: strategy.
+	"OupsDebuggerSelectionStrategy debuggerSelectionStrategy: strategy.
+	we recove the old debugger once we receive the #debuggSession: strategy is an instance var "
 	self sendMessage: DAPTerminatedEvent new
 ]
 
@@ -246,7 +253,7 @@ DAPServer >> dapScopes: aDAPScopesRequest [
 DAPServer >> dapSetBreakpoints: aDAPSetBreakpointsRequest [
 	<dap: #setBreakpoints>
 	| breakpointsList sourcePath bl |
-
+	
 	breakpointsList := (aDAPSetBreakpointsRequest arguments  
 										at:'breakpoints'
 										ifAbsent:[ aDAPSetBreakpointsRequest arguments 
@@ -275,7 +282,7 @@ DAPServer >> dapSetBreakpoints: aDAPSetBreakpointsRequest [
 				body:{ 
 				#breakpoints -> bl asArray} asDictionary).
 	
-	bl do:[ :eachBreakpoint |
+	 bl do:[ :eachBreakpoint |
 		self sendMessage: ((DAPBreakpointCreatedEvent newFromABreakpoint: eachBreakpoint )
 				seq: self nextSeq) ] ] forkAt: (Processor timingPriority - 1)  named: #transaction
 		
@@ -338,7 +345,7 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 								name: stack method printString;
 								sourceReference: stack method hash;
 								yourself);
-						line: (positions at: #line);
+						line: (positions at: #line) -2;
 						column: (positions at: #column);
 						yourself ]).
 	self sendMessage: response
@@ -441,6 +448,9 @@ DAPServer >> debugMode: anObject [
 DAPServer >> debugSession: aDebugSession [
 	Transcript crShow: 'Hello instance'.
 	debugSession := aDebugSession.
+	"easy to debug if we keep the debugger"
+	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: strategy.
+
 	self
 		sendMessage:
 			(DAPStoppedEvent new
@@ -517,6 +527,7 @@ DAPServer >> handleException: exception ofProcess: aProcess [
 	debugSession := DebugSession new
 		process: aProcess
 		context: exception signalerContext.
+
 	self
 		sendMessage:
 			(DAPStoppedEvent new
@@ -626,14 +637,14 @@ DAPServer >> parseJSON: aJSONString [
 ]
 
 { #category : #accessing }
-DAPServer >> pluggableEvaluationBlock [
+DAPServer >> pluggableCompilationBlock [
 
-	^ pluggableEvaluationBlock ifNil:[ pluggableEvaluationBlock := [	:source |	 compiler source:source;evaluate ] ] 
+	^ pluggableEvaluationBlock ifNil:[ pluggableEvaluationBlock := [	:source |	 compiler source:source;compile ] ] 
 ]
 
 { #category : #accessing }
-DAPServer >> pluggableEvaluationBlock: aOneArgBlock [
-
+DAPServer >> pluggableCompilationBlock: aOneArgBlock [
+	pluggableEvaluationBlockSender := thisContext sender. 
 	pluggableEvaluationBlock := aOneArgBlock
 ]
 
@@ -670,17 +681,16 @@ DAPServer >> sendMessage: aDAPMessage [
 ]
 
 { #category : #'debugger support' }
-DAPServer >> setBreakpointsFor: aCompiler source: filename [
-	| breakpointList compiledBlock breakpoint |
+DAPServer >> setBreakpoints: breakpointList inCompiledMethod: aCompiledMethod [
+	| breakpoint |
 	
-	breakpointList := self breakpoints at:filename ifAbsent:[ Array new ].
-	compiledBlock := aCompiler compile.
 	Breakpoint removeAll.
 	breakpointList do:[ :aBreakpointIndex |
 		breakpoint := Breakpoint new
-		node:  ( compiledBlock ast statements at: aBreakpointIndex value);
+		node:  ( aCompiledMethod ast statements at: (aBreakpointIndex at:#line));
 		always.
-		breakpoint install]
+		breakpoint scopeTo: aCompiledMethod;
+		install]
 ]
 
 { #category : #starting }
