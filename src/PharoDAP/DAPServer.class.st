@@ -174,7 +174,7 @@ DAPServer >> dapInitialize: aDAPRequest [
 DAPServer >> dapLaunch: aDAPLaunchRequest [
 
 	<dap: #launch>
-	| source compiledMethod |
+	| source compiledMethod breakpointList sourceWithBreakpoints |
 	'Launch.' record.
 	self sendMessage: (DAPResponse new
 			 seq: self nextSeq;
@@ -186,14 +186,15 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 	strategy := OupsDebuggerSelectionStrategy debuggerSelectionStrategy.
 	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: (DAPOupsDebuggerSelector with: { self }).
 	'Begin Evaluate.' record.
-	compiledMethod := self pluggableCompilationBlock value: source.
-	self 
-		setBreakpoints: (aDAPLaunchRequest arguments at: #program)
-		inCompiledMethod: compiledMethod.
-	compiledMethod  valueWithReceiver: self arguments:{self}. 
+	breakpointList := self breakpoints at: (self fileNameForCode:source) ifAbsent: Array new. 
+	sourceWithBreakpoints := self insertHaltsIn: source using:breakpointList.
+	compiledMethod := self pluggableCompilationBlock value: sourceWithBreakpoints.
+	compiledMethod  valueWithReceiver:  self pluggableCompilationBlock receiver arguments:{self}.
 	'End Evaluate.' record.
-	"OupsDebuggerSelectionStrategy debuggerSelectionStrategy: strategy.
-	we recove the old debugger once we receive the #debuggSession: strategy is an instance var "
+	"OupsDebuggerSelectionStrategy debuggerSelectionStrategy: strategy."
+	"we recove the old debugger once we receive the #debuggSession: strategy is an instance var
+	jmari: I think it's better reactivate the normal debugger once we hace received the debugSession 
+	for debugging purposes " 
 	self sendMessage: DAPTerminatedEvent new
 ]
 
@@ -593,6 +594,20 @@ DAPServer >> initialize [
 ]
 
 { #category : #'debugger support' }
+DAPServer >> insertHaltsIn: source using:breakpointList [
+	| tmpSource stream |
+	tmpSource := source deepCopy findTokens: String lf.
+	stream := WriteStream on: String new.
+	
+	breakpointList do:[ :aBreakpointIndex |
+		tmpSource at: (aBreakpointIndex at:#line) put: 'self halt.' , (tmpSource at: (aBreakpointIndex at:#line) ) 
+		].
+	tmpSource do:[ :aLine | 
+		stream nextPutAll: aLine;crlf ].
+	^ stream contents
+]
+
+{ #category : #'debugger support' }
 DAPServer >> isObsolete [
 	^ true
 ]
@@ -683,14 +698,14 @@ DAPServer >> sendMessage: aDAPMessage [
 { #category : #'debugger support' }
 DAPServer >> setBreakpoints: breakpointList inCompiledMethod: aCompiledMethod [
 	| breakpoint |
-	
+
 	Breakpoint removeAll.
 	breakpointList do:[ :aBreakpointIndex |
-		breakpoint := Breakpoint new
-		node:  ( aCompiledMethod ast statements at: (aBreakpointIndex at:#line));
-		always.
-		breakpoint scopeTo: aCompiledMethod;
-		install]
+		breakpoint := Breakpoint
+		breakOnAST: ( aCompiledMethod ast statements at: (aBreakpointIndex at:#line))
+		inObject: self pluggableCompilationBlock receiver.
+		breakpoint enable].
+	
 ]
 
 { #category : #starting }
