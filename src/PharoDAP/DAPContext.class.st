@@ -44,5 +44,5 @@ DAPContext >> removeItem: aURI [
 
 { #category : #'message processing' }
 DAPContext >> removeMessageProcess: anId [
-	anId ifNotNil: [ self messageProcesses removeKey: anId ]
+	anId ifNotNil: [ self messageProcesses removeKey: anId ifAbsent:["ignore"] ]
 ]
