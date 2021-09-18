@@ -249,6 +249,7 @@ DAPServer >> dapScopes: aDAPScopesRequest [
 	stack := self getStacks
 		detect: [ :aStack | aStack hash = (aDAPScopesRequest arguments at: #frameId) ].
 	scope := stack sourceNodeExecuted scope.
+	(sourcesReferenceCache at: 0 ) sourceCode:stack method sourceCode.
 	dapScope := DAPScope new
 		name: scope printString;
 		variablesReference: scope hash;
@@ -333,7 +334,7 @@ DAPServer >> dapSource: aDAPSourceRequest [
 			 command: aDAPSourceRequest command;
 			 content: (sourcesReferenceCache
 					  at: (aDAPSourceRequest arguments at: #sourceReference)
-					  ifPresent: [ :code |code sourceCode ]
+					  ifPresent: [ :code |((code sourceCode copyReplaceAll: String cr with: String lf) copyReplaceAll: String tab with: '    ')  ]
 					  ifAbsent: [ 'Debugger cannot get block source code yet' ]);
 			 mimeType: 'pharo';
 			 yourself)
@@ -351,12 +352,10 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 		yourself.
 		
 	stacks := self getStacks.
-
+	(sourcesReferenceCache at: 0 ) sourceCode:self getStacks first method sourceCode.
 	dapStacks := (stacks
 				collect: [ :stack | 
 					| positions |
-					sourcesReferenceCache at:0 ifPresent:[:s| 
-						sourcePath := s at:#path ifAbsent:[nil] ].
 					"put reference to source in the cache"
 					sourcesReferenceCache at:  stack method hash put: stack method.
 					positions := stack sourceCode
@@ -366,9 +365,6 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 								name: stack method printString;
 								sourceReference:stack method hash;
 								yourself.			
-					
-					(sourcePath notNil and:[stack method asString includesSubstring:'DoItIn:'])
-						ifTrue:[sourceNode sourceReference:0; path: sourcePath].
 							
 					DAPStackFrame new
 						id: stack hash;
@@ -380,9 +376,8 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 	
 	self isJustMyCode 
 	ifTrue:[ 
-		response stackFrames addAll: (dapStacks select:[:aStack|  aStack source sourceReference = 0 ])  ]
+		response stackFrames addAll: (dapStacks select:[:aStack|  aStack source sourceReference = 0 ]) ]
 	ifFalse:[ response stackFrames addAll: dapStacks].	 
-	
 	
 	self sendMessage: response
 ]
@@ -502,7 +497,7 @@ DAPServer >> debugSession: aDebugSession [
 	"easy to debug if we keep the debugger"
 	aDebugSession exception class = Halt ifTrue:[
 		"jumps the halt stack"
-		debugSession stepOver;stepOver].
+		debugSession stepOver].
 	self
 		sendMessage:
 			(DAPStoppedEvent new
