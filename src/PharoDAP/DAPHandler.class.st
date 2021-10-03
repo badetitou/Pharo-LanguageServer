@@ -26,10 +26,10 @@ DAPHandler >> checkParametersForRequest: aDAPRequestObject [
 
 { #category : #accessing }
 DAPHandler >> executeWithArguments: anArrayOrDictionary [
-	^ self
+	^ self execute: [ self
 		send: self messageSelector
 		to: self receiver
-		with: anArrayOrDictionary
+		with: anArrayOrDictionary ] recordedAs: self messageSelector printString
 ]
 
 { #category : #accessing }
