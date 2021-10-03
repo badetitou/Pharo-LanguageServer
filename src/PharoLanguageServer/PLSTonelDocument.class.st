@@ -23,8 +23,7 @@ PLSTonelDocument >> codeLens [
 	parsed
 		detect: #isClassDefinition
 		ifFound: [ :classDef |
-			className := classDef name. 
-			(classDef name endsWith: #Test)
+			(classDef className endsWith: #Test)
 				ifFalse: [ ^ {} ] ]
 		ifNone: [ ^ {} ].
 	^ ((parsed
@@ -143,7 +142,7 @@ PLSTonelDocument >> symbols [
 						end: (self text toLineCharacter: methodDef endPos + 1));
 				yourself ]) asArray.
 	^ {(PLSDocumentSymbol new
-		name: classDef name;
+		name: classDef className;
 		kind: PLSSymbolKind classID;
 		range:
 			(PLSRange
