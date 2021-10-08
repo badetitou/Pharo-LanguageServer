@@ -118,12 +118,14 @@ PLSServer >> commandPharoSave [
 
 { #category : #accessing }
 PLSServer >> compilerFor: fileURI [
+
 	| compiler |
 	compiler := SmalltalkImage current compiler
-		transformDoit;
-		failBlock: [ nil ];
-		requestor: (self context textItem: fileURI) binder;
-		yourself.
+		            transformDoit;
+		            failBlock: [ nil ];
+		            yourself.
+	fileURI ifNotNil: [ 
+		compiler requestor: (self context textItem: fileURI) binder ].
 	^ compiler
 ]
 
