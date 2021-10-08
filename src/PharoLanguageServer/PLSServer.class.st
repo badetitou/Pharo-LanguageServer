@@ -501,7 +501,7 @@ PLSServer >> start [
 { #category : #dap }
 PLSServer >> startDapServer [
 	<jrpc: #'dap:startServer'>
-	'Begin DAP Server.' record.
+	'Start DAP Server.' record.
 	^ DAPServer new
 		start.
 ]

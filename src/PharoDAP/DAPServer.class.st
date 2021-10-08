@@ -26,7 +26,8 @@ Class {
 		'pluggableEvaluationBlockSender',
 		'lineOffset',
 		'numberOfStacks',
-		'justMyCode'
+		'justMyCode',
+		'shouldStop'
 	],
 	#category : #PharoDAP
 }
@@ -57,11 +58,11 @@ DAPServer >> breakpoints [
 
 { #category : #'debugger support' }
 DAPServer >> compilerFor: fileURI [
+
 	| compi |
-	compi := SmalltalkImage current compiler
-		transformDoit;
-		failBlock: [ nil ];
-		yourself.
+	compi := SmalltalkImage current compiler.
+	compi compilationContext noPattern: true.
+	compi failBlock: [ nil ].
 	^ compi
 ]
 
@@ -135,11 +136,15 @@ DAPServer >> dapDisconnect: aDAPDisconnectRequest [
 	aDAPDisconnectRequest arguments
 		at: #terminateDebuggee
 		ifPresent: [ :terminate | 
+			('terminate: ' , terminate printString) record.
 			terminate ifTrue: [ 
 				OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
 					OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
-				socketClient close.
-				serverLoop := false ] ]
+				self stop ] ].
+	self shouldStop ifTrue: [ 
+		OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
+			OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
+		self stop ]
 ]
 
 { #category : #dap }
@@ -207,10 +212,13 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 		(DAPOupsDebuggerSelector with: { self }).
 	self execute: [ compiler evaluate ] recordedAs: 'Evaluate'.
 
+	'change debugger' record.
 	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: strategy.
 	"we recove the old debugger once we receive the #debuggSession: strategy is an instance var
 	jmari: I think it's better reactivate the normal debugger once we hace received the debugSession 
 	for debugging purposes "
+	'terminated' record.
+	self shouldStop: true.
 	self sendMessage: DAPTerminatedEvent new
 ]
 
@@ -770,7 +778,12 @@ DAPServer >> parseJSON: aJSONString [
 { #category : #accessing }
 DAPServer >> pluggableCompilationBlock [
 
-	^ pluggableEvaluationBlock ifNil:[ pluggableEvaluationBlock := [	:source |	 compiler source:source;compile ] ] 
+	^ pluggableEvaluationBlock ifNil: [ 
+		  pluggableEvaluationBlock := [ :source | 
+		                              compiler
+			                              source: source;
+			                              compile;
+			                              transformDoit ] ]
 ]
 
 { #category : #accessing }
@@ -822,6 +835,20 @@ DAPServer >> setBreakpoints: breakpointList inCompiledMethod: aCompiledMethod [
 		inObject: self pluggableCompilationBlock receiver.
 		breakpoint enable].
 	
+]
+
+{ #category : #accessing }
+DAPServer >> shouldStop [
+
+	"this variable should be at true when the execution is over"
+
+	^ shouldStop ifNil: [ ^ false ]
+]
+
+{ #category : #accessing }
+DAPServer >> shouldStop: anObject [
+
+	shouldStop := anObject
 ]
 
 { #category : #starting }
