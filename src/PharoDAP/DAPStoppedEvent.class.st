@@ -14,7 +14,7 @@ Class {
 
 { #category : #accessing }
 DAPStoppedEvent >> allThreadsStopped [
-	^ allThreadsStopped
+	^ allThreadsStopped ifNil:[ allThreadsStopped := true ]
 ]
 
 { #category : #accessing }
@@ -28,6 +28,7 @@ DAPStoppedEvent >> asDAPJSON [
 	self body at: #reason put: self reason.
 	self body at: #description put: self description printString.
 	self body at: #threadId put: self threadId.
+	self body at: #allThreadsStopped put: self allThreadsStopped.
 	dic := super asDAPJSON.
 	^ dic
 ]

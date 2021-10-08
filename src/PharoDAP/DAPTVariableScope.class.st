@@ -11,7 +11,7 @@ DAPTVariableScope >> getDAPVariablesInContent: context [
 			| result |
 			result := context object: self scope instVarAt: index.
 			self inCache
-				at: result hash
+				at: result hash 
 				put:
 					{(#context -> context).
 					(#scope
@@ -22,7 +22,7 @@ DAPTVariableScope >> getDAPVariablesInContent: context [
 								yourself))} asDictionary.
 			DAPVariable new
 				name: ivName;
-				value: result printString;
+				value: ([result printString] on:Exception do:['?']);
 				variablesReference:
 					(result class allInstVarNames
 						ifEmpty: [ 0 ]

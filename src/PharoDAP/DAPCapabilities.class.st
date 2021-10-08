@@ -44,12 +44,14 @@ Class {
 
 { #category : #converting }
 DAPCapabilities >> asDAPJSON [
+
 	| dic |
 	dic := super asDAPJSON.
-	self supportsDelayedStackTraceLoading
-		ifNotNil: [ dic
-				at: #supportsDelayedStackTraceLoading
-				put: self supportsDelayedStackTraceLoading ].
+	self supportsDelayedStackTraceLoading ifNotNil: [ 
+		dic
+			at: #supportsDelayedStackTraceLoading
+			put: self supportsDelayedStackTraceLoading ].
+	dic at: #supportTerminateDebuggee put: true.
 	^ dic
 ]
 
@@ -57,6 +59,9 @@ DAPCapabilities >> asDAPJSON [
 DAPCapabilities >> initialize [
 	super initialize.
 	supportsDelayedStackTraceLoading := true.
+	supportsConfigurationDoneRequest := true.
+	supportsDataBreakpoints := true.
+	supportsConditionalBreakpoints := true.
 ]
 
 { #category : #accessing }

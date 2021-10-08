@@ -3,17 +3,21 @@ Class {
 	#superclass : #DAPJsonableObject,
 	#instVars : [
 		'name',
-		'sourceReference'
+		'sourceReference',
+		'path'
 	],
 	#category : #'PharoDAP-Types'
 }
 
 { #category : #accessing }
 DAPSource >> asDAPJSON [
-	^ super asDAPJSON
+	| json |
+	json:= super asDAPJSON
 		at: #name put: self name;
 		at: #sourceReference put: self sourceReference;
-		yourself
+		yourself.
+	self path ifNotNil:[ json at:#path put: self path ].
+	^ json
 ]
 
 { #category : #accessing }
@@ -24,6 +28,18 @@ DAPSource >> name [
 { #category : #accessing }
 DAPSource >> name: anObject [
 	name := anObject
+]
+
+{ #category : #accessing }
+DAPSource >> path [
+
+	^ path
+]
+
+{ #category : #accessing }
+DAPSource >> path: anObject [
+
+	path := anObject
 ]
 
 { #category : #accessing }

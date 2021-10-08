@@ -18,7 +18,16 @@ Class {
 		'variablesReferenceCache',
 		'sourcesReferenceCache',
 		'context',
-		'debugSession'
+		'debugSession',
+		'breakpoints',
+		'initialized',
+		'pluggableEvaluationBlock',
+		'strategy',
+		'pluggableEvaluationBlockSender',
+		'lineOffset',
+		'numberOfStacks',
+		'justMyCode',
+		'shouldStop'
 	],
 	#category : #PharoDAP
 }
@@ -41,13 +50,19 @@ DAPServer >> addHandlersFromPragmasIn: handlerInstance [
 						yourself) ]
 ]
 
+{ #category : #accessing }
+DAPServer >> breakpoints [ 
+	"breakpoint is a source->breakpoints array dictionary"
+	^ breakpoints ifNil:[ breakpoints := Dictionary new ]
+]
+
 { #category : #'debugger support' }
 DAPServer >> compilerFor: fileURI [
+
 	| compi |
-	compi := SmalltalkImage current compiler
-		transformDoit;
-		failBlock: [ nil ];
-		yourself.
+	compi := SmalltalkImage current compiler.
+	compi compilationContext noPattern: true.
+	compi failBlock: [ nil ].
 	^ compi
 ]
 
@@ -68,32 +83,75 @@ DAPServer >> convertDAPJsonableObjectToJSON: aDAPJsonableObject on: stream [
 ]
 
 { #category : #dap }
+DAPServer >> dapAttach: aDAPRequest [
+
+	"Send that I receive  the initialize"
+
+	<dap: #attach>
+	self sendMessage: (DAPAttachResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPRequest seq;
+			 command: aDAPRequest command;
+			 body: DAPCapabilities new).
+	self sendMessage: DAPAttachEvent new
+]
+
+{ #category : #dap }
+DAPServer >> dapConfigurationDone: aDAPConfigurationDoneRequest [
+
+	<dap: #configurationDone>
+	self sendMessage: (DAPConfigurationDoneResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPConfigurationDoneRequest seq;
+			 command: aDAPConfigurationDoneRequest command)
+]
+
+{ #category : #dap }
 DAPServer >> dapContinue: aDAPContinueRequest [
+
 	<dap: #continue>
+
 	self
-		sendMessage:
-			(DAPContinueResponse new
-				seq: self nextSeq;
-				request_seq: aDAPContinueRequest seq;
-				command: aDAPContinueRequest command;
-				yourself).
+		sendMessage: (DAPContinuedEvent new
+				 seq: self nextSeq;
+				 threadId: self threads associations anyOne key;
+				 yourself);
+		sendMessage: (DAPContinueResponse new
+				 seq: self nextSeq;
+				 request_seq: aDAPContinueRequest seq;
+				 command: aDAPContinueRequest command;
+				 yourself).
 	debugSession resume
 ]
 
 { #category : #dap }
-DAPServer >> dapDisconnect: arguments [
+DAPServer >> dapDisconnect: aDAPDisconnectRequest [
+
 	<dap: #disconnect>
+	initialized := false.
+	self resetContext.
+	self resetCache.
 	self sendMessage: DAPDisconnectResponse new.
-	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
-	socketClient close.
-	serverLoop := false
+
+	aDAPDisconnectRequest arguments
+		at: #terminateDebuggee
+		ifPresent: [ :terminate | 
+			('terminate: ' , terminate printString) record.
+			terminate ifTrue: [ 
+				OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
+					OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
+				self stop ] ].
+	self shouldStop ifTrue: [ 
+		OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
+			OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
+		self stop ]
 ]
 
 { #category : #dap }
 DAPServer >> dapEvaluate: aDAPEvaluateRequest [
 	<dap: #evaluate>
 	| localContext expression localCompiler |
-	localContext := (debugSession stackOfSize: 10)
+	localContext := self getStacks
 		detect:
 			[ :aStack | aStack hash = (aDAPEvaluateRequest arguments at: #frameId) ]
 		ifNone: [ nil ].
@@ -130,21 +188,37 @@ DAPServer >> dapInitialize: aDAPRequest [
 DAPServer >> dapLaunch: aDAPLaunchRequest [
 
 	<dap: #launch>
-	| strategy |
-	'Launch.' record.
+	| source compiledMethod breakpointList sourceWithBreakpoints |
 	self sendMessage: (DAPResponse new
 			 seq: self nextSeq;
 			 request_seq: aDAPLaunchRequest seq;
 			 command: aDAPLaunchRequest command;
 			 body: DAPLaunchResponse new).
-	compiler source: (aDAPLaunchRequest arguments at: #program) asFileReference contents.
+	source := (aDAPLaunchRequest arguments at: #program) asFileReference
+		          contents.
 	self threads at: aDAPLaunchRequest seq put: aDAPLaunchRequest seq.
 	strategy := OupsDebuggerSelectionStrategy debuggerSelectionStrategy.
-	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: (DAPOupsDebuggerSelector with: { self }).
-	'Begin Evaluate.' record.
-	compiler evaluate.
-	'End Evaluate.' record.
+	breakpointList := self breakpoints
+		                  at: (self fileNameForCode: source)
+		                  ifAbsent: Array new.
+	sourceWithBreakpoints := self
+		                         insertHaltsIn: source
+		                         using: breakpointList.
+	compiledMethod := self pluggableCompilationBlock value:
+		                  sourceWithBreakpoints.
+	"compiledMethod  valueWithReceiver:  self pluggableCompilationBlock receiver arguments:{self}.
+	"
+	OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
+		(DAPOupsDebuggerSelector with: { self }).
+	self execute: [ compiler evaluate ] recordedAs: 'Evaluate'.
+
+	'change debugger' record.
 	OupsDebuggerSelectionStrategy debuggerSelectionStrategy: strategy.
+	"we recove the old debugger once we receive the #debuggSession: strategy is an instance var
+	jmari: I think it's better reactivate the normal debugger once we hace received the debugSession 
+	for debugging purposes "
+	'terminated' record.
+	self shouldStop: true.
 	self sendMessage: DAPTerminatedEvent new
 ]
 
@@ -159,7 +233,16 @@ DAPServer >> dapNext: aDAPNextRequest [
 				seq: self nextSeq;
 				request_seq: aDAPNextRequest seq;
 				command: aDAPNextRequest command).
+
+	self
+		sendMessage:
+			(DAPContinuedEvent new
+				seq: self nextSeq;
+				threadId: self threads associations anyOne key;
+				yourself).
+				
 	debugSession stepThrough.
+
 	self
 		sendMessage:
 			(DAPStoppedEvent new
@@ -172,32 +255,72 @@ DAPServer >> dapNext: aDAPNextRequest [
 
 { #category : #dap }
 DAPServer >> dapScopes: aDAPScopesRequest [
+
 	<dap: #scopes>
 	| stack scope dapScope response |
-	stack := (debugSession stackOfSize: 10)
-		detect: [ :aStack | aStack hash = (aDAPScopesRequest arguments at: #frameId) ].
+	stack := self getStacks detect: [ :aStack | 
+		         aStack hash = (aDAPScopesRequest arguments at: #frameId) ].
 	scope := stack sourceNodeExecuted scope.
+	sourcesReferenceCache
+		at: 0
+		ifPresent: [ :sourceRef | 
+		sourceRef sourceCode: stack method sourceCode ].
 	dapScope := DAPScope new
-		name: scope printString;
-		variablesReference: scope hash;
-		yourself.
-	variablesReferenceCache
-		at: scope hash
-		put:
-			{(#scope
-				->
-					(DAPTScope new
-						scope: scope;
-						inCache: variablesReferenceCache;
-						yourself)).
-			(#context -> stack)} asDictionary.
+		            name: scope printString;
+		            variablesReference: scope hash;
+		            yourself.
+	variablesReferenceCache at: scope hash put: { 
+			(#scope -> (DAPTScope new
+				  scope: scope;
+				  inCache: variablesReferenceCache;
+				  yourself)).
+			(#context -> stack) } asDictionary.
 	response := DAPScopesResponse new
-		seq: self nextSeq;
-		request_seq: aDAPScopesRequest seq;
-		command: aDAPScopesRequest command;
-		scopes: {dapScope};
-		yourself.
+		            seq: self nextSeq;
+		            request_seq: aDAPScopesRequest seq;
+		            command: aDAPScopesRequest command;
+		            scopes: { dapScope };
+		            yourself.
 	self sendMessage: response
+]
+
+{ #category : #dap }
+DAPServer >> dapSetBreakpoints: aDAPSetBreakpointsRequest [
+
+	<dap: #setBreakpoints>
+	| breakpointsList sourcePath bl |
+	breakpointsList := aDAPSetBreakpointsRequest arguments
+		                   at: 'breakpoints'
+		                   ifAbsent: [ 
+		                   aDAPSetBreakpointsRequest arguments at: 'lines' ].
+	sourcePath := (aDAPSetBreakpointsRequest arguments at: #source)
+		              at: #path
+		              ifAbsent: [ 
+		              (aDAPSetBreakpointsRequest arguments at: #source) at:
+			              #reference ].
+
+	bl := breakpointsList collectWithIndex: [ :aLine :anIndex | 
+		      { 
+			      (#id -> (self getAllBreakpoints size + 1)).
+			      (#source -> { (#path -> sourcePath) } asDictionary).
+			      (#line -> (aLine at: #line)).
+			      (#verified -> true) } asDictionary ].
+
+	self breakpoints at: sourcePath put: breakpointsList.
+
+	[ 
+	self sendMessage: (DAPSetBreakpointsResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPSetBreakpointsRequest seq;
+			 command: aDAPSetBreakpointsRequest command;
+			 body: { (#breakpoints -> bl asArray) } asDictionary).
+
+	bl do: [ :eachBreakpoint | 
+		self sendMessage:
+			((DAPBreakpointCreatedEvent newFromABreakpoint: eachBreakpoint) 
+				 seq: self nextSeq) ] ]
+		forkAt: Processor timingPriority - 1
+		named: #transaction
 ]
 
 { #category : #dap }
@@ -216,13 +339,17 @@ DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [
 DAPServer >> dapSource: aDAPSourceRequest [
 
 	<dap: #source>
+
 	self sendMessage: (DAPSourceResponse new
 			 seq: self nextSeq;
 			 request_seq: aDAPSourceRequest seq;
 			 command: aDAPSourceRequest command;
 			 content: (sourcesReferenceCache
 					  at: (aDAPSourceRequest arguments at: #sourceReference)
-					  ifPresent: [ :code | code sourceCode ]
+					  ifPresent: [ :code | 
+						  (code sourceCode copyReplaceAll: String cr with: String lf)
+							  copyReplaceAll: String tab
+							  with: '    ' ]
 					  ifAbsent: [ 'Debugger cannot get block source code yet' ]);
 			 mimeType: 'pharo';
 			 yourself)
@@ -230,34 +357,47 @@ DAPServer >> dapSource: aDAPSourceRequest [
 
 { #category : #dap }
 DAPServer >> dapStackTrace: aDAPStackTraceRequest [
+
 	<dap: #stackTrace>
-	| response |
+	| response stacks sourceNode dapStacks |
 	response := DAPStackTraceResponse new
-		seq: self nextSeq;
-		request_seq: aDAPStackTraceRequest seq;
-		command: aDAPStackTraceRequest command;
-		yourself.
-	response stackFrames
-		addAll:
-			((debugSession stackOfSize: 10)
-				collect: [ :stack | 
-					| positions |
-					"put reference to source in the cache"
-					sourcesReferenceCache at: stack method hash put: stack method.
-					positions := stack sourceCode
-						toLineColumn: stack sourceNodeExecuted start.
-					"create the stack frame with its source"
-					DAPStackFrame new
-						id: stack hash;
-						name: stack printString;
-						source:
-							(DAPSource new
-								name: stack method printString;
-								sourceReference: stack method hash;
-								yourself);
-						line: (positions at: #line);
-						column: (positions at: #column);
-						yourself ]).
+		            seq: self nextSeq;
+		            request_seq: aDAPStackTraceRequest seq;
+		            command: aDAPStackTraceRequest command;
+		            yourself.
+	stacks := self getStacks.
+	sourcesReferenceCache
+		at: 0
+		ifPresent: [ :sourceRef | 
+		sourceRef sourceCode: stacks first method sourceCode ].
+
+	dapStacks := stacks collect: [ :stack | 
+		             | positions |
+		             "put reference to source in the cache"
+		             sourcesReferenceCache
+			             at: stack method hash
+			             put: stack method.
+		             positions := stack sourceCode toLineColumn:
+			                          stack sourceNodeExecuted start.
+		             "create the stack frame with its source"
+		             sourceNode := DAPSource new
+			                           name: stack method printString;
+			                           sourceReference: stack method hash;
+			                           yourself.
+
+		             DAPStackFrame new
+			             id: stack hash;
+			             name: stack printString;
+			             source: sourceNode;
+			             line: (positions at: #line) + self lineOffset;
+			             column: (positions at: #column);
+			             yourself ].
+	self isJustMyCode
+		ifTrue: [ 
+			response stackFrames addAll:
+				(dapStacks select: [ :aStack | aStack source sourceReference = 0 ]) ]
+		ifFalse: [ response stackFrames addAll: dapStacks ].
+
 	self sendMessage: response
 ]
 
@@ -272,6 +412,14 @@ DAPServer >> dapStepIn: aDAPStepInRequest [
 				seq: self nextSeq;
 				request_seq: aDAPStepInRequest seq;
 				command: aDAPStepInRequest command).
+				
+	self
+		sendMessage:
+			(DAPContinuedEvent new
+				seq: self nextSeq;
+				threadId: self threads associations anyOne key;
+				yourself).
+				
 	debugSession stepInto.
 	self
 		sendMessage:
@@ -294,6 +442,13 @@ DAPServer >> dapStepOut: aDAPStepOutRequest [
 				seq: self nextSeq;
 				request_seq: aDAPStepOutRequest seq;
 				command: aDAPStepOutRequest command).
+	self
+		sendMessage:
+			(DAPContinuedEvent new
+				seq: self nextSeq;
+				threadId: self threads associations anyOne key;
+				yourself).
+			
 	debugSession stepOver.
 	self
 		sendMessage:
@@ -307,41 +462,39 @@ DAPServer >> dapStepOut: aDAPStepOutRequest [
 
 { #category : #dap }
 DAPServer >> dapThreads: aDAPThreadsRequest [
+
 	<dap: #threads>
 	| response |
 	response := DAPThreadsResponse new
-		seq: self nextSeq;
-		request_seq: aDAPThreadsRequest seq;
-		command: aDAPThreadsRequest command;
-		yourself.
-	response threads
-		addAll:
-			(self threads associations
-				collect: [ :assoc | 
-					DAPThread new
-						id: assoc key;
-						name: assoc value printString;
-						yourself ]).
+		            seq: self nextSeq;
+		            request_seq: aDAPThreadsRequest seq;
+		            command: aDAPThreadsRequest command;
+		            yourself.
+	response threads addAll:
+		(self threads associations collect: [ :assoc | 
+			 DAPThread new
+				 id: assoc key;
+				 name: assoc value printString;
+				 yourself ]).
 	self sendMessage: response
 ]
 
 { #category : #dap }
 DAPServer >> dapVariables: aDAPVariablesRequest [
+
 	<dap: #variables>
 	| variablesReference scope context2 |
-	variablesReference := aDAPVariablesRequest arguments
-		at: #variablesReference.
+	variablesReference := aDAPVariablesRequest arguments at:
+		                      #variablesReference.
 	scope := (variablesReferenceCache at: variablesReference) at: #scope.
-	context2 := (variablesReferenceCache at: variablesReference)
-		at: #context.
-	self
-		sendMessage:
-			(DAPVariablesResponse new
-				seq: self nextSeq;
-				request_seq: aDAPVariablesRequest seq;
-				command: aDAPVariablesRequest command;
-				variables: (scope getDAPVariablesInContent: context2);
-				yourself)
+	context2 := (variablesReferenceCache at: variablesReference) at:
+		            #context.
+	self sendMessage: (DAPVariablesResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPVariablesRequest seq;
+			 command: aDAPVariablesRequest command;
+			 variables: (scope getDAPVariablesInContent: context2);
+			 yourself)
 ]
 
 { #category : #accessing }
@@ -356,8 +509,12 @@ DAPServer >> debugMode: anObject [
 
 { #category : #'debugger support' }
 DAPServer >> debugSession: aDebugSession [
-	Transcript crShow: 'Hello instance'.
+	'DAP debugSession:' record.
 	debugSession := aDebugSession.
+	"easy to debug if we keep the debugger"
+	aDebugSession exception class = Halt ifTrue:[
+		"jumps the halt stack"
+		debugSession stepOver].
 	self
 		sendMessage:
 			(DAPStoppedEvent new
@@ -406,6 +563,23 @@ DAPServer >> extractRequestFrom: clientSocket [
 	^ result
 ]
 
+{ #category : #dap }
+DAPServer >> fileNameForCode: aName [
+	^ ''
+]
+
+{ #category : #accessing }
+DAPServer >> getAllBreakpoints [ 
+	"breakpoint is a source->breakpoints array dictionary"
+	| oc |
+	oc := OrderedCollection new.
+	
+	self breakpoints associationsDo:[ :anAssociation | 
+		oc add:{ #source:->anAssociation key. #breakpoints->anAssociation value } asDictionary ].
+	^oc asArray
+	
+]
+
 { #category : #starting }
 DAPServer >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
 	clientSocket receiveDataInto: existingData startingAt: startingPoint
@@ -417,11 +591,20 @@ DAPServer >> getHeaderFor: answer into: aStream [
 		<< String crlf
 ]
 
+{ #category : #accessing }
+DAPServer >> getStacks [ 
+
+	^ debugSession stackOfSize: self numberOfStacks.
+
+]
+
 { #category : #'debugger support' }
 DAPServer >> handleException: exception ofProcess: aProcess [
+	'DAP handleException:ofProcess:' record.
 	debugSession := DebugSession new
 		process: aProcess
 		context: exception signalerContext.
+
 	self
 		sendMessage:
 			(DAPStoppedEvent new
@@ -480,13 +663,76 @@ DAPServer >> initialize [
 	threads := Dictionary new.
 	variablesReferenceCache := Dictionary new.
 	sourcesReferenceCache := Dictionary new.
+	initialized := false.
 	self addHandlersFromPragmasIn: self.
 	
+	
+]
+
+{ #category : #'debugger support' }
+DAPServer >> insertBestHaltOn: sourceLines at: line [ 
+
+		| sourceLineBefore |
+	line = 1 
+		ifTrue:[
+			"first Line"
+			sourceLines at:line put: 'self halt.' , (sourceLines at: line ) ]
+		ifFalse:[
+			sourceLineBefore := (sourceLines at: (line - 1)) trimRight.
+			(sourceLineBefore endsWithAnyOf:  #('.' '[' '|')) ifTrue:[ 
+				sourceLines at:line put: 'self halt.' , (sourceLines at: line ) ] 
+			ifFalse:[ (sourceLineBefore endsWith: ';') ifTrue:[ 
+				sourceLines at:line put: 'halt;' , (sourceLines at: line ) ]
+			ifFalse:[ 	self insertBestHaltOn: sourceLines at: (line -1) ] ] ]
+]
+
+{ #category : #'debugger support' }
+DAPServer >> insertHaltsIn: source using:breakpointList [
+	| sourceLines stream |
+	sourceLines := source deepCopy findTokens: String lf.
+	stream := WriteStream on: String new.
+	
+	breakpointList do:[ :aBreakpointIndex |
+		self insertBestHaltOn: sourceLines at: (aBreakpointIndex at:#line) ].
+	sourceLines do:[ :aLine | stream nextPutAll: aLine;crlf ].
+	^ stream contents
+]
+
+{ #category : #accessing }
+DAPServer >> isJustMyCode [
+	^ justMyCode ifNil:[ justMyCode:= false ]
 ]
 
 { #category : #'debugger support' }
 DAPServer >> isObsolete [
 	^ true
+]
+
+{ #category : #testing }
+DAPServer >> isRunning [
+	^ serverLoop
+]
+
+{ #category : #accessing }
+DAPServer >> justMyCode [
+	justMyCode := true
+]
+
+{ #category : #accessing }
+DAPServer >> lineOffset [
+
+	^ lineOffset ifNil:[ lineOffset := 0 ]
+]
+
+{ #category : #accessing }
+DAPServer >> lineOffset: anObject [
+
+	lineOffset := anObject
+]
+
+{ #category : #context }
+DAPServer >> messageProcess: anId [	
+	^ self context messageProcessesAt: anId 
 ]
 
 { #category : #context }
@@ -499,9 +745,20 @@ DAPServer >> nextSeq [
 	^ current_seq := current_seq + 1
 ]
 
+{ #category : #accessing }
+DAPServer >> numberOfStacks [
+	^ numberOfStacks ifNil:[ numberOfStacks := 10 ]
+]
+
+{ #category : #accessing }
+DAPServer >> numberOfStacks: anInteger [
+	numberOfStacks := anInteger
+]
+
 { #category : #'debugger support' }
 DAPServer >> openOn: aDebugSession withFullView: bool andNotification: notification [
 	debugSession := aDebugSession.
+	'Open debug' record.
 	self
 		sendMessage:
 			(DAPStoppedEvent new
@@ -516,6 +773,23 @@ DAPServer >> parseJSON: aJSONString [
 	| jsonObject |
 	jsonObject := STONJSON fromString: aJSONString.
 	^ DAPRequest newFromJSON: jsonObject
+]
+
+{ #category : #accessing }
+DAPServer >> pluggableCompilationBlock [
+
+	^ pluggableEvaluationBlock ifNil: [ 
+		  pluggableEvaluationBlock := [ :source | 
+		                              compiler
+			                              source: source;
+			                              compile;
+			                              transformDoit ] ]
+]
+
+{ #category : #accessing }
+DAPServer >> pluggableCompilationBlock: aOneArgBlock [
+	pluggableEvaluationBlockSender := thisContext sender. 
+	pluggableEvaluationBlock := aOneArgBlock
 ]
 
 { #category : #context }
@@ -550,12 +824,39 @@ DAPServer >> sendMessage: aDAPMessage [
 	self sendData: (aDAPMessage beConvertedBy: self) toClient: socketClient
 ]
 
+{ #category : #'debugger support' }
+DAPServer >> setBreakpoints: breakpointList inCompiledMethod: aCompiledMethod [
+	| breakpoint |
+	'Set breakpoint' record.
+	Breakpoint removeAll.
+	breakpointList do:[ :aBreakpointIndex |
+		breakpoint := Breakpoint
+		breakOnAST: ( aCompiledMethod ast statements at: (aBreakpointIndex at:#line))
+		inObject: self pluggableCompilationBlock receiver.
+		breakpoint enable].
+	
+]
+
+{ #category : #accessing }
+DAPServer >> shouldStop [
+
+	"this variable should be at true when the execution is over"
+
+	^ shouldStop ifNil: [ ^ false ]
+]
+
+{ #category : #accessing }
+DAPServer >> shouldStop: anObject [
+
+	shouldStop := anObject
+]
+
 { #category : #starting }
 DAPServer >> start [
 	tcpServer := Socket newTCP.
 	tcpServer listenOn: 0 backlogSize: 10.
 	serverLoop := true.
-	[ (tcpServer waitForAcceptFor: 60)
+	[ (tcpServer waitForAcceptFor: 6000)
 		ifNotNil: [ :clientSocket | 
 			socketClient := clientSocket.
 			process := [ [ serverLoop ]
@@ -576,7 +877,7 @@ DAPServer >> stop [
 	tcpServer closeAndDestroy.
 	
 	"Ensure process finishes."
-	process isTerminated
+	(process isNil or:[ process isTerminated])
 		ifTrue: [ ^ self ].
 	process terminate
 ]
