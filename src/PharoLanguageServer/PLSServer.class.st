@@ -88,7 +88,7 @@ PLSServer >> commandNotebookPrintIt: line [
 	<jrpc: #'command:notebookPrintIt'>
 	| compiler answer |
 	compiler := self compilerFor: nil.
-	answer := [ compiler evaluate: line ] on: Error do: [ :error | error ].
+	answer := [ compiler evaluate: line ] on: Exception do: [ :error | 'error' record. error ].
 	^ {(#mimetype -> answer plsMimeType).
 	(#content -> answer plsPrintString)} asDictionary
 ]
@@ -410,6 +410,29 @@ PLSServer >> plsGetPackages [
 	<jrpc: #'pls:packages'>
 	^ (RPackageOrganizer default packages collect: #name)
 		asArray
+]
+
+{ #category : #'pls - gtk' }
+PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
+
+	"| compiler inspector |
+	compiler := self compilerFor: nil.
+	inspector := (PLSApplication current new: StInspector).
+	inspector model: (StInspectorModel on: ([ compiler evaluate: line ] on: Exception do: [ :error | error ])).
+	inspector openWithSpec."
+
+	<jrpc: #'pls-gtk:inspectIt'>
+	| app presenter |
+	app := PLSApplication current.
+	'hello' record.
+	[ 
+	presenter := (app new: SpLabelPresenter) label: 'Hello, Gtk3'; yourself.
+	'presenter created' record.
+	presenter openWithSpec ]
+		on: Error
+		do: [ :err | ^ err message printString ].
+	'opened with spec' record.
+	^ 'ok'
 ]
 
 { #category : #stopping }
