@@ -19,7 +19,8 @@ Class {
 		'serverContext',
 		'data',
 		'messagesProcesses',
-		'socketClient'
+		'socketClient',
+		'answer'
 	],
 	#category : #PharoLanguageServer
 }
@@ -422,13 +423,17 @@ PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
 	inspector openWithSpec."
 
 	<jrpc: #'pls-gtk:inspectIt'>
-	| app presenter |
-	app := PLSApplication current.
-	'hello' record.
+	| app compiler |
+	compiler := self compilerFor: (textDocumentURI at: #external).
+	answer := [ compiler evaluate: line ] on: Exception do: [ :error | 'error' record. error ].
 	[ 
-	presenter := (app new: SpLabelPresenter) label: 'Hello, Gtk3'; yourself.
-	'presenter created' record.
-	presenter openWithSpec ]
+	app := SpApplication new
+		       useBackend: #Gtk;
+		       yourself.
+
+	(StInspector onObject: answer)
+		application: app;
+		openWithSpec ]
 		on: Error
 		do: [ :err | ^ err message printString ].
 	'opened with spec' record.
