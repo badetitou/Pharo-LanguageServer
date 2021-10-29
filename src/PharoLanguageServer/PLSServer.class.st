@@ -85,13 +85,14 @@ PLSServer >> codeLensTextDocument: textDocument [
 ]
 
 { #category : #commands }
-PLSServer >> commandNotebookPrintIt: line [
+PLSServer >> commandNotebookPrintIt: line textDocument: textDocumentURI [
 	<jrpc: #'command:notebookPrintIt'>
-	| compiler answer |
-	compiler := self compilerFor: nil.
-	answer := [ compiler evaluate: line ] on: Exception do: [ :error | 'error' record. error ].
-	^ {(#mimetype -> answer plsMimeType).
-	(#content -> answer plsPrintString)} asDictionary
+	| compiler answer2  |
+	"Use path because #external also uses the fragment number of the cell"
+	compiler := self compilerFor: (textDocumentURI at: #path).
+	answer2 := [ compiler evaluate: line ] on: Exception do: [ :error | 'error' record. error ].
+	^ {(#mimetype -> answer2 plsMimeType).
+	(#content -> answer2 plsPrintString)} asDictionary
 ]
 
 { #category : #commands }
@@ -104,10 +105,10 @@ PLSServer >> commandPharoLanguageServerVersion [
 PLSServer >> commandPharoPrintIt: line textDocument: textDocumentURI [
 	<jrpc: #'command:printIt'>
 	"This textDocumentURI from VSCode is strange"
-	| compiler answer | 
-	compiler := self compilerFor: (textDocumentURI at: #external).
-	answer := compiler evaluate: line.
-	^ answer plsPrintString
+	| compiler answer2 | 
+	compiler := self compilerFor: (textDocumentURI at: #path).
+	answer2 := compiler evaluate: line.
+	^ answer2 plsPrintString
 ]
 
 { #category : #commands }
@@ -424,7 +425,7 @@ PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
 
 	<jrpc: #'pls-gtk:inspectIt'>
 	| app compiler |
-	compiler := self compilerFor: (textDocumentURI at: #external).
+	compiler := self compilerFor: (textDocumentURI at: #path).
 	answer := [ compiler evaluate: line ] on: Exception do: [ :error | 'error' record. error ].
 	[ 
 	app := SpApplication new
