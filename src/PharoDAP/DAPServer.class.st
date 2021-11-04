@@ -509,12 +509,8 @@ DAPServer >> debugMode: anObject [
 
 { #category : #'debugger support' }
 DAPServer >> debugSession: aDebugSession [
+
 	'DAP debugSession:' record.
-	debugSession := aDebugSession.
-	"easy to debug if we keep the debugger"
-	aDebugSession exception class = Halt ifTrue:[
-		"jumps the halt stack"
-		debugSession stepOver].
 	self
 		sendMessage:
 			(DAPStoppedEvent new
