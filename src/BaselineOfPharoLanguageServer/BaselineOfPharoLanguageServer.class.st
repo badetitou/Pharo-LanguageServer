@@ -32,7 +32,7 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 		baseline: 'TinyLogger'
 		with: [ spec repository: 'github://jecisc/TinyLogger:v1.x.x/src' ].
 	spec
-		baseline: 'SpecGtk	'
+		baseline: 'SpecGtk'
 		with: [ spec repository: 'github://pharo-spec/Spec-Gtk:/src' ]
 ]
 
