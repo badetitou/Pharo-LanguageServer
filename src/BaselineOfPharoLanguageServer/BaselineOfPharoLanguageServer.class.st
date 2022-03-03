@@ -46,11 +46,13 @@ BaselineOfPharoLanguageServer >> defineGroups: spec [
 BaselineOfPharoLanguageServer >> definePackages: spec [
 
 	spec
+		package: 'PLSDAP-Helpers';
 		package: 'PharoLanguageServer'
-		with: [ spec requires: #( 'JRPC' 'TinyLogger' ) ];
+		with: [ spec requires: #( 'JRPC' 'PLSDAP-Helpers' 'TinyLogger' ) ];
 		package: 'PharoLanguageServer-Tests'
 		with: [ spec requires: #( 'PharoLanguageServer' ) ];
-		package: 'PharoDAP' with: [ spec requires: #( 'TinyLogger' ) ];
+		package: 'PharoDAP'
+		with: [ spec requires: #( 'TinyLogger' 'PLSDAP-Helpers' ) ];
 		package: 'PharoLanguageServer-Gtk'
 		with: [ spec requires: #( 'SpecGtk' ) ].
 	spec for: #WithRoassal2 do: [ spec package: 'PLS-Pharo8-Extension' ].

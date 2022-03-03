@@ -1,23 +1,6 @@
 Extension { #name : #String }
 
 { #category : #'*PharoLanguageServer' }
-String >> findCloseBracesFor: startIndex [
-
-	| pos nestLevel |
-	pos := startIndex + 1.
-	nestLevel := 1.
-	[ pos <= self size ]
-		whileTrue: [ (self at: pos) = ${
-				ifTrue: [ nestLevel := nestLevel + 1 ].
-			(self at: pos) = $}
-				ifTrue: [ nestLevel := nestLevel - 1 ].
-			nestLevel = 0
-				ifTrue: [ ^ pos ].
-			pos := pos + 1 ].
-	^ 0
-]
-
-{ #category : #'*PharoLanguageServer' }
 String >> plsLineIndicesDo: aBlock [
 	"execute aBlock with 3 arguments for each line:
 	- start index of line
