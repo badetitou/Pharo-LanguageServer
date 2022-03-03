@@ -15,6 +15,41 @@ PLSUIManager class >> withPLSServer: aPLSServer [
 		yourself
 ]
 
+{ #category : #accessing }
+PLSUIManager >> debugProcess: process context: context label: title fullView: bool notification: notificationString [
+	
+	(OupsDebugRequest newForContext: context)
+		process: process;
+		label: title;
+		submit
+]
+
+{ #category : #accessing }
+PLSUIManager >> handleDebugRequest: aDebugRequest [
+	| debuggerOpeningStrategy oupsSystem |
+  
+	oupsSystem := OupsDebuggerSystem new.
+	aDebugRequest debugSession logStackToFileIfNeeded.
+	oupsSystem performPreDebugActionsIn: aDebugRequest.
+	oupsSystem ensureExceptionIn: aDebugRequest debugSession.
+	debuggerOpeningStrategy := oupsSystem debuggerSelectionStrategy.
+	debuggerOpeningStrategy openDebuggerForSession:aDebugRequest debugSession.
+	oupsSystem suspendDebuggedProcess: aDebugRequest
+]
+
+{ #category : #accessing }
+PLSUIManager >> handleError: anError log: shouldLog [
+
+	self handleDebugRequest: (OupsDebugRequest newForException: anError)
+
+]
+
+{ #category : #accessing }
+PLSUIManager >> handleWarningDebugRequest: aWarningDebugRequest [
+
+	self handleDebugRequest:  aWarningDebugRequest	
+]
+
 { #category : #'default actions' }
 PLSUIManager >> inform: aStringOrText [
 	plsServer
@@ -37,4 +72,6 @@ PLSUIManager >> plsServer: anObject [
 PLSUIManager >> unhandledErrorDefaultAction: anException [
 
 	anException debug
+
+	
 ]

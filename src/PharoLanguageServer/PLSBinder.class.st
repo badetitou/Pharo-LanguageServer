@@ -33,3 +33,8 @@ PLSBinder >> hasBindingOf: aString [
 PLSBinder >> initialize [
 	compilationBindings := Dictionary new.
 ]
+
+{ #category : #binding }
+PLSBinder >> isForScripting [
+	^ false
+]

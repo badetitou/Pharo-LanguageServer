@@ -510,15 +510,15 @@ DAPServer >> debugMode: anObject [
 { #category : #'debugger support' }
 DAPServer >> debugSession: aDebugSession [
 
-	'DAP debugSession:' record.
-	self
-		sendMessage:
-			(DAPStoppedEvent new
-				seq: self nextSeq;
-				description: aDebugSession exception printString;
-				threadId: self threads associations anyOne key;
-				reason: 'exception';
-				yourself)
+	'Start debug session' record.
+	('Description: ' , aDebugSession exception printString) record.
+	debugSession := aDebugSession.
+	self sendMessage: (DAPStoppedEvent new
+			 seq: self nextSeq;
+			 description: aDebugSession exception printString;
+			 threadId: self threads associations anyOne key;
+			 reason: 'exception';
+			 yourself)
 ]
 
 { #category : #starting }
