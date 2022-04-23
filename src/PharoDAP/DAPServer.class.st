@@ -511,6 +511,7 @@ DAPServer >> debugMode: anObject [
 DAPServer >> debugSession: aDebugSession [
 
 	'DAP debugSession:' record.
+	debugSession := aDebugSession.
 	self
 		sendMessage:
 			(DAPStoppedEvent new
