@@ -32,7 +32,7 @@ PLSAbstractServer class >> reset [
 				do: [ Transcript crShow: 'one server not stopped' ] ]
 ]
 
-{ #category : #lsp }
+{ #category : #'lsp - initialization' }
 PLSAbstractServer >> cancelRequest: id [
 	<jrpc: #'$/cancelRequest' >
 	self context messageProcesses
@@ -135,10 +135,11 @@ PLSAbstractServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
 ]
 
-{ #category : #lsp }
+{ #category : #'lsp - initialization' }
 PLSAbstractServer >> onInitializeTrace: trace processId: processId clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 	<jrpc: #initialize>
-	^ PLSInitializeResult new
+	self subclassResponsibility.
+	
 ]
 
 { #category : #starting }
@@ -179,13 +180,13 @@ PLSAbstractServer >> sendData: answer toClient: clientSocket [
 			clientSocket sendData: answer utf8Encoded  ]
 ]
 
-{ #category : #lsp }
+{ #category : #'lsp - initialization' }
 PLSAbstractServer >> serverInitialized [
 	<jrpc: #initialized>
 	Transcript crTrace: 'Initialized'
 ]
 
-{ #category : #lsp }
+{ #category : #'lsp - initialization' }
 PLSAbstractServer >> serverShutdown [
 	<jrpc: #shutdown>
 	SmalltalkImage current snapshot: false andQuit: true

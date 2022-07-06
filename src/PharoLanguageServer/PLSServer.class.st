@@ -217,6 +217,13 @@ PLSServer >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
+{ #category : #'lsp - initialization' }
+PLSServer >> onInitializeTrace: trace processId: processId clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
+
+	<jrpc: #initialize>
+	^ PLSInitializeResult new
+]
+
 { #category : #pls }
 PLSServer >> plsExecuteClass: class test: testMethod [
 	<jrpc: #'pls:executeClassTest'>

@@ -32,7 +32,7 @@ PLSInitializeResult >> initialize [
 	serverInfo := Dictionary new.
 	serverInfo at: #name put: 'Pharo Language Server'.
 	serverInfo at: #version put: 'v0.0.1'.
-	capabilities := PLSServerCapabilities new.
+	capabilities := PLSServerCapabilities forPharo.
 ]
 
 { #category : #accessing }
