@@ -183,13 +183,13 @@ PLSAbstractServer >> sendData: answer toClient: clientSocket [
 { #category : #'lsp - initialization' }
 PLSAbstractServer >> serverInitialized [
 	<jrpc: #initialized>
-	Transcript crTrace: 'Initialized'
+	self subclassResponsibility
 ]
 
 { #category : #'lsp - initialization' }
 PLSAbstractServer >> serverShutdown [
 	<jrpc: #shutdown>
-	SmalltalkImage current snapshot: false andQuit: true
+	self subclassResponsibility
 ]
 
 { #category : #'lsp - message' }

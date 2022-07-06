@@ -305,6 +305,19 @@ PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
 	^ 'ok'
 ]
 
+{ #category : #'lsp - initialization' }
+PLSServer >> serverInitialized [
+
+	<jrpc: #initialized>
+	Transcript crShow: 'Initialized'
+]
+
+{ #category : #'lsp - initialization' }
+PLSServer >> serverShutdown [
+	<jrpc: #shutdown>
+	SmalltalkImage current snapshot: false andQuit: true
+]
+
 { #category : #'lsp - trace' }
 PLSServer >> setTrace: setTraceParam [
 	<jrpc: #'$/setTrace'>
