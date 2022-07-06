@@ -8,46 +8,9 @@ Methods in `pls` protocol are pharo language server feature.
 "
 Class {
 	#name : #PLSServer,
-	#superclass : #JRPCServer,
-	#traits : 'JRPCParser',
-	#classTraits : 'JRPCParser classTrait',
-	#instVars : [
-		'port',
-		'tcpServer',
-		'serverLoop',
-		'process',
-		'serverContext',
-		'data',
-		'messagesProcesses',
-		'socketClient',
-		'answer'
-	],
+	#superclass : #PLSAbstractServer,
 	#category : #PharoLanguageServer
 }
-
-{ #category : #defaults }
-PLSServer class >> defaultPort [
-	^ 0
-]
-
-{ #category : #defaults }
-PLSServer class >> reset [
-	<script>
-	PLSServer
-		allInstancesDo: [ :inst | 
-			[ inst stop ]
-				on: Error
-				do: [ Transcript crShow: 'one server not stopped' ] ]
-]
-
-{ #category : #lsp }
-PLSServer >> cancelRequest: id [
-	<jrpc: #'$/cancelRequest' >
-	self context messageProcesses
-		at: id
-		ifPresent: [ :process2 | process2 terminate ]
-		ifAbsent: [ ]
-]
 
 { #category : #'pls - variables' }
 PLSServer >> childrenVariables: variableReference in: textDocument [
@@ -129,16 +92,6 @@ PLSServer >> compilerFor: fileURI [
 	fileURI ifNotNil: [ 
 		compiler requestor: (self context textItem: fileURI) binder ].
 	^ compiler
-]
-
-{ #category : #context }
-PLSServer >> context [
-	^ serverContext
-]
-
-{ #category : #stopping }
-PLSServer >> defaultPort [
-	^ self class defaultPort
 ]
 
 { #category : #'lsp - text synchronisation' }
@@ -233,43 +186,6 @@ PLSServer >> documentVariables: textDocument [
 		as: Array) asJRPCJSON
 ]
 
-{ #category : #starting }
-PLSServer >> extractLengthOf: data [
-	(data beginsWith: 'Content-Length: ')
-		ifTrue:
-			[ ^ (data copyFrom: 16 to: (data indexOf: Character cr)) asInteger ]
-		ifFalse: [ ^ -1 ]
-]
-
-{ #category : #starting }
-PLSServer >> extractRequestFrom: clientSocket [
-	| length startingPoint endPoint result |
-	"data is the current buffer state"
-	data ifEmpty: [ data := clientSocket receiveData ].
-	length := self extractLengthOf: data.
-	startingPoint := data indexOf: ${.
-	endPoint := data findCloseBracesFor: startingPoint.
-	result := String new: length.
-	"three options"
-	"startingPoint and endPoint are found"
-	(startingPoint ~= 0 and: [ endPoint ~= 0 ])
-		ifTrue: [ result := data copyFrom: startingPoint to: endPoint.
-			data := data copyFrom: endPoint + 1 to: data size.
-			^ result ].
-	startingPoint = 0
-		ifTrue:
-			[ "none were found" self getDatafromPosition: 1 fromSocket: clientSocket in: result ]
-		ifFalse: [ "only startingPoint is found"
-			(data copyFrom: startingPoint to: data size)
-				withIndexDo: [ :each :index | result at: index put: each ].
-			self
-				getDatafromPosition: data size - startingPoint + 2
-				fromSocket: clientSocket
-				in: result ].
-	data := ''.
-	^ result
-]
-
 { #category : #'lsp - formatting' }
 PLSServer >> formatTextDocument: textDocument withOptions: options [
 	<jrpc: #'textDocument/formatting'>
@@ -296,68 +212,9 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 				yourself))}
 ]
 
-{ #category : #starting }
-PLSServer >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
-	clientSocket receiveDataInto: existingData startingAt: startingPoint
-]
-
-{ #category : #starting }
-PLSServer >> getHeaderFor: answer into: aStream [
-	aStream << 'Content-Length: ' << answer utf8Encoded size asString << String crlf << 'Content-Type: application/vscode-jsonrpc; charset=utf-8'
-		<< String crlf << String crlf
-]
-
-{ #category : #starting }
-PLSServer >> handleRequest: request toClient: clientSocket [
-	| jrpcMessage |
-	jrpcMessage := [ self parseJSON: request ]
-		on: Error
-		do: [ :err | err return: err asJRPCResponse ].
-	^ self messageProcess: jrpcMessage id
-		put:
-			([ self
-				sendData: (self handleJSON: jrpcMessage)
-				toClient: clientSocket.
-			[self removeMessageProcess: jrpcMessage id] on: KeyNotFound do: [  ] ]
-				forkAt: Processor lowIOPriority
-				named: jrpcMessage id printString)
-]
-
-{ #category : #starting }
-PLSServer >> initialize [
-	super initialize.
-	messageProcessor := PLSMessageProcessor new.
-	self addHandlersFromPragmasIn: self.
-	serverContext := PLSContext new.
-	data := ''.
-	messagesProcesses := Dictionary new.
-]
-
 { #category : #'lsp - formatting' }
 PLSServer >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
-]
-
-{ #category : #accessing }
-PLSServer >> log: everything [
-	everything printString record
-]
-
-{ #category : #context }
-PLSServer >> messageProcess: anId	put: aProcess [
-	self context messageProcessesAt: anId put: aProcess
-]
-
-{ #category : #lsp }
-PLSServer >> onInitializeTrace: trace processId: processId clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
-	<jrpc: #initialize>
-	^ PLSInitializeResult new
-]
-
-{ #category : #starting }
-PLSServer >> parseJSON: aJSONString [
-	^ self messageProcessor parseSupposedJRPCMessageObjectFromString: aJSONString.
-	
 ]
 
 { #category : #pls }
@@ -441,50 +298,6 @@ PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
 	^ 'ok'
 ]
 
-{ #category : #stopping }
-PLSServer >> port [
-	^ port ifNil: [ port := self defaultPort ]
-]
-
-{ #category : #stopping }
-PLSServer >> port: anObject [
-	port := anObject
-]
-
-{ #category : #context }
-PLSServer >> removeMessageProcess: anId [
-	self context removeMessageProcess: anId
-]
-
-{ #category : #context }
-PLSServer >> resetContext [
-	serverContext := PLSContext new
-]
-
-{ #category : #starting }
-PLSServer >> sendData: answer toClient: clientSocket [
-
-	answer
-		ifNotEmpty: [ clientSocket
-				sendData:
-					(String
-						streamContents:
-							[ :contentStream | self getHeaderFor: answer into: contentStream ]).
-			clientSocket sendData: answer utf8Encoded  ]
-]
-
-{ #category : #lsp }
-PLSServer >> serverInitialized [
-	<jrpc: #initialized>
-	Transcript crTrace: 'Initialized'
-]
-
-{ #category : #lsp }
-PLSServer >> serverShutdown [
-	<jrpc: #shutdown>
-	SmalltalkImage current snapshot: false andQuit: true
-]
-
 { #category : #'lsp - trace' }
 PLSServer >> setTrace: setTraceParam [
 	<jrpc: #'$/setTrace'>
@@ -495,58 +308,12 @@ PLSServer >> setTraceNotification: value [
 	<jrpc: #'$/setTraceNotification'>
 ]
 
-{ #category : #'lsp - message' }
-PLSServer >> showMessage: aString ofType: messageType [
-	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
-
-	self
-		sendData:
-			(self
-				convertJRPCJsonableObjectToJSON:
-					((JRPCNotificationObject method: 'window/showMessage')
-						params: (PLSShowMessage message: aString type: messageType))
-						asJRPCJSON)
-		toClient: socketClient
-]
-
-{ #category : #starting }
-PLSServer >> start [
-	PLSUIManager withPLSServer: self.
-	tcpServer := Socket newTCP.
-	tcpServer listenOn: self port backlogSize: 10.
-	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
-	Stdio stdout flush.
-	serverLoop := true.
-	(tcpServer waitForAcceptFor: 60)
-		ifNotNil: [ :clientSocket | 
-			socketClient := clientSocket.
-			process := [ [ serverLoop ]
-				whileTrue: [ | request |
-					request := self extractRequestFrom: clientSocket.
-					self log: request.
-					self handleRequest: request toClient: clientSocket ] ]
-				forkAt: Processor lowIOPriority
-				named: 'JRPC TCP connection' ]
-]
-
 { #category : #dap }
 PLSServer >> startDapServer [
 	<jrpc: #'dap:startServer'>
 	'Start DAP Server.' record.
 	^ DAPServer new
 		start.
-]
-
-{ #category : #stopping }
-PLSServer >> stop [
-
-	serverLoop := false.
-	tcpServer closeAndDestroy.
-
-	"Ensure process finishes."
-	process ifNotNil: [ 
-		process isTerminated ifTrue: [ ^ self ].
-		process terminate ]
 ]
 
 { #category : #'lsp - completion' }
