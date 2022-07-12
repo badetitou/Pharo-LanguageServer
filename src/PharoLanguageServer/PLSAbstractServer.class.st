@@ -11,7 +11,8 @@ Class {
 		'serverContext',
 		'data',
 		'messagesProcesses',
-		'socketClient'
+		'socketClient',
+		'lastId'
 	],
 	#category : #PharoLanguageServer
 }
@@ -105,6 +106,7 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 	jrpcMessage := [ self parseJSON: request ]
 		               on: Error
 		               do: [ :err | err return: err asJRPCResponse ].
+	lastId := lastId max: jrpcMessage id.
 	^ self messageProcess: jrpcMessage id put: ([ 
 		   self
 			   sendData: (self handleJSON: jrpcMessage)
@@ -260,6 +262,7 @@ PLSAbstractServer >> start [
 		ifNotNil: [ :clientSocket | 
 			socketClient := clientSocket.
 			self logMessage: 'Client connected to Server' ofType: PLSMessageType info.
+			lastId := 0.
 			process := [ [ serverLoop ]
 				whileTrue: [ | request |
 					request := self extractRequestFrom: clientSocket.
