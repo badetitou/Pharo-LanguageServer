@@ -11,8 +11,7 @@ Class {
 		'serverContext',
 		'data',
 		'messagesProcesses',
-		'socketClient',
-		'answer'
+		'socketClient'
 	],
 	#category : #PharoLanguageServer
 }
@@ -101,18 +100,20 @@ PLSAbstractServer >> getHeaderFor: answer into: aStream [
 
 { #category : #starting }
 PLSAbstractServer >> handleRequest: request toClient: clientSocket [
+
 	| jrpcMessage |
 	jrpcMessage := [ self parseJSON: request ]
-		on: Error
-		do: [ :err | err return: err asJRPCResponse ].
-	^ self messageProcess: jrpcMessage id
-		put:
-			([ self
-				sendData: (self handleJSON: jrpcMessage)
-				toClient: clientSocket.
-			[self removeMessageProcess: jrpcMessage id] on: KeyNotFound do: [  ] ]
-				forkAt: Processor lowIOPriority
-				named: jrpcMessage id printString)
+		               on: Error
+		               do: [ :err | err return: err asJRPCResponse ].
+	^ self messageProcess: jrpcMessage id put: ([ 
+		   self
+			   sendData: (self handleJSON: jrpcMessage)
+			   toClient: clientSocket.
+		   [ self removeMessageProcess: jrpcMessage id ]
+			   on: KeyNotFound
+			   do: [  ] ]
+			   forkAt: Processor lowIOPriority
+			   named: jrpcMessage id printString)
 ]
 
 { #category : #starting }
@@ -169,15 +170,13 @@ PLSAbstractServer >> resetContext [
 ]
 
 { #category : #starting }
-PLSAbstractServer >> sendData: answer toClient: clientSocket [
-
-	answer
-		ifNotEmpty: [ clientSocket
-				sendData:
-					(String
-						streamContents:
-							[ :contentStream | self getHeaderFor: answer into: contentStream ]).
-			clientSocket sendData: answer utf8Encoded  ]
+PLSAbstractServer >> sendData: answer2 toClient: clientSocket [
+	('Answer: ' , answer2) recordInfo.
+	answer2 ifNotEmpty: [ 
+		('Answer sent: ' , answer2) recordInfo.
+		clientSocket sendData: (String streamContents: [ :contentStream | 
+				 self getHeaderFor: answer2 into: contentStream ]).
+		clientSocket sendData: answer2 utf8Encoded ]
 ]
 
 { #category : #'lsp - initialization' }
@@ -190,6 +189,16 @@ PLSAbstractServer >> serverInitialized [
 PLSAbstractServer >> serverShutdown [
 	<jrpc: #shutdown>
 	self subclassResponsibility
+]
+
+{ #category : #'lsp - trace' }
+PLSAbstractServer >> setTrace: setTraceParam [
+	<jrpc: #'$/setTrace'>
+]
+
+{ #category : #'lsp - trace' }
+PLSAbstractServer >> setTraceNotification: value [
+	<jrpc: #'$/setTraceNotification'>
 ]
 
 { #category : #'lsp - message' }

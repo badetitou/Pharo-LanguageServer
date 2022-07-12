@@ -288,15 +288,15 @@ PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
 	inspector openWithSpec."
 
 	<jrpc: #'pls-gtk:inspectIt'>
-	| app compiler |
+	| app compiler answer2 |
 	compiler := self compilerFor: (textDocumentURI at: #path).
-	answer := [ compiler evaluate: line ] on: Exception do: [ :error | 'error' record. error ].
+	answer2 := [ compiler evaluate: line ] on: Exception do: [ :error | 'error' record. error ].
 	[ 
 	app := SpApplication new
 		       useBackend: #Gtk;
 		       yourself.
 
-	(StInspector onObject: answer)
+	(StInspector onObject: answer2)
 		application: app;
 		openWithSpec ]
 		on: Error
