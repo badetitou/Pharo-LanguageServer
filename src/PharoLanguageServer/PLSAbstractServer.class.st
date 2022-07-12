@@ -106,7 +106,7 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 	jrpcMessage := [ self parseJSON: request ]
 		               on: Error
 		               do: [ :err | err return: err asJRPCResponse ].
-	lastId := lastId max: jrpcMessage id.
+	jrpcMessage id ifNotNil: [lastId := lastId max: jrpcMessage id ].
 	^ self messageProcess: jrpcMessage id put: ([ 
 		   self
 			   sendData: (self handleJSON: jrpcMessage)
