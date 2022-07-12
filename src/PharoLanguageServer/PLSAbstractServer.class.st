@@ -215,6 +215,25 @@ PLSAbstractServer >> setTraceNotification: value [
 	<jrpc: #'$/setTraceNotification'>
 ]
 
+{ #category : #'lsp - show document' }
+PLSAbstractServer >> showDocument: documentURI external: aBooleanOrNil withFocus: focusBooleanOrNil atRange: aPLSRangeOrNil [
+	
+	self
+		sendData:
+			(self
+				convertJRPCJsonableObjectToJSON:
+					((JRPCRequestObject id: 400 method: 'window/showDocument')
+						params: (PLSShowDocument new 
+							uri: documentURI;
+							external: aBooleanOrNil;
+							takeFocus: focusBooleanOrNil;
+							selection: aPLSRangeOrNil;
+							yourself
+							))
+						asJRPCJSON)
+		toClient: socketClient
+]
+
 { #category : #'lsp - message' }
 PLSAbstractServer >> showMessage: aString ofType: messageType [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
