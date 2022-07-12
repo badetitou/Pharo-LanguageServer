@@ -131,6 +131,20 @@ PLSAbstractServer >> log: everything [
 	everything printString record
 ]
 
+{ #category : #'lsp - message' }
+PLSAbstractServer >> logMessage: aString ofType: messageType [
+	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
+
+	self
+		sendData:
+			(self
+				convertJRPCJsonableObjectToJSON:
+					((JRPCNotificationObject method: 'window/logMessage')
+						params: (PLSLogMessage message: aString type: messageType))
+						asJRPCJSON)
+		toClient: socketClient
+]
+
 { #category : #context }
 PLSAbstractServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
@@ -226,6 +240,7 @@ PLSAbstractServer >> start [
 	(tcpServer waitForAcceptFor: 60)
 		ifNotNil: [ :clientSocket | 
 			socketClient := clientSocket.
+			self logMessage: 'Client connected to Server' ofType: PLSMessageType info.
 			process := [ [ serverLoop ]
 				whileTrue: [ | request |
 					request := self extractRequestFrom: clientSocket.
