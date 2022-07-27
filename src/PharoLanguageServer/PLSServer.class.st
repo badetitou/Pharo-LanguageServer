@@ -110,7 +110,7 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 				convertJRPCJsonableObjectToJSON:
 					((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
 						params: document diagnostics) asJRPCJSON  )
-		toClient: socketClient
+		toClient: clientOutStream
 ]
 
 { #category : #'lsp - text synchronisation' }
@@ -130,7 +130,7 @@ PLSServer >> didClose: textDocument [
 										uri: document uri;
 										version: document version;
 										yourself)) asJRPCJSON)
-				toClient: socketClient ]
+				toClient: clientOutStream ]
 ]
 
 { #category : #'lsp - text synchronisation' }
@@ -150,7 +150,7 @@ PLSServer >> didOpen: textDocument [
 									((PLSDiagnosticsParamsEngine document: document)
 										requestor: document binder)
 										computeDiagnostics) asJRPCJSON)
-				toClient: socketClient ]
+				toClient: clientOutStream ]
 ]
 
 { #category : #'lsp - text synchronisation' }

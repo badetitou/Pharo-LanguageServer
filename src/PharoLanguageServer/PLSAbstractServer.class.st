@@ -5,14 +5,15 @@ Class {
 	#classTraits : 'JRPCParser classTrait',
 	#instVars : [
 		'port',
-		'tcpServer',
 		'serverLoop',
 		'process',
 		'serverContext',
 		'data',
 		'messagesProcesses',
-		'socketClient',
-		'lastId'
+		'clientInStream',
+		'clientOutStream',
+		'lastId',
+		'withStdIO'
 	],
 	#category : #PharoLanguageServer
 }
@@ -60,29 +61,34 @@ PLSAbstractServer >> extractLengthOf: data [
 ]
 
 { #category : #starting }
-PLSAbstractServer >> extractRequestFrom: clientSocket [
+PLSAbstractServer >> extractRequestFrom: stream [
+
 	| length startingPoint endPoint result |
 	"data is the current buffer state"
-	data ifEmpty: [ data := clientSocket receiveData ].
-	length := self extractLengthOf: data.
+	length := -1.
+	[ length = -1 and: [ serverLoop ] ] whileTrue: [ 
+		data ifEmpty: [ data := (stream next: 200) asString ].
+		length := self extractLengthOf: data.
+		 ].
 	startingPoint := data indexOf: ${.
 	endPoint := data findCloseBracesFor: startingPoint.
 	result := String new: length.
 	"three options"
 	"startingPoint and endPoint are found"
-	(startingPoint ~= 0 and: [ endPoint ~= 0 ])
-		ifTrue: [ result := data copyFrom: startingPoint to: endPoint.
-			data := data copyFrom: endPoint + 1 to: data size.
-			^ result ].
+	(startingPoint ~= 0 and: [ endPoint ~= 0 ]) ifTrue: [ 
+		result := data copyFrom: startingPoint to: endPoint.
+		data := data copyFrom: endPoint + 1 to: data size.
+		^ result ].
 	startingPoint = 0
-		ifTrue:
-			[ "none were found" self getDatafromPosition: 1 fromSocket: clientSocket in: result ]
+		ifTrue: [ "none were found" 
+			self getDatafromPosition: 1 fromSocket: stream in: result ]
 		ifFalse: [ "only startingPoint is found"
-			(data copyFrom: startingPoint to: data size)
-				withIndexDo: [ :each :index | result at: index put: each ].
+			(data copyFrom: startingPoint to: data size) withIndexDo: [ 
+				:each 
+				:index | result at: index put: each ].
 			self
 				getDatafromPosition: data size - startingPoint + 2
-				fromSocket: clientSocket
+				fromSocket: stream
 				in: result ].
 	data := ''.
 	^ result
@@ -90,7 +96,7 @@ PLSAbstractServer >> extractRequestFrom: clientSocket [
 
 { #category : #starting }
 PLSAbstractServer >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
-	clientSocket receiveDataInto: existingData startingAt: startingPoint
+	clientSocket nextInto: existingData startingAt: startingPoint
 ]
 
 { #category : #starting }
@@ -106,7 +112,7 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 	jrpcMessage := [ self parseJSON: request ]
 		               on: Error
 		               do: [ :err | err return: err asJRPCResponse ].
-	jrpcMessage id ifNotNil: [lastId := lastId max: jrpcMessage id ].
+	jrpcMessage id ifNotNil: [lastId := lastId max: jrpcMessage id asInteger ].
 	^ self messageProcess: jrpcMessage id put: ([ 
 		   self
 			   sendData: (self handleJSON: jrpcMessage)
@@ -120,12 +126,37 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 
 { #category : #starting }
 PLSAbstractServer >> initialize [
+
 	super initialize.
 	messageProcessor := PLSMessageProcessor new.
 	self addHandlersFromPragmasIn: self.
 	serverContext := PLSContext new.
+	withStdIO := false.
 	data := ''.
 	messagesProcesses := Dictionary new.
+	serverLoop := true.
+	lastId := 0
+]
+
+{ #category : #starting }
+PLSAbstractServer >> initializeStreams [
+
+	| tcpServer |
+	withStdIO ifTrue: [ 
+		clientInStream := Stdio stdin.
+		clientOutStream := Stdio stdout.
+		^ self ].
+	tcpServer := Socket newTCP.
+	tcpServer listenOn: self port backlogSize: 10.
+	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
+	Stdio stdout flush.
+	serverLoop := true.
+	(tcpServer waitForAcceptFor: 60) ifNotNil: [ :clientSocket | 
+		clientInStream := SocketStream on: clientSocket.
+		clientOutStream := clientInStream.
+		self
+			logMessage: 'Client connected to Server using socket'
+			ofType: PLSMessageType info ]
 ]
 
 { #category : #accessing }
@@ -144,7 +175,7 @@ PLSAbstractServer >> logMessage: aString ofType: messageType [
 					((JRPCNotificationObject method: 'window/logMessage')
 						params: (PLSLogMessage message: aString type: messageType))
 						asJRPCJSON)
-		toClient: socketClient
+		toClient: clientOutStream
 ]
 
 { #category : #context }
@@ -186,13 +217,13 @@ PLSAbstractServer >> resetContext [
 ]
 
 { #category : #starting }
-PLSAbstractServer >> sendData: answer2 toClient: clientSocket [
-	('Answer: ' , answer2) recordInfo.
-	answer2 ifNotEmpty: [ 
+PLSAbstractServer >> sendData: answer2 toClient: stream [
+
+	answer2 ifEmpty: [ 'No Answser' recordInfo ] ifNotEmpty: [ 
 		('Answer sent: ' , answer2) recordInfo.
-		clientSocket sendData: (String streamContents: [ :contentStream | 
-				 self getHeaderFor: answer2 into: contentStream ]).
-		clientSocket sendData: answer2 utf8Encoded ]
+		self getHeaderFor: answer2 into: stream.
+		stream << answer2 utf8Encoded.
+		stream flush ]
 ]
 
 { #category : #'lsp - initialization' }
@@ -233,7 +264,7 @@ PLSAbstractServer >> showDocument: documentURI external: aBooleanOrNil withFocus
 							yourself
 							))
 						asJRPCJSON)
-		toClient: socketClient
+		toClient: clientOutStream
 ]
 
 { #category : #'lsp - message' }
@@ -247,36 +278,32 @@ PLSAbstractServer >> showMessage: aString ofType: messageType [
 					((JRPCNotificationObject method: 'window/showMessage')
 						params: (PLSShowMessage message: aString type: messageType))
 						asJRPCJSON)
-		toClient: socketClient
+		toClient: clientOutStream
 ]
 
 { #category : #starting }
 PLSAbstractServer >> start [
+
 	PLSUIManager withPLSServer: self.
-	tcpServer := Socket newTCP.
-	tcpServer listenOn: self port backlogSize: 10.
-	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
-	Stdio stdout flush.
-	serverLoop := true.
-	(tcpServer waitForAcceptFor: 60)
-		ifNotNil: [ :clientSocket | 
-			socketClient := clientSocket.
-			self logMessage: 'Client connected to Server' ofType: PLSMessageType info.
-			lastId := 0.
-			process := [ [ serverLoop ]
-				whileTrue: [ | request |
-					request := self extractRequestFrom: clientSocket.
-					self log: request.
-					self handleRequest: request toClient: clientSocket ] ]
-				forkAt: Processor lowIOPriority
-				named: 'JRPC TCP connection' ]
+	self initializeStreams.
+
+	lastId := 0.
+	process := [ 
+	           [ serverLoop ] whileTrue: [ 
+		           | request |
+		           request := self extractRequestFrom: clientInStream.
+		           ('Request: ' , request) recordDebug.
+		           self handleRequest: request toClient: clientOutStream ] ]
+		           forkAt: Processor lowIOPriority
+		           named: 'JRPC TCP connection'
 ]
 
 { #category : #stopping }
 PLSAbstractServer >> stop [
 
 	serverLoop := false.
-	tcpServer closeAndDestroy.
+	clientInStream close.
+	clientOutStream close
 
 	"Ensure process finishes."
 	process ifNotNil: [ 
@@ -294,4 +321,16 @@ PLSAbstractServer >> textDocumentCompletionWithContext: context position: positi
 PLSAbstractServer >> textDocumentHoverWithPosition: position textDocument: textDocument [
 	<jrpc: #'textDocument/hover'>
 	self subclassResponsibility
+]
+
+{ #category : #accessing }
+PLSAbstractServer >> withStdIO [
+
+	^ withStdIO
+]
+
+{ #category : #accessing }
+PLSAbstractServer >> withStdIO: anObject [
+
+	withStdIO := anObject
 ]

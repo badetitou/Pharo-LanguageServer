@@ -29,8 +29,8 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 				loads: #( 'Deployment' ) ];
 		import: 'JRPC'.
 	spec
-		baseline: 'TinyLogger'
-		with: [ spec repository: 'github://jecisc/TinyLogger:v1.x.x/src' ].
+		baseline: 'MoreLogger'
+		with: [ spec repository: 'github://badetitou/MoreLogger:main/src' ].
 	spec
 		baseline: 'SpecGtk'
 		with: [ spec repository: 'github://pharo-spec/Spec-Gtk:/src' ]
@@ -48,11 +48,11 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 	spec
 		package: 'PLSDAP-Helpers';
 		package: 'PharoLanguageServer'
-		with: [ spec requires: #( 'JRPC' 'PLSDAP-Helpers' 'TinyLogger' ) ];
+		with: [ spec requires: #( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' ) ];
 		package: 'PharoLanguageServer-Tests'
 		with: [ spec requires: #( 'PharoLanguageServer' ) ];
 		package: 'PharoDAP'
-		with: [ spec requires: #( 'TinyLogger' 'PLSDAP-Helpers' ) ];
+		with: [ spec requires: #( 'MoreLogger' 'PLSDAP-Helpers' ) ];
 		package: 'PharoLanguageServer-Gtk'
 		with: [ spec requires: #( 'SpecGtk' ) ].
 	spec for: #WithRoassal2 do: [ spec package: 'PLS-Pharo8-Extension' ].
