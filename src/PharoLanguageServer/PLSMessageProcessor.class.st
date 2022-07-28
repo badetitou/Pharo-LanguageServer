@@ -1,8 +1,23 @@
 Class {
 	#name : #PLSMessageProcessor,
 	#superclass : #JRPCMessageProcessor,
-	#category : #PharoLanguageServer
+	#category : #'PharoLanguageServer-Handler'
 }
+
+{ #category : #initialization }
+PLSMessageProcessor >> addHandlersFromPragmasIn: anObject [
+
+	( Pragma allNamed: #jrpc: in: anObject class )
+		do: [ :pragma | 
+			self
+				addHandler:
+					( PLSMessageSendHandler new
+						receiver: anObject;
+						methodName: pragma arguments first;
+						messageSelector: pragma methodSelector;
+						yourself )
+			]
+]
 
 { #category : #initialization }
 PLSMessageProcessor >> handleJSON: jrpcMessage [

@@ -111,8 +111,12 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 	| jrpcMessage |
 	jrpcMessage := [ self parseJSON: request ]
 		               on: Error
-		               do: [ :err | err return: err asJRPCResponse ].
-	jrpcMessage id ifNotNil: [lastId := lastId max: jrpcMessage id asInteger ].
+		               do: [ :err | 
+			               self debugMode
+				               ifTrue: [ err pass  ]
+				               ifFalse: [ err return: err asJRPCResponse ] ].
+	jrpcMessage id ifNotNil: [ 
+		lastId := lastId max: jrpcMessage id asInteger ].
 	^ self messageProcess: jrpcMessage id put: ([ 
 		   self
 			   sendData: (self handleJSON: jrpcMessage)
@@ -284,9 +288,8 @@ PLSAbstractServer >> showMessage: aString ofType: messageType [
 { #category : #starting }
 PLSAbstractServer >> start [
 
-	PLSUIManager withPLSServer: self.
+	self debugMode ifFalse: [ PLSUIManager withPLSServer: self ].
 	self initializeStreams.
-
 	lastId := 0.
 	process := [ 
 	           [ serverLoop ] whileTrue: [ 
