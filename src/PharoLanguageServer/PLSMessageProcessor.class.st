@@ -5,18 +5,25 @@ Class {
 }
 
 { #category : #initialization }
-PLSMessageProcessor >> addHandlersFromPragmasIn: anObject [
+PLSMessageProcessor >> addHandler: aJRPCHandler [
 
-	( Pragma allNamed: #jrpc: in: anObject class )
-		do: [ :pragma | 
-			self
-				addHandler:
-					( PLSMessageSendHandler new
-						receiver: anObject;
-						methodName: pragma arguments first;
-						messageSelector: pragma methodSelector;
-						yourself )
-			]
+	(self handlers includes: aJRPCHandler) ifTrue: [ "handler has been override" 
+		^ self ].
+
+	handlers add: aJRPCHandler
+]
+
+{ #category : #initialization }
+PLSMessageProcessor >> addHandlersFromPragmasIn: anObject [
+	(anObject class withAllSuperclasses select: [ :class | 
+		 (class inheritsFrom: PLSAbstractServer) or: [ 
+			 class == PLSAbstractServer ] ]) do: [ :class | 
+		(Pragma allNamed: #jrpc: in: class) do: [ :pragma | 
+			self addHandler: (PLSMessageSendHandler new
+					 receiver: anObject;
+					 methodName: pragma arguments first;
+					 messageSelector: pragma methodSelector;
+					 yourself) ] ]
 ]
 
 { #category : #initialization }
