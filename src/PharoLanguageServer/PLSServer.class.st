@@ -318,16 +318,6 @@ PLSServer >> serverShutdown [
 	SmalltalkImage current snapshot: false andQuit: true
 ]
 
-{ #category : #'lsp - trace' }
-PLSServer >> setTrace: setTraceParam [
-	<jrpc: #'$/setTrace'>
-]
-
-{ #category : #'lsp - trace' }
-PLSServer >> setTraceNotification: value [
-	<jrpc: #'$/setTraceNotification'>
-]
-
 { #category : #dap }
 PLSServer >> startDapServer [
 	<jrpc: #'dap:startServer'>
