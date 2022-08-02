@@ -129,7 +129,7 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 			   named: jrpcMessage id printString)
 ]
 
-{ #category : #starting }
+{ #category : #initialization }
 PLSAbstractServer >> initialize [
 
 	super initialize.
