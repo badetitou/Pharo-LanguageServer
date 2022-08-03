@@ -34,3 +34,8 @@ PLSMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 
 	^ self send: self messageSelector to: self receiver with: arguments
 ]
+
+{ #category : #'parameters-checking' }
+PLSMessageSendHandler >> parametersNames [
+	^ (self receiver class lookupSelector: self messageSelector) argumentNames
+]
