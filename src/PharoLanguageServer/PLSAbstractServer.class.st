@@ -49,6 +49,14 @@ PLSAbstractServer >> codeActionForDocument: textDocument atRange: range withCont
 
 ]
 
+{ #category : #'pls - config' }
+PLSAbstractServer >> configDebugMode: debugMode [
+
+	<jrpc: #'pls:updateDebugMode'>
+	self debugMode: debugMode.
+	^ debugMode
+]
+
 { #category : #context }
 PLSAbstractServer >> context [
 	^ serverContext
