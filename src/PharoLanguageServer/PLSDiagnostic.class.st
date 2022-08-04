@@ -8,16 +8,63 @@ Class {
 	#instVars : [
 		'range',
 		'message',
-		'source'
+		'source',
+		'codeDescription',
+		'data',
+		'code'
 	],
 	#category : #'PharoLanguageServer-Structure-Diagnostic'
 }
 
 { #category : #accessing }
 PLSDiagnostic >> asJRPCJSON [
-	^ {(#message -> self message asJRPCJSON).
-	(#range -> self range asJRPCJSON).
-	(#source -> self source asJRPCJSON)} asDictionary
+
+	| dic |
+	dic := { 
+		       (#message -> self message asJRPCJSON).
+		       (#range -> self range asJRPCJSON).
+		       (#source -> self source asJRPCJSON) } asDictionary.
+	self codeDescription ifNotNil: [ 
+		dic at: #codeDescription put: self codeDescription asJRPCJSON ].
+	self code ifNotNil: [ dic at: #code put: self code asJRPCJSON ].
+	self data ifNotNil: [ dic at: #data put: self data asJRPCJSON ].
+	^ dic
+]
+
+{ #category : #accessing }
+PLSDiagnostic >> code [
+
+	^ code
+]
+
+{ #category : #accessing }
+PLSDiagnostic >> code: anObject [
+
+	code := anObject
+]
+
+{ #category : #accessing }
+PLSDiagnostic >> codeDescription [
+
+	^ codeDescription
+]
+
+{ #category : #accessing }
+PLSDiagnostic >> codeDescription: anObject [
+
+	codeDescription := anObject
+]
+
+{ #category : #accessing }
+PLSDiagnostic >> data [
+
+	^ data
+]
+
+{ #category : #accessing }
+PLSDiagnostic >> data: anObject [
+
+	data := anObject
 ]
 
 { #category : #accessing }

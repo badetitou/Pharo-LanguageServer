@@ -21,11 +21,13 @@ PLSCommand >> arguments: anObject [
 
 { #category : #accessing }
 PLSCommand >> asJRPCJSON [
+
 	| dic |
-	dic := {(#command -> self command asJRPCJSON).
-	(#title -> self title asJRPCJSON)} asDictionary.
-	self arguments
-		ifNotNil: [ dic at: #arguments put: self arguments asJRPCJSON ].
+	dic := { 
+		       (#command -> self command asJRPCJSON).
+		       (#title -> self title asJRPCJSON) } asDictionary.
+	self arguments ifNotNil: [ 
+		dic at: #arguments put: self arguments asJRPCJSON ].
 	^ dic
 ]
 

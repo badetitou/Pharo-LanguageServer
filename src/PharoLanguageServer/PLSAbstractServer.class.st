@@ -42,6 +42,13 @@ PLSAbstractServer >> cancelRequest: id [
 		ifAbsent: [ ]
 ]
 
+{ #category : #'lsp - code action' }
+PLSAbstractServer >> codeActionForDocument: textDocument atRange: range withContext: context [
+
+	<jrpc: #'textDocument/codeAction'>
+
+]
+
 { #category : #context }
 PLSAbstractServer >> context [
 	^ serverContext

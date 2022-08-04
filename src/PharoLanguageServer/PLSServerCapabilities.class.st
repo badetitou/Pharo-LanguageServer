@@ -9,7 +9,8 @@ Class {
 		'hoverProvider',
 		'signatureHelp',
 		'textDocumentSync',
-		'typeDefinitionOptions'
+		'typeDefinitionOptions',
+		'codeActionProvider'
 	],
 	#category : #'PharoLanguageServer-Structure-Capabilities'
 }
@@ -65,7 +66,21 @@ PLSServerCapabilities >> asJRPCJSON [
 		dic
 			at: #documentSymbolProvider
 			put: self documentSymbolProvider asJRPCJSON ].
+	self codeActionProvider ifNotNil: [ 
+		dic at: #codeActionProvider put: self codeActionProvider asJRPCJSON ].
 	^ dic
+]
+
+{ #category : #accessing }
+PLSServerCapabilities >> codeActionProvider [
+
+	^ codeActionProvider
+]
+
+{ #category : #accessing }
+PLSServerCapabilities >> codeActionProvider: anObject [
+
+	codeActionProvider := anObject
 ]
 
 { #category : #'as yet unclassified' }
