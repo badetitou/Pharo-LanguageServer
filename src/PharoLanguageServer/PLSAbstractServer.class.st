@@ -150,6 +150,7 @@ PLSAbstractServer >> initialize [
 	super initialize.
 	messageProcessor := PLSMessageProcessor new.
 	self addHandlersFromPragmasIn: self.
+	self debugMode: false.
 	serverContext := PLSContext new.
 	withStdIO := false.
 	data := ''.
