@@ -67,6 +67,11 @@ PLSAbstractServer >> defaultPort [
 	^ self class defaultPort
 ]
 
+{ #category : #'lsp - diagnostics' }
+PLSAbstractServer >> documentDiagnosticFor: textDocument withIdentifier: identifier andPreviousResult: previousResultId [
+	<jrpc: #'textDocument/diagnostic'>
+]
+
 { #category : #starting }
 PLSAbstractServer >> extractLengthOf: data [
 	(data beginsWith: 'Content-Length: ')

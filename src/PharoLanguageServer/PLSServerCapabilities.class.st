@@ -10,7 +10,8 @@ Class {
 		'signatureHelp',
 		'textDocumentSync',
 		'typeDefinitionOptions',
-		'codeActionProvider'
+		'codeActionProvider',
+		'diagnosticProvider'
 	],
 	#category : #'PharoLanguageServer-Structure-Capabilities'
 }
@@ -68,6 +69,8 @@ PLSServerCapabilities >> asJRPCJSON [
 			put: self documentSymbolProvider asJRPCJSON ].
 	self codeActionProvider ifNotNil: [ 
 		dic at: #codeActionProvider put: self codeActionProvider asJRPCJSON ].
+	self diagnosticProvider ifNotNil: [ 
+		dic at: #diagnosticProvider put: self diagnosticProvider asJRPCJSON ].
 	^ dic
 ]
 
@@ -105,6 +108,18 @@ PLSServerCapabilities >> completionProvider [
 PLSServerCapabilities >> completionProvider: anObject [
 
 	completionProvider := anObject
+]
+
+{ #category : #accessing }
+PLSServerCapabilities >> diagnosticProvider [
+
+	^ diagnosticProvider
+]
+
+{ #category : #accessing }
+PLSServerCapabilities >> diagnosticProvider: anObject [
+
+	diagnosticProvider := anObject
 ]
 
 { #category : #converting }
