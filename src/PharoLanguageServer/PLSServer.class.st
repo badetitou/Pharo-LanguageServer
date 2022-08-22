@@ -218,7 +218,7 @@ PLSServer >> isTonelDocument: textDocument [
 ]
 
 { #category : #'lsp - initialization' }
-PLSServer >> onInitializeTrace: trace processId: processId clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
+PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 
 	<jrpc: #initialize>
 	^ PLSInitializeResult new

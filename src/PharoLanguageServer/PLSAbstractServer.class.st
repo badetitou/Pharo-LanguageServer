@@ -210,7 +210,7 @@ PLSAbstractServer >> messageProcess: anId	put: aProcess [
 ]
 
 { #category : #'lsp - initialization' }
-PLSAbstractServer >> onInitializeTrace: trace processId: processId clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
+PLSAbstractServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 	<jrpc: #initialize>
 	self subclassResponsibility.
 	
