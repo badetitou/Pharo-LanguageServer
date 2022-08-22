@@ -35,6 +35,11 @@ PLSBinder >> initialize [
 ]
 
 { #category : #binding }
+PLSBinder >> interactive [
+	^ false
+]
+
+{ #category : #binding }
 PLSBinder >> isForScripting [
 	^ false
 ]
