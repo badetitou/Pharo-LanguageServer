@@ -11,7 +11,7 @@ PLSMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 		self parametersCount = 0 ifFalse: [ JRPCInvalidParameters signal ] ].
 
 	(aJRPCRequestObject params ifNil: [ #(  ) ]) size
-	= self parametersCount ifFalse: [ JRPCInvalidParameters signal ].
+	<= self parametersCount ifFalse: [ JRPCInvalidParameters signal ].
 
 	(aJRPCRequestObject params isDictionary or: [ 
 		 aJRPCRequestObject params isNil ]) ifFalse: [ 
