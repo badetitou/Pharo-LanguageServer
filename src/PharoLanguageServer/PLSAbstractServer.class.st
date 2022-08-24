@@ -87,7 +87,7 @@ PLSAbstractServer >> extractRequestFrom: stream [
 	"data is the current buffer state"
 	length := -1.
 	[ length = -1 and: [ serverLoop ] ] whileTrue: [ 
-		[ data ifEmpty: [ data := (stream next: 200) asString ] ]
+		[ data ifEmpty: [ data := (stream next: 25) asString ] ]
 			on: ConnectionTimedOut
 			do: [ self log: 'timeout but still work' ].
 		length := self extractLengthOf: data ].
