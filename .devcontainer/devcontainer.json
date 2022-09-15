@@ -12,8 +12,8 @@
 		"vscode": {
 			// Set *default* container specific settings.json values on container create.
 			"settings": {
-                "pharo.pathToVM": "/tmp/pharo/pharo64-linux-headless-latest/pharo",
-                "pharo.pathToImage": "/tmp/pharo/Pharo64-10-PLS/Pharo64-10-PLS.image",
+                "pharo.pathToVM": "/root/pharo/pharo-vm/pharo",
+                "pharo.pathToImage": "/root/pharo/Pharo64-10-PLS/Pharo64-10-PLS.image",
                 "pharo.headless": true,
                 "pharo.debug": false
             },
