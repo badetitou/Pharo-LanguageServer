@@ -1,0 +1,30 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.195.0/containers/javascript-node
+{
+	"name": "Pharo",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+
+	// Configure tool-specific properties.
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			// Set *default* container specific settings.json values on container create.
+			"settings": {
+                "pharo.pathToVM": "/tmp/pharo/pharo64-linux-headless-latest/pharo",
+                "pharo.pathToImage": "/tmp/pharo/Pharo64-10-PLS/Pharo64-10-PLS.image",
+                "pharo.headless": true,
+                "pharo.debug": false
+            },
+			
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"badetitou.pharo-language-server"
+			]
+		}
+	}
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "yarn install"
+}
