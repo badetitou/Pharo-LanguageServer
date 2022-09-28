@@ -1,0 +1,1 @@
+[{"kind":1,"language":"markdown","value":"# Moosebook\n\nThis is a moosebook.\nYou can use it to code in Pharo inside a notebook (such as the famous Jupiter one)"},{"kind":2,"language":"pharo","value":"aVariable := 'Hello World'"},{"kind":1,"language":"markdown","value":"Variables are shared between cells :smile:"},{"kind":2,"language":"pharo","value":"aVariable"}]
