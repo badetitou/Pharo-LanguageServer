@@ -13,7 +13,7 @@
 			// Set *default* container specific settings.json values on container create.
 			"settings": {
                 "pharo.pathToVM": "/root/pharo/pharo-vm/pharo",
-                "pharo.pathToImage": "/root/pharo/Pharo64-10-PLS/Pharo64-10-PLS.image",
+                "pharo.pathToImage": "/root/pharo/Moose64-10-PLS/Moose64-10-PLS.image",
                 "pharo.headless": true,
                 "pharo.debug": false
             },

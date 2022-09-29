@@ -27,7 +27,7 @@ WORKDIR /root/pharo
 ######################################
 RUN mkdir /root/pharo/Pharo64-10-PLS
 WORKDIR /root/pharo/Pharo64-10-PLS
-RUN wget https://github.com/badetitou/Pharo-LanguageServer/releases/download/v3.0.1/Pharo64-10-PLS.zip
+RUN wget https://github.com/badetitou/Pharo-LanguageServer/releases/download/v3.0.1/Moose64-10-PLS.zip
 RUN unzip Pharo64-10-PLS.zip
 
 WORKDIR /root/pharo/
