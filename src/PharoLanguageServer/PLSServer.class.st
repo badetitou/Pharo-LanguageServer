@@ -17,7 +17,7 @@ PLSServer >> childrenVariables: variableReference in: textDocument [
 	<jrpc: #'pls:childrenVariables'>
 	| document references currentVariable |
 	document := self context
-		textItem: (textDocument at: #uri at: #external).
+		textItem: (textDocument at: #uri at: #path).
 	references := Stack newFrom: (variableReference substrings: '/').
 	currentVariable := document binder compilationBindings
 		at: references pop.
@@ -174,7 +174,7 @@ PLSServer >> documentVariables: textDocument [
 	<jrpc: #'pls:documentVariables'>
 	| document |
 	document := self context
-		textItem: (textDocument at: #uri at: #external).
+		textItem: (textDocument at: #uri at: #path).
 	^ (document binder compilationBindings associations
 		collect: [ :assoc |
 			  PLSVariable new
