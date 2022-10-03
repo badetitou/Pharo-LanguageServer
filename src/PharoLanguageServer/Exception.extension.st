@@ -1,11 +1,9 @@
 Extension { #name : #Exception }
 
 { #category : #'*PharoLanguageServer' }
-Exception >> plsMimeType [
-	^ 'error'
-]
+Exception >> asPLSCellOutput [
 
-{ #category : #'*PharoLanguageServer' }
-Exception >> plsPrintString [
-	^ self messageText
+	^ { (PLSCellOutput
+		   content: self messageText
+		   mimetype: PLSCellMimetype errorType) }
 ]

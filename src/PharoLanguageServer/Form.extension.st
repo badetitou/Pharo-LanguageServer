@@ -1,11 +1,15 @@
 Extension { #name : #Form }
 
 { #category : #'*PharoLanguageServer' }
-Form >> plsMimeType [
-	"Answer a String whose characters are a description of the receiver. 
-	If you want to print without a character limit, use fullPrintString."
+Form >> asPLSCellOutput [
 
-	^ 'text/markdown'
+	^ { 
+		  (PLSCellOutput
+			   content: self plsPrintString
+			   mimetype: PLSCellMimetype markdown).
+		  (PLSCellOutput
+			   content: self plsPrintString
+			   mimetype: PLSCellMimetype html) }
 ]
 
 { #category : #'*PharoLanguageServer' }

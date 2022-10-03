@@ -49,13 +49,17 @@ PLSServer >> codeLensTextDocument: textDocument [
 
 { #category : #commands }
 PLSServer >> commandNotebookPrintIt: line textDocument: textDocumentURI [
+
 	<jrpc: #'command:notebookPrintIt'>
-	| compiler answer2  |
+	| compiler answer2 |
 	"Use path because #external also uses the fragment number of the cell"
 	compiler := self compilerFor: (textDocumentURI at: #path).
-	answer2 := [ compiler evaluate: line ] on: Exception do: [ :error | 'error' record. error ].
-	^ {(#mimetype -> answer2 plsMimeType).
-	(#content -> answer2 plsPrintString)} asDictionary
+	answer2 := [ compiler evaluate: line ]
+		           on: Exception
+		           do: [ :error | 
+			           'error' record.
+			           error ].
+	^ answer2 asPLSCellOutput asJRPCJSON
 ]
 
 { #category : #commands }
