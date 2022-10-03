@@ -9,7 +9,11 @@ LABEL maintainer="Benoit Verhaeghe"
 # Update Ubuntu apt and install some tools
 ######################################
 RUN  apt-get update \
-  && apt-get install -y wget git unzip libpulse0 libasound2 libcairo2 \
+  && apt-get install -y wget git unzip libpulse0 libasound2 libcairo2 
+
+
+# Required for the readme moosebook
+RUN  apt-get install -y openjdk-17-jdk openjdk-17-jre \
   && rm -rf /var/lib/apt/lists/*
 
 ######################################
