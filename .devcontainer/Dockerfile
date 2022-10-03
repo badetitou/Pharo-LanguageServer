@@ -9,11 +9,7 @@ LABEL maintainer="Benoit Verhaeghe"
 # Update Ubuntu apt and install some tools
 ######################################
 RUN  apt-get update \
-  && apt-get install -y wget \
-  && apt-get install -y git \
-  && apt-get install -y unzip \
-  && apt-get install -y libpulse0 \
-  && apt-get install -y libasound2 \
+  && apt-get install -y wget git unzip libpulse0 libasound2 libcairo2 \
   && rm -rf /var/lib/apt/lists/*
 
 ######################################
