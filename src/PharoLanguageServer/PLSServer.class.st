@@ -216,6 +216,14 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 				yourself))}
 ]
 
+{ #category : #'pls - ice' }
+PLSServer >> iceRepositories [
+
+	<jrpc: #'pls-ice:repositories'>
+	^ IceRepository registry collect: [ :repository | 
+		  { (#name -> repository name) } asDictionary ]
+]
+
 { #category : #'lsp - formatting' }
 PLSServer >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
