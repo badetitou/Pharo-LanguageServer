@@ -64,13 +64,13 @@ sources := {
             nextPut: sources ]
 ```
 
-### Load the code 
+### Load the code
 
 Execute this code in any Pharo Image
 
 ```Smalltalk
 Metacello new
-  githubUser: 'badetitou' project: 'Pharo-LanguageServer' commitish: 'v2' path: 'src';
+  githubUser: 'badetitou' project: 'Pharo-LanguageServer' commitish: 'v3' path: 'src';
   baseline: 'PharoLanguageServer';
   load
 ```
