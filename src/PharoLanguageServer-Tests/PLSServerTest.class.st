@@ -40,6 +40,16 @@ PLSServerTest >> tearDown [
 ]
 
 { #category : #test }
+PLSServerTest >> testCodeLensTextDocument [
+
+	| result |
+	self addMyScriptDocument.
+	result := server codeLensTextDocument:
+		          { (#uri -> 'src/myScript.st') } asDictionary.
+	self assert: result size equals: 0
+]
+
+{ #category : #test }
 PLSServerTest >> testCommandPharoPrintItTextDocument [
 
 	| result |
