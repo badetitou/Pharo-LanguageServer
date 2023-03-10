@@ -136,3 +136,24 @@ PLSServerTest >> testTextDocumentHoverWithPositionTextDocument [
 		          textDocument: { (#uri -> 'src/myScript.st') } asDictionary.
 	self assert: (result at: #contents) equals: ''
 ]
+
+{ #category : #test }
+PLSServerTest >> testTypeDefinitionAtIn [
+
+	| result |
+	self addMyScriptDocument.
+	result := server
+		          typeDefinitionAt: { 
+				          (#line -> 1).
+				          (#character -> 12) } asDictionary
+		          in: { (#uri -> 'src/myScript.st') } asDictionary.
+	self assert: result class equals: PLSLocation.
+	self assert: result uri equals: 'pharoImage://Kernel/Object.class.st'.
+	self assert: result range class equals: PLSRange.
+	self assert: result range start class equals: PLSPosition.
+	self assert: result range start character equals: 0.
+	self assert: result range start line equals: 0.
+	self assert: result range end class equals: PLSPosition.
+	self assert: result range end character equals: 0.
+	self assert: result range end line equals: 0
+]
