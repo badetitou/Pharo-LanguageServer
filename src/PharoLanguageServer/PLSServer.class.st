@@ -220,8 +220,24 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 PLSServer >> iceRepositories [
 
 	<jrpc: #'pls-ice:repositories'>
-	^ IceRepository registry collect: [ :repository | 
-		  { (#name -> repository name) } asDictionary ]
+	^ (IceRepository registry collect: [ :repository | 
+		   { 
+			   (#name -> repository name).
+			   (#valid -> repository isValid) } asDictionary ]) asArray
+]
+
+{ #category : #'pls - ice' }
+PLSServer >> iceRepository: aRepositoryName [
+
+	<jrpc: #'pls-ice:repository'>
+	| repoOfInterest set |
+	repoOfInterest := IceRepository registry detect: [ :repository | 
+		                  repository name = aRepositoryName ].
+	set := (repoOfInterest workingCopy diffToReferenceCommit tree
+		        allChildren
+		        select: [ :a | a children isEmpty ]
+		        thenCollect: [ :a | a definition actualClass ]) asSet.
+	^ (set collect: #plsURIString) asArray
 ]
 
 { #category : #'lsp - formatting' }
@@ -404,26 +420,24 @@ PLSServer >> textDocumentSignatureHelpWithPosition: position textDocument: textD
 
 { #category : #'lsp - type definition' }
 PLSServer >> typeDefinitionAt: position in: textDocument [
+
 	<jrpc: #'textDocument/typeDefinition'>
 	| document canBeClass aClass |
 	document := self context textItem: (textDocument at: #uri).
 	canBeClass := document nodeAt: position.
 	canBeClass ifNil: [ ^ {  } ].
-	((canBeClass isKindOf: RBProgramNode) not or: [ canBeClass isVariable not ]) ifTrue: [ ^ {  } ].
+	((canBeClass isKindOf: RBProgramNode) not or: [ 
+		 canBeClass isVariable not ]) ifTrue: [ ^ {  } ].
 	aClass := self class environment
-		at: canBeClass name asSymbol
-		ifAbsent: [ ^ {} ].
-	aClass isClass
-		ifFalse: [ ^ {} ].
+		          at: canBeClass name asSymbol
+		          ifAbsent: [ ^ {  } ].
+	aClass isClass ifFalse: [ ^ {  } ].
 	^ PLSLocation new
-		uri:
-			'pharoImage://' , aClass package name , '/' , aClass name
-				, '.class.st';
-		range:
-			(PLSRange
-				start: (PLSPosition line: 0 character: 0)
-				end: (PLSPosition line: 0 character: 0));
-		yourself
+		  uri: aClass plsURIString;
+		  range: (PLSRange
+				   start: (PLSPosition line: 0 character: 0)
+				   end: (PLSPosition line: 0 character: 0));
+		  yourself
 ]
 
 { #category : #'lsp - text synchronisation' }
