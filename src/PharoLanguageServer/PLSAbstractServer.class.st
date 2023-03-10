@@ -42,6 +42,18 @@ PLSAbstractServer >> cancelRequest: id [
 		ifAbsent: [ ]
 ]
 
+{ #category : #accessing }
+PLSAbstractServer >> clientOutStream [
+
+	^ clientOutStream
+]
+
+{ #category : #accessing }
+PLSAbstractServer >> clientOutStream: anObject [
+
+	clientOutStream := anObject
+]
+
 { #category : #'lsp - code action' }
 PLSAbstractServer >> codeActionForDocument: textDocument atRange: range withContext: context [
 
