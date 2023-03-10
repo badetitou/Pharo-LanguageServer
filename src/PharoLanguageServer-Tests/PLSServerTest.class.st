@@ -56,6 +56,23 @@ PLSServerTest >> testCommandPharoPrintItTextDocument [
 ]
 
 { #category : #test }
+PLSServerTest >> testCommandPharoPrintItTextDocumentWithVariableCreated [
+
+	| result |
+	self addMyScriptDocument.
+	result := server
+		          commandPharoPrintIt: 'hello := 12'
+		          textDocument:
+		          { (#path -> 'src/myScript.st') } asDictionary.
+	self assert: '12' equals: result.
+	result := server
+		          commandPharoPrintIt: 'hello'
+		          textDocument:
+		          { (#path -> 'src/myScript.st') } asDictionary.
+	self assert: '12' equals: result
+]
+
+{ #category : #test }
 PLSServerTest >> testDidOpen [
 
 	self addMyScriptDocument.
