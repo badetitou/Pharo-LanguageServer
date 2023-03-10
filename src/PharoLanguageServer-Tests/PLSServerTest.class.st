@@ -96,6 +96,28 @@ PLSServerTest >> testDidOpen [
 ]
 
 { #category : #test }
+PLSServerTest >> testDocumentVariables [
+
+	| result |
+	self addMyScriptDocument.
+	server
+		commandPharoPrintIt: 'hello := 12'
+		textDocument: { (#path -> 'src/myScript.st') } asDictionary.
+	result := server documentVariables:
+		          { (#uri -> { (#path -> 'src/myScript.st') } asDictionary) }
+			          asDictionary.
+	self assert: result size equals: 2.
+	self
+		assert:
+		((result detect: [ :r | (r at: #name) = '#hello' ]) at: #value)
+		equals: '12'.
+		self
+		assert:
+		((result detect: [ :r | (r at: #name) = '#object' ]) at: #value)
+		equals: 'nil'
+]
+
+{ #category : #test }
 PLSServerTest >> testTextDocumentHoverWithPositionTextDocument [
 
 	| result |
