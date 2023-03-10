@@ -18,7 +18,8 @@ PLSServerTest >> addMyScriptDocument [
 	textDocument at: #uri put: 'src/myScript.st'.
 	textDocument at: #version put: '1'.
 	textDocument at: #languageId put: 'pharo'.
-	textDocument at: #text put: '1 + 1'.
+	textDocument at: #text put: '1 + 1.
+object := Object new'.
 
 	server didOpen: textDocument
 ]
@@ -92,4 +93,24 @@ PLSServerTest >> testDidOpen [
 	self
 		assert: (server context textItem: 'src/myScript.st') class
 		equals: PLSScriptDocument
+]
+
+{ #category : #test }
+PLSServerTest >> testTextDocumentHoverWithPositionTextDocument [
+
+	| result |
+	self addMyScriptDocument.
+	result := server
+		          textDocumentHoverWithPosition: { 
+				          (#line -> 1).
+				          (#character -> 12) } asDictionary
+		          textDocument: { (#uri -> 'src/myScript.st') } asDictionary.
+	self assert: (result at: #contents) equals: Object comment.
+	"hovering nothing return empty"
+	result := server
+		          textDocumentHoverWithPosition: { 
+				          (#line -> 0).
+				          (#character -> 0) } asDictionary
+		          textDocument: { (#uri -> 'src/myScript.st') } asDictionary.
+	self assert: (result at: #contents) equals: ''
 ]
