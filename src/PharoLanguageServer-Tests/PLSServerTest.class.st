@@ -73,6 +73,19 @@ PLSServerTest >> testCommandPharoPrintItTextDocumentWithVariableCreated [
 ]
 
 { #category : #test }
+PLSServerTest >> testDidClose [
+
+	| textDocument |
+	self addMyScriptDocument.
+
+	textDocument := Dictionary new.
+	textDocument at: #uri put: 'src/myScript.st'.
+
+	server didClose: textDocument.
+	self assert: server context textItems isEmpty
+]
+
+{ #category : #test }
 PLSServerTest >> testDidOpen [
 
 	self addMyScriptDocument.
