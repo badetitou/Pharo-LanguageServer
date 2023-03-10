@@ -27,7 +27,13 @@ jobs:
       - run: smalltalkci -s ${{ matrix.smalltalk }}
         shell: bash
         timeout-minutes: 15
-      
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        if: ${{ matrix.smalltalk == 'Moose64-10' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: package
         run: |
           mv /home/runner/.smalltalkCI/_builds/* .
