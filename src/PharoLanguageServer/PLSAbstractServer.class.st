@@ -43,7 +43,7 @@ PLSAbstractServer >> buildClientContextFromTrace: trace processId: processId loc
 			 clientInfo: clientInfo;
 			 rootPath: rootPath;
 			 workspaceFolders: workspaceFolders;
-			 capabilities: capabilities;
+			 capabilities: (PLSClientCapabilities from: capabilities);
 			 rootUri: rootUri;
 			 yourself)
 ]
