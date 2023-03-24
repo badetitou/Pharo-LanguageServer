@@ -32,7 +32,8 @@ PLSClientCapabilities class >> from: aDictionary [
 			(PLSTextDocumentClientCapabilities from: textDocument) ].
 	aDictionary
 		at: #workspace
-		ifPresent: [ :workspace | instance workspace: workspace ]
+		ifPresent: [ :workspace | instance workspace: workspace ].
+	^ instance
 ]
 
 { #category : #accessing }

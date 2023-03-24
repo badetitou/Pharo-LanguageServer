@@ -134,7 +134,8 @@ PLSTextDocumentClientCapabilities class >> from: aDictionary [
 		ifPresent: [ :inlayHint | instance inlayHint: inlayHint ].
 	aDictionary
 		at: #diagnostic
-		ifPresent: [ :diagnostic | instance diagnostic: diagnostic ]
+		ifPresent: [ :diagnostic | instance diagnostic: diagnostic ].
+	^ instance
 ]
 
 { #category : #accessing }
