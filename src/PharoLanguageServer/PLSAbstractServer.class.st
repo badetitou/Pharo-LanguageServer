@@ -34,6 +34,21 @@ PLSAbstractServer class >> reset [
 ]
 
 { #category : #'lsp - initialization' }
+PLSAbstractServer >> buildClientContextFromTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
+
+	self context clientContext: (PLSClientContext new
+			 trace: trace;
+			 processId: processId;
+			 locale: locale;
+			 clientInfo: clientInfo;
+			 rootPath: rootPath;
+			 workspaceFolders: workspaceFolders;
+			 capabilities: capabilities;
+			 rootUri: rootUri;
+			 yourself)
+]
+
+{ #category : #'lsp - initialization' }
 PLSAbstractServer >> cancelRequest: id [
 	<jrpc: #'$/cancelRequest' >
 	self context messageProcesses

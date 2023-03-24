@@ -6,15 +6,29 @@ Class {
 	#superclass : #Object,
 	#instVars : [
 		'textItems',
-		'messageProcesses'
+		'messageProcesses',
+		'clientContext'
 	],
-	#category : #PharoLanguageServer
+	#category : #'PharoLanguageServer-Context'
 }
+
+{ #category : #accessing }
+PLSContext >> clientContext [
+
+	^ clientContext
+]
+
+{ #category : #accessing }
+PLSContext >> clientContext: anObject [
+
+	clientContext := anObject
+]
 
 { #category : #initialization }
 PLSContext >> initialize [
 	textItems := Dictionary new.
 	messageProcesses := Dictionary new.
+	clientContext := PLSClientContext
 ]
 
 { #category : #'message processing' }
