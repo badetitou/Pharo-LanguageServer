@@ -20,7 +20,7 @@ jobs:
       PROJECT_NAME: ${{ matrix.smalltalk }}-PLS
     strategy:
       matrix:
-        smalltalk: [ Pharo64-11, Pharo64-12, Moose64-10 ]
+        smalltalk: [ Pharo64-11, Moose64-10 ]
     name: ${{ matrix.smalltalk }}
     steps:
       - uses: actions/checkout@v2
