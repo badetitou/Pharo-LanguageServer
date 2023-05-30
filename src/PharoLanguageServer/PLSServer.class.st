@@ -90,7 +90,6 @@ PLSServer >> compilerFor: fileURI [
 
 	| compiler |
 	compiler := SmalltalkImage current compiler
-		            transformDoit;
 		            failBlock: [ nil ];
 		            yourself.
 	fileURI ifNotNil: [ 

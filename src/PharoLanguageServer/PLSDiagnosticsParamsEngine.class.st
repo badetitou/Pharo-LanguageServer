@@ -30,7 +30,6 @@ PLSDiagnosticsParamsEngine >> computeDiagnostics [
 
 	| ast compiler diagnostics |
 	compiler := self class compiler
-		            transformDoit;
 		            source: source;
 		            noPattern: true;
 		            failBlock: [ nil ];
