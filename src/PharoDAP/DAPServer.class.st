@@ -778,8 +778,7 @@ DAPServer >> pluggableCompilationBlock [
 		  pluggableEvaluationBlock := [ :source | 
 		                              compiler
 			                              source: source;
-			                              compile;
-			                              transformDoit ] ]
+			                              compile ] ]
 ]
 
 { #category : #accessing }
