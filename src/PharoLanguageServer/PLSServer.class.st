@@ -332,6 +332,13 @@ PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
 	^ 'ok'
 ]
 
+{ #category : #'pls - developer' }
+PLSServer >> plsOpenLog [
+
+	<jrpc: #'pls-developer:openLog'>
+	(TinyLogger default ensureMoreFileLoggerNamed: 'LSP.log') open
+]
+
 { #category : #'lsp - initialization' }
 PLSServer >> serverInitialized [
 
