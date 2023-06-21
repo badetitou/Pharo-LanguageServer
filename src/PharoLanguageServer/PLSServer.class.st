@@ -339,6 +339,13 @@ PLSServer >> plsOpenLog [
 	(TinyLogger default ensureMoreFileLoggerNamed: 'LSP.log') open
 ]
 
+{ #category : #'pls - developer' }
+PLSServer >> plsResetLog [
+
+	<jrpc: #'pls-developer:clearLog'>
+	(TinyLogger default ensureMoreFileLoggerNamed: 'LSP.log') clearLog
+]
+
 { #category : #'lsp - initialization' }
 PLSServer >> serverInitialized [
 
