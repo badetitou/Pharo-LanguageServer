@@ -33,6 +33,19 @@ PLSAbstractServer class >> reset [
 				do: [ Transcript crShow: 'one server not stopped' ] ]
 ]
 
+{ #category : #'lsp - workspace' }
+PLSAbstractServer >> applyWorkspaceEdit: workspaceEdit withLabel: aLabel [
+
+	self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCRequestObject id: 400 method: 'workspace/applyEdit')
+					  params: (PLSApplyWorkspaceEditParams new
+							   label: aLabel;
+							   edit: workspaceEdit;
+							   yourself)) asJRPCJSON)
+		toClient: clientOutStream
+]
+
 { #category : #'lsp - initialization' }
 PLSAbstractServer >> buildClientContextFromTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 

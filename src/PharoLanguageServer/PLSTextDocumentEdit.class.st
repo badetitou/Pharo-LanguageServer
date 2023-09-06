@@ -1,5 +1,5 @@
 Class {
-	#name : #TextDocumentEdit,
+	#name : #PLSTextDocumentEdit,
 	#superclass : #Object,
 	#instVars : [
 		'textDocument',
@@ -9,7 +9,7 @@ Class {
 }
 
 { #category : #accessing }
-TextDocumentEdit >> asJRPCJSON [
+PLSTextDocumentEdit >> asJRPCJSON [
 
 	^ {
 		  (#edits -> self edits asJRPCJSON).
@@ -17,25 +17,25 @@ TextDocumentEdit >> asJRPCJSON [
 ]
 
 { #category : #accessing }
-TextDocumentEdit >> edits [
+PLSTextDocumentEdit >> edits [
 
 	^ edits
 ]
 
 { #category : #accessing }
-TextDocumentEdit >> edits: anObject [
+PLSTextDocumentEdit >> edits: anObject [
 
 	edits := anObject
 ]
 
 { #category : #accessing }
-TextDocumentEdit >> textDocument [
+PLSTextDocumentEdit >> textDocument [
 
 	^ textDocument
 ]
 
 { #category : #accessing }
-TextDocumentEdit >> textDocument: anObject [
+PLSTextDocumentEdit >> textDocument: anObject [
 
 	textDocument := anObject
 ]

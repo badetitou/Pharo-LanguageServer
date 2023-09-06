@@ -13,6 +13,20 @@ Class {
 }
 
 { #category : #accessing }
+PLSWorkspaceEdit >> asJRPCJSON [
+
+	| dic |
+	dic := Dictionary new.
+	self changeAnnotations ifNotNil: [ :changeAnnots |
+		dic at: #changeAnnotations put: changeAnnots asJRPCJSON ].
+	self changes ifNotNil: [ :chgs |
+		dic at: #changes put: chgs asJRPCJSON ].
+	self documentChanges ifNotNil: [ :docChanges |
+		dic at: #documentChanges put: docChanges asJRPCJSON ].
+	^ dic
+]
+
+{ #category : #accessing }
 PLSWorkspaceEdit >> changeAnnotations [
 
 	^ changeAnnotations
