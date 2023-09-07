@@ -26,6 +26,11 @@ PLSMessageProcessor >> addHandlersFromPragmasIn: anObject [
 					 yourself) ] ]
 ]
 
+{ #category : #'as yet unclassified' }
+PLSMessageProcessor >> handleJRPCSuccessResponseObject: aJRPCSuccessResponseObject [ 
+	^ JRPCEmptyResponseObject new
+]
+
 { #category : #initialization }
 PLSMessageProcessor >> handleJSON: jrpcMessage [
 	"Gets aJSONString being a request or notification serialized in JSON format as input

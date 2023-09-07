@@ -38,7 +38,7 @@ PLSAbstractServer >> applyWorkspaceEdit: workspaceEdit withLabel: aLabel [
 
 	self
 		sendData: (self convertJRPCJsonableObjectToJSON:
-				 ((JRPCRequestObject id: 400 method: 'workspace/applyEdit')
+				 ((JRPCRequestObject id: self nextId method: 'workspace/applyEdit')
 					  params: (PLSApplyWorkspaceEditParams new
 							   label: aLabel;
 							   edit: workspaceEdit;
@@ -249,6 +249,12 @@ PLSAbstractServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
 ]
 
+{ #category : #starting }
+PLSAbstractServer >> nextId [
+	^ lastId := lastId + 1
+	
+]
+
 { #category : #'lsp - initialization' }
 PLSAbstractServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 	<jrpc: #initialize>
@@ -374,6 +380,13 @@ PLSAbstractServer >> stop [
 	process ifNotNil: [ 
 		process isTerminated ifTrue: [ ^ self ].
 		process terminate ]
+]
+
+{ #category : #'lsp - successResponse' }
+PLSAbstractServer >> successJRPCResponse: aJRPCResponse [
+	"I handle generic SuccessJRPCResponse after I send message"
+
+	
 ]
 
 { #category : #'lsp - completion' }
