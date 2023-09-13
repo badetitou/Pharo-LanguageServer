@@ -39,6 +39,7 @@ PLPTests >> tearDown [
 PLPTests >> testInitialize [
 
 	client connect.
+	client sendInitialize.
 	self
 		assert: (server context clientContext clientInfo at: #name)
 		equals: 'PLCClient'

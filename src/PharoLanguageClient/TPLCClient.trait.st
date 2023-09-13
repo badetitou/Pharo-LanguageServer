@@ -98,14 +98,9 @@ TPLCClient >> sendInitialize [
 
 { #category : #api }
 TPLCClient >> sendRequest: aJRPCRequestObject [
-		
-				(self convertJRPCJsonableObjectToJSON:
-					 aJRPCRequestObject asJRPCJSON) traceCr .
-	clientOutStream
-		<<
-			(self convertJRPCJsonableObjectToJSON:
-					 aJRPCRequestObject asJRPCJSON);
-		flush
+
+	clientOutStream nextPutAllFlush:
+		(self convertJRPCJsonableObjectToJSON: aJRPCRequestObject asJRPCJSON)
 ]
 
 { #category : #api }
