@@ -199,6 +199,7 @@ PLSAbstractServer >> initializeStreams [
 		^ self ].
 	tcpServer := Socket newTCP.
 	tcpServer listenOn: self port backlogSize: 10.
+	self port: tcpServer port.
 	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
 	Stdio stdout flush.
 	serverLoop := true.

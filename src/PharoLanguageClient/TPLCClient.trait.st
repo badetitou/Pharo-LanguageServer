@@ -5,8 +5,8 @@ Trait {
 		'clientInStream',
 		'clientOutStream'
 	],
-	#traits : 'JRPCParser',
-	#classTraits : 'JRPCParser classTrait',
+	#traits : 'JRPCParser + TPLPCommon',
+	#classTraits : 'JRPCParser classTrait + TPLPCommon classTrait',
 	#category : #PharoLanguageClient
 }
 
@@ -61,6 +61,13 @@ TPLCClient >> connect [
 	clientInStream := SocketStream on: tcpSocket.
 	clientOutStream := clientInStream.
 	self sendInitialize
+]
+
+{ #category : #accessing }
+TPLCClient >> initialize [
+
+	super initialize.
+	currentId := 0
 ]
 
 { #category : #accessing }

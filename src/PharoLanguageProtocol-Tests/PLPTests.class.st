@@ -3,7 +3,8 @@ Class {
 	#superclass : #TestCase,
 	#instVars : [
 		'client',
-		'server'
+		'server',
+		'serverProcess'
 	],
 	#category : #'PharoLanguageProtocol-Tests'
 }
@@ -11,18 +12,26 @@ Class {
 { #category : #running }
 PLPTests >> setUp [
 
-	| byteArray openPort |
+	| openPort |
 	super setUp.
 
 	client := PLCDummyClient new.
 	server := PLSServer new.
-	[ server start ]
+	serverProcess := [ server start ]
 		forkAt: Processor activeProcess priority
 		named: 'Test PLS server'.
-	Stdio stdout waitForData.
-	byteArray := Stdio stdout next: 100.
-	openPort := byteArray asString asInteger.
+
+	[ server port = 0 ] whileTrue.
+	openPort := server port.
 	client port: openPort
+]
+
+{ #category : #running }
+PLPTests >> tearDown [
+
+	serverProcess terminate.
+	server stop.
+	super tearDown
 ]
 
 { #category : #running }
@@ -30,6 +39,6 @@ PLPTests >> testInitialize [
 
 	client connect.
 	self
-		assert: (server context clientInfo at: #name)
+		assert: (server context clientContext clientInfo at: #name)
 		equals: 'PLCClient'
 ]
