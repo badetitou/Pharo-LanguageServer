@@ -360,7 +360,7 @@ PLSAbstractServer >> stop [
 
 	serverLoop := false.
 	clientInStream close.
-	clientOutStream close
+	clientOutStream close.
 
 	"Ensure process finishes."
 	process ifNotNil: [ 
