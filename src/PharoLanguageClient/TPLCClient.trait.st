@@ -59,8 +59,7 @@ TPLCClient >> connect [
 	tcpSocket := Socket newTCP.
 	tcpSocket connectTo: NetNameResolver loopBackAddress port: self port.
 	clientInStream := SocketStream on: tcpSocket.
-	clientOutStream := clientInStream.
-	self sendInitialize
+	clientOutStream := clientInStream
 ]
 
 { #category : #accessing }
@@ -99,10 +98,19 @@ TPLCClient >> sendInitialize [
 
 { #category : #api }
 TPLCClient >> sendRequest: aJRPCRequestObject [
-
+		
+				(self convertJRPCJsonableObjectToJSON:
+					 aJRPCRequestObject asJRPCJSON) traceCr .
 	clientOutStream
 		<<
 			(self convertJRPCJsonableObjectToJSON:
 					 aJRPCRequestObject asJRPCJSON);
 		flush
+]
+
+{ #category : #api }
+TPLCClient >> start [
+
+	self connect.
+	self sendInitialize
 ]

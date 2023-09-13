@@ -17,6 +17,7 @@ PLPTests >> setUp [
 
 	client := PLCDummyClient new.
 	server := PLSServer new.
+	server debugMode: true.
 	serverProcess := [ server start ]
 		forkAt: Processor activeProcess priority
 		named: 'Test PLS server'.
