@@ -1,5 +1,5 @@
 Class {
-	#name : #PLSClientCapabilities,
+	#name : #PLPClientCapabilities,
 	#superclass : #Object,
 	#instVars : [
 		'workspace',
@@ -9,11 +9,11 @@ Class {
 		'general',
 		'experimental'
 	],
-	#category : #'PharoLanguageServer-Structure-Capabilities'
+	#category : #'PharoLanguageProtocol-Initialize'
 }
 
 { #category : #'instance creation' }
-PLSClientCapabilities class >> from: aDictionary [
+PLPClientCapabilities class >> from: aDictionary [
 
 	| instance |
 	instance := self new.
@@ -37,73 +37,91 @@ PLSClientCapabilities class >> from: aDictionary [
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> experimental [
+PLPClientCapabilities >> asJRPCJSON [
+
+	| dic |
+	dic := Dictionary new.
+	self experimental ifNotNil: [ :el | 
+		dic at: #experimental put: el asJRPCJSON ].
+	self general ifNotNil: [ :el | dic at: #general put: el asJRPCJSON ].
+	self notebookDocument ifNotNil: [ :el | 
+		dic at: #notebookDocument put: el asJRPCJSON ].
+	self textDocument ifNotNil: [ :el | 
+		dic at: #textDocument put: el asJRPCJSON ].
+	self window ifNotNil: [ :el | dic at: #window put: el asJRPCJSON ].
+	self workspace ifNotNil: [ :el | 
+		dic at: #workspace put: el asJRPCJSON ].
+	^ dic
+]
+
+{ #category : #accessing }
+PLPClientCapabilities >> experimental [
 
 	^ experimental
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> experimental: anObject [
+PLPClientCapabilities >> experimental: anObject [
 
 	experimental := anObject
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> general [
+PLPClientCapabilities >> general [
 
 	^ general
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> general: anObject [
+PLPClientCapabilities >> general: anObject [
 
 	general := anObject
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> notebookDocument [
+PLPClientCapabilities >> notebookDocument [
 
 	^ notebookDocument
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> notebookDocument: anObject [
+PLPClientCapabilities >> notebookDocument: anObject [
 
 	notebookDocument := anObject
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> textDocument [
+PLPClientCapabilities >> textDocument [
 
 	^ textDocument
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> textDocument: anObject [
+PLPClientCapabilities >> textDocument: anObject [
 
 	textDocument := anObject
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> window [
+PLPClientCapabilities >> window [
 
 	^ window
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> window: anObject [
+PLPClientCapabilities >> window: anObject [
 
 	window := anObject
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> workspace [
+PLPClientCapabilities >> workspace [
 
 	^ workspace
 ]
 
 { #category : #accessing }
-PLSClientCapabilities >> workspace: anObject [
+PLPClientCapabilities >> workspace: anObject [
 
 	workspace := anObject
 ]

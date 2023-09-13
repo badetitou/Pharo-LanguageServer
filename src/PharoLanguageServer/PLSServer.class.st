@@ -248,6 +248,16 @@ PLSServer >> isTonelDocument: textDocument [
 PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 
 	<jrpc: #initialize>
+	self context clientContext: (PLSClientContext new
+			 trace: trace;
+			 processId: processId;
+			 locale: locale;
+			 clientInfo: clientInfo;
+			 rootPath: rootPath;
+			 workspaceFolders: workspaceFolders;
+			 capabilities: (PLPClientCapabilities from: capabilities);
+			 rootUri: rootUri;
+			 yourself).
 	^ PLSInitializeResult new
 ]
 
