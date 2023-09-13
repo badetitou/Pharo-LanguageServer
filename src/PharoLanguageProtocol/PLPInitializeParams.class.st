@@ -2,9 +2,14 @@ Class {
 	#name : #PLPInitializeParams,
 	#superclass : #Object,
 	#instVars : [
+		'trace',
 		'processId',
+		'locale',
 		'clientInfo',
-		'capabilities'
+		'rootPath',
+		'workspaceFolders',
+		'capabilities',
+		'rootUri'
 	],
 	#category : #'PharoLanguageProtocol-Initialize'
 }
@@ -15,10 +20,16 @@ PLPInitializeParams >> asJRPCJSON [
 	| dic |
 	dic := Dictionary new.
 	dic at: #capabilities put: self capabilities asJRPCJSON.
-	self clientInfo ifNotNil: [ :cI | 
-		dic at: #clientInfo put: cI asJRPCJSON ].
-	self processId ifNotNil: [ :cI | 
-		dic at: #processId put: cI asJRPCJSON ].
+
+	dic at: #clientInfo put: self clientInfo asJRPCJSON.
+	dic at: #locale put: self locale asJRPCJSON.
+
+	dic at: #processId put: self processId asJRPCJSON.
+	dic at: #rootPath put: self rootPath asJRPCJSON.
+	dic at: #rootUri put: self rootUri asJRPCJSON.
+	dic at: #trace put: self trace1 asJRPCJSON.
+
+	dic at: #workspaceFolders put: self workspaceFolders asJRPCJSON.
 	^ dic
 ]
 
@@ -47,6 +58,18 @@ PLPInitializeParams >> clientInfo: anObject [
 ]
 
 { #category : #accessing }
+PLPInitializeParams >> locale [
+
+	^ locale
+]
+
+{ #category : #accessing }
+PLPInitializeParams >> locale: anObject [
+
+	locale := anObject
+]
+
+{ #category : #accessing }
 PLPInitializeParams >> processId [
 
 	^ processId
@@ -56,4 +79,52 @@ PLPInitializeParams >> processId [
 PLPInitializeParams >> processId: anObject [
 
 	processId := anObject
+]
+
+{ #category : #accessing }
+PLPInitializeParams >> rootPath [
+
+	^ rootPath
+]
+
+{ #category : #accessing }
+PLPInitializeParams >> rootPath: anObject [
+
+	rootPath := anObject
+]
+
+{ #category : #accessing }
+PLPInitializeParams >> rootUri [
+
+	^ rootUri
+]
+
+{ #category : #accessing }
+PLPInitializeParams >> rootUri: anObject [
+
+	rootUri := anObject
+]
+
+{ #category : #accessing }
+PLPInitializeParams >> trace1 [
+
+	^ trace
+]
+
+{ #category : #accessing }
+PLPInitializeParams >> trace1: anObject [
+
+	trace := anObject
+]
+
+{ #category : #accessing }
+PLPInitializeParams >> workspaceFolders [
+
+	^ workspaceFolders
+]
+
+{ #category : #accessing }
+PLPInitializeParams >> workspaceFolders: anObject [
+
+	workspaceFolders := anObject
 ]
