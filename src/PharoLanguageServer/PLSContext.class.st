@@ -27,8 +27,7 @@ PLSContext >> clientContext: anObject [
 { #category : #initialization }
 PLSContext >> initialize [
 	textItems := Dictionary new.
-	messageProcesses := Dictionary new.
-	clientContext := PLSClientContext
+	messageProcesses := Dictionary new
 ]
 
 { #category : #'message processing' }

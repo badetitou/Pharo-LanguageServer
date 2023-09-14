@@ -13,7 +13,9 @@ Class {
 		'clientInStream',
 		'clientOutStream',
 		'lastId',
-		'withStdIO'
+		'withStdIO',
+		'serverLoopPriority',
+		'answerLoopPriority'
 	],
 	#category : #PharoLanguageServer
 }
@@ -44,21 +46,6 @@ PLSAbstractServer >> applyWorkspaceEdit: workspaceEdit withLabel: aLabel [
 							   edit: workspaceEdit;
 							   yourself)) asJRPCJSON)
 		toClient: clientOutStream
-]
-
-{ #category : #'lsp - initialization' }
-PLSAbstractServer >> buildClientContextFromTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
-
-	self context clientContext: (PLSClientContext new
-			 trace: trace;
-			 processId: processId;
-			 locale: locale;
-			 clientInfo: clientInfo;
-			 rootPath: rootPath;
-			 workspaceFolders: workspaceFolders;
-			 capabilities: (PLSClientCapabilities from: capabilities);
-			 rootUri: rootUri;
-			 yourself)
 ]
 
 { #category : #'lsp - initialization' }
@@ -172,20 +159,20 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 	| jrpcMessage |
 	jrpcMessage := [ self parseJSON: request ]
 		               on: Error
-		               do: [ :err | 
+		               do: [ :err |
 			               self debugMode
-				               ifTrue: [ err pass  ]
+				               ifTrue: [ err pass ]
 				               ifFalse: [ err return: err asJRPCResponse ] ].
-	jrpcMessage id ifNotNil: [ 
+	jrpcMessage id ifNotNil: [
 		lastId := lastId max: jrpcMessage id asInteger ].
-	^ self messageProcess: jrpcMessage id put: ([ 
+	^ self messageProcess: jrpcMessage id put: ([
 		   self
 			   sendData: (self handleJSON: jrpcMessage)
 			   toClient: clientSocket.
 		   [ self removeMessageProcess: jrpcMessage id ]
 			   on: KeyNotFound
 			   do: [  ] ]
-			   forkAt: Processor lowIOPriority
+			   forkAt: self serverLoopPriority
 			   named: jrpcMessage id printString)
 ]
 
@@ -201,6 +188,7 @@ PLSAbstractServer >> initialize [
 	data := ''.
 	messagesProcesses := Dictionary new.
 	serverLoop := true.
+	serverLoopPriority := Processor lowIOPriority.
 	lastId := 0
 ]
 
@@ -214,6 +202,7 @@ PLSAbstractServer >> initializeStreams [
 		^ self ].
 	tcpServer := Socket newTCP.
 	tcpServer listenOn: self port backlogSize: 10.
+	self port: tcpServer port.
 	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
 	Stdio stdout flush.
 	serverLoop := true.
@@ -304,6 +293,19 @@ PLSAbstractServer >> serverInitialized [
 	self subclassResponsibility
 ]
 
+{ #category : #accessing }
+PLSAbstractServer >> serverLoopPriority [
+	
+	"You can change my priority with you need even more performance for the server loop (note that it might be a bad idea to change me)"
+	^ serverLoopPriority
+]
+
+{ #category : #accessing }
+PLSAbstractServer >> serverLoopPriority: anObject [
+
+	serverLoopPriority := anObject
+]
+
 { #category : #'lsp - initialization' }
 PLSAbstractServer >> serverShutdown [
 	<jrpc: #shutdown>
@@ -365,7 +367,7 @@ PLSAbstractServer >> start [
 		           request := self extractRequestFrom: clientInStream.
 		           ('Request: ' , request) recordDebug.
 		           self handleRequest: request toClient: clientOutStream ] ]
-		           forkAt: Processor lowIOPriority
+		           forkAt: self serverLoopPriority
 		           named: 'JRPC TCP connection'
 ]
 
@@ -374,7 +376,7 @@ PLSAbstractServer >> stop [
 
 	serverLoop := false.
 	clientInStream close.
-	clientOutStream close
+	clientOutStream close.
 
 	"Ensure process finishes."
 	process ifNotNil: [ 

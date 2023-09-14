@@ -39,28 +39,50 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> defineGroups: spec [
 
-	spec group: 'default' with: #( 'LSP' 'DAP' ).
+	spec group: 'default' with: #( 'LSP' 'DAP' 'LSC' 'Tests' ).
+	spec
+		group: 'LSC'
+		with:
+			#( 'PharoLanguageClient' ).
 	spec
 		group: 'LSP'
 		with:
 			#( 'PLSDAP-Helpers' 'PharoLanguageServer' 'PharoLanguageServer-Tests'
 			   'PLS-Pharo9-Extension' ).
 	spec group: 'LSP-GTK' with: #( 'LSP' 'PharoLanguageServer-Gtk' ).
-	spec group: 'DAP' with: #( 'PharoDAP' )
+	spec group: 'DAP' with: #( 'PharoDAP' ).
+	spec
+		group: 'Tests'
+		with:
+			#( 'PharoLanguageProtocol-Tests' )
 ]
 
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> definePackages: spec [
 
+	"common"
+
+	spec package: 'PharoLanguageProtocol'.
+	spec
+		package: 'PharoLanguageProtocol-Tests'
+		with: [ 
+		spec requires: #( 'PharoLanguageServer' 'PharoLanguageClient' ) ].
+	"server"
 	spec
 		package: 'PLSDAP-Helpers';
-		package: 'PharoLanguageServer'
-		with: [ spec requires: #( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' ) ];
+		package: 'PharoLanguageServer' with: [ 
+			spec requires:
+					#( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' 'PharoLanguageProtocol' ) ];
 		package: 'PharoLanguageServer-Tests'
 		with: [ spec requires: #( 'PharoLanguageServer' ) ];
 		package: 'PharoDAP'
 		with: [ spec requires: #( 'MoreLogger' 'PLSDAP-Helpers' ) ];
 		package: 'PharoLanguageServer-Gtk'
 		with: [ spec requires: #( 'SpecGtk' ) ].
-	 spec package: 'PLS-Pharo9-Extension'
+	spec package: 'PLS-Pharo9-Extension'.
+
+	"client"
+	spec
+		package: 'PharoLanguageClient'
+		with: [ spec requires: #( 'JRPC' 'PharoLanguageProtocol' ) ]
 ]
