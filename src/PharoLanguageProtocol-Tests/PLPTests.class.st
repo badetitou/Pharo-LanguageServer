@@ -18,7 +18,8 @@ PLPTests >> setUp [
 	client := PLCDummyClient new.
 	server := PLSServer new.
 	server debugMode: true.
-	server serverLoopPriority: Processor activeProcess priority. 
+	server serverLoopPriority: Processor activeProcess priority.
+	client answerLoopPriority: Processor activeProcess priority.
 	serverProcess := [ server start ]
 		forkAt: Processor activeProcess priority
 		named: 'Test PLS server'.
@@ -39,11 +40,12 @@ PLPTests >> tearDown [
 { #category : #running }
 PLPTests >> testInitialize [
 
-	client connect.
-	client sendInitialize.
-	1 second wait.
+	client start.
+	[ client answerProcessor answerHandlers isEmpty ] whileFalse.
 	self
 		assert: (server context clientContext clientInfo at: #name)
 		equals: 'PLCClient'.
-	"self assert: (client serverContext )"
+	self
+		assert: (client serverContext at: #name)
+		equals: 'Pharo Language Server'
 ]

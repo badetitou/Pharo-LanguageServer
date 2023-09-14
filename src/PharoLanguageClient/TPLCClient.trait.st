@@ -59,7 +59,14 @@ TPLCClient >> clientInStream: anObject [
 TPLCClient >> clientInit [
 
 	currentId := 0.
-	answerProcessor := PLCAnswerProcessor for: self
+	answerProcessor := PLCAnswerProcessor for: self.
+	data := ''
+]
+
+{ #category : #'lsp - initialization' }
+TPLCClient >> clientInitializeWith: capabilities fromServerInfo: serverInfo [
+	<jrpc: #initialize>
+	self serverContext: serverInfo.
 ]
 
 { #category : #accessing }

@@ -19,6 +19,12 @@ TPLPCommon >> answerLoopPriority [
 		  answerLoopPriority := Processor lowIOPriority ]
 ]
 
+{ #category : #accessing }
+TPLPCommon >> answerLoopPriority: anObject [
+
+	answerLoopPriority := anObject
+]
+
 { #category : #id }
 TPLPCommon >> currentId [
 
@@ -32,12 +38,20 @@ TPLPCommon >> currentId: anObject [
 ]
 
 { #category : #'plp - answerLoop' }
+TPLPCommon >> extractLengthOf: aData [
+	(aData beginsWith: 'Content-Length: ')
+		ifTrue:
+			[ ^ (aData copyFrom: 16 to: (aData indexOf: Character cr)) asInteger ]
+		ifFalse: [ ^ -1 ]
+]
+
+{ #category : #'plp - answerLoop' }
 TPLPCommon >> extractRequestFrom: stream [
 
 	| length startingPoint endPoint result |
 	"data is the current buffer state"
 	length := -1.
-	[ length = -1 and: [ answerLoop ] ] whileTrue: [ 
+	[ length = -1 and: [ answerLoop ] ] whileTrue: [
 		[ data ifEmpty: [ data := (stream next: 25) asString ] ]
 			on: ConnectionTimedOut
 			do: [ self log: 'timeout but still work' ].
@@ -47,16 +61,18 @@ TPLPCommon >> extractRequestFrom: stream [
 	result := String new: length.
 	"three options"
 	"startingPoint and endPoint are found"
-	(startingPoint ~= 0 and: [ endPoint ~= 0 ]) ifTrue: [ 
+	(startingPoint ~= 0 and: [ endPoint ~= 0 ]) ifTrue: [
 		result := data copyFrom: startingPoint to: endPoint.
 		data := data copyFrom: endPoint + 1 to: data size.
 		^ result ].
 	startingPoint = 0
-		ifTrue: [ "none were found" 
-			self getDatafromPosition: 1 fromSocket: stream in: result ]
+		ifTrue: [ "none were found"
+			stream upTo: ${.
+			result at: 1 put: ${.
+			self getDatafromPosition: 2 fromSocket: stream in: result ]
 		ifFalse: [ "only startingPoint is found"
-			(data copyFrom: startingPoint to: data size) withIndexDo: [ 
-				:each 
+			(data copyFrom: startingPoint to: data size) withIndexDo: [
+				:each
 				:index | result at: index put: each ].
 			self
 				getDatafromPosition: data size - startingPoint + 2
@@ -64,6 +80,11 @@ TPLPCommon >> extractRequestFrom: stream [
 				in: result ].
 	data := ''.
 	^ result
+]
+
+{ #category : #'plp - answerLoop' }
+TPLPCommon >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
+	clientSocket nextInto: existingData startingAt: startingPoint
 ]
 
 { #category : #'plp - send message' }

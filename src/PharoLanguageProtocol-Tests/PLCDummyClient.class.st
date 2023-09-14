@@ -12,3 +12,10 @@ PLCDummyClient >> initialize [
 	super initialize.
 	self clientInit
 ]
+
+{ #category : #'lsp - window' }
+PLCDummyClient >> windowLogMessage: message withType: type [
+
+	<jrpc: #'window/logMessage'>
+	message asString recordInfo
+]
