@@ -39,14 +39,22 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> defineGroups: spec [
 
-	spec group: 'default' with: #( 'LSP' 'DAP' ).
+	spec group: 'default' with: #( 'LSP' 'DAP' 'LSC' 'Tests' ).
+	spec
+		group: 'LSC'
+		with:
+			#( 'PharoLanguageClient' ).
 	spec
 		group: 'LSP'
 		with:
 			#( 'PLSDAP-Helpers' 'PharoLanguageServer' 'PharoLanguageServer-Tests'
 			   'PLS-Pharo9-Extension' ).
 	spec group: 'LSP-GTK' with: #( 'LSP' 'PharoLanguageServer-Gtk' ).
-	spec group: 'DAP' with: #( 'PharoDAP' )
+	spec group: 'DAP' with: #( 'PharoDAP' ).
+	spec
+		group: 'Tests'
+		with:
+			#( 'PharoLanguageProtocol-Tests' )
 ]
 
 { #category : #baselines }
