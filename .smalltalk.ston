@@ -10,7 +10,7 @@ SmalltalkCISpec {
   ],
   #testing : {
     #coverage : {
-      #packages : [ 'PharoLanguageServer.*', 'PLS-.*' ],
+      #packages : [ 'PharoLanguageServer.*', 'PLS-.*', 'PharoLanguageClient.*', 'PharoLanguageProtocol' ],
       #format : #lcov
     }
   }
