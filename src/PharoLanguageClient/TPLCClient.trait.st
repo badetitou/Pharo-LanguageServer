@@ -99,8 +99,13 @@ TPLCClient >> sendInitialize [
 { #category : #api }
 TPLCClient >> sendRequest: aJRPCRequestObject [
 
-	clientOutStream nextPutAllFlush:
-		(self convertJRPCJsonableObjectToJSON: aJRPCRequestObject asJRPCJSON)
+	| answer |
+	answer := self convertJRPCJsonableObjectToJSON:
+		          aJRPCRequestObject asJRPCJSON.
+	self getHeaderFor: answer into: clientOutStream.
+	clientOutStream
+		nextPutAllFlush: answer;
+		flush
 ]
 
 { #category : #api }

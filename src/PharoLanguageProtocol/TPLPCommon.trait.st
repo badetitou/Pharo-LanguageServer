@@ -6,19 +6,26 @@ Trait {
 	#category : #PharoLanguageProtocol
 }
 
-{ #category : #accessing }
+{ #category : #id }
 TPLPCommon >> currentId [
 
 	^ currentId
 ]
 
-{ #category : #accessing }
+{ #category : #id }
 TPLPCommon >> currentId: anObject [
 
 	currentId := anObject
 ]
 
-{ #category : #accessing }
+{ #category : #'plp - send message' }
+TPLPCommon >> getHeaderFor: answer into: aStream [
+
+	aStream << 'Content-Length: ' << answer size asString << String crlf
+	<< String crlf
+]
+
+{ #category : #id }
 TPLPCommon >> nextId [
 
 	^ currentId := currentId + 1
