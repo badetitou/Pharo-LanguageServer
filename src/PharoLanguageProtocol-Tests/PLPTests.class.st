@@ -44,5 +44,6 @@ PLPTests >> testInitialize [
 	1 second wait.
 	self
 		assert: (server context clientContext clientInfo at: #name)
-		equals: 'PLCClient'
+		equals: 'PLCClient'.
+	"self assert: (client serverContext )"
 ]

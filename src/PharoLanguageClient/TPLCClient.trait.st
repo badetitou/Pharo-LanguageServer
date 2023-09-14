@@ -1,14 +1,29 @@
+"
+To use my traits, the easiest way is to use the trait **and** then to perform the `clientInit` method in the initialization method of your class
+"
 Trait {
 	#name : #TPLCClient,
 	#instVars : [
 		'port',
-		'clientInStream',
-		'clientOutStream'
+		'serverContext',
+		'answerProcessor'
 	],
 	#traits : 'JRPCParser + TPLPCommon',
 	#classTraits : 'JRPCParser classTrait + TPLPCommon classTrait',
 	#category : #PharoLanguageClient
 }
+
+{ #category : #accessing }
+TPLCClient >> answerProcessor [
+
+	^ answerProcessor
+]
+
+{ #category : #accessing }
+TPLCClient >> answerProcessor: anObject [
+
+	answerProcessor := anObject
+]
 
 { #category : #api }
 TPLCClient >> callMethod: aString arguments: anObject withId: anInteger [
@@ -40,6 +55,13 @@ TPLCClient >> clientInStream: anObject [
 	clientInStream := anObject
 ]
 
+{ #category : #'plp - answerLoop' }
+TPLCClient >> clientInit [
+
+	currentId := 0.
+	answerProcessor := PLCAnswerProcessor for: self
+]
+
 { #category : #accessing }
 TPLCClient >> clientOutStream [
 
@@ -62,11 +84,16 @@ TPLCClient >> connect [
 	clientOutStream := clientInStream
 ]
 
-{ #category : #accessing }
-TPLCClient >> initialize [
+{ #category : #'plp - answerLoop' }
+TPLCClient >> handleRequest: request toClient: outputStream [
 
-	super initialize.
-	currentId := 0
+	self answerProcessor handle: request
+]
+
+{ #category : #testing }
+TPLCClient >> isClient [
+	"Returns true if the trait is used in the context of a client, false in the context of a server."
+	^ true
 ]
 
 { #category : #accessing }
@@ -102,15 +129,30 @@ TPLCClient >> sendRequest: aJRPCRequestObject [
 	| answer |
 	answer := self convertJRPCJsonableObjectToJSON:
 		          aJRPCRequestObject asJRPCJSON.
+	self answerProcessor addHandlerFor: aJRPCRequestObject.
 	self getHeaderFor: answer into: clientOutStream.
 	clientOutStream
 		nextPutAllFlush: answer;
 		flush
 ]
 
+{ #category : #accessing }
+TPLCClient >> serverContext [
+
+	^ serverContext
+]
+
+{ #category : #accessing }
+TPLCClient >> serverContext: anObject [
+
+	serverContext := anObject
+]
+
 { #category : #api }
 TPLCClient >> start [
 
 	self connect.
-	self sendInitialize
+	answerLoop := true.
+	self startAnswerLoop.
+	self sendInitialize.
 ]

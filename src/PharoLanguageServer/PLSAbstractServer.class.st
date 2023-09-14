@@ -14,7 +14,8 @@ Class {
 		'clientOutStream',
 		'lastId',
 		'withStdIO',
-		'serverLoopPriority'
+		'serverLoopPriority',
+		'answerLoopPriority'
 	],
 	#category : #PharoLanguageServer
 }
