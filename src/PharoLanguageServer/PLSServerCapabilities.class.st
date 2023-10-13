@@ -11,7 +11,8 @@ Class {
 		'textDocumentSync',
 		'typeDefinitionOptions',
 		'codeActionProvider',
-		'diagnosticProvider'
+		'diagnosticProvider',
+		'inlineCompletionProvider'
 	],
 	#category : #'PharoLanguageServer-Structure-Capabilities'
 }
@@ -156,6 +157,18 @@ PLSServerCapabilities >> hoverProvider [
 PLSServerCapabilities >> hoverProvider: anObject [
 
 	hoverProvider := anObject
+]
+
+{ #category : #accessing }
+PLSServerCapabilities >> inlineCompletionProvider [
+
+	^ inlineCompletionProvider
+]
+
+{ #category : #accessing }
+PLSServerCapabilities >> inlineCompletionProvider: anObject [
+
+	inlineCompletionProvider := anObject
 ]
 
 { #category : #'as yet unclassified' }
