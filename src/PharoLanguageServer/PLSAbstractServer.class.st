@@ -403,6 +403,13 @@ PLSAbstractServer >> textDocumentHoverWithPosition: position textDocument: textD
 	self subclassResponsibility
 ]
 
+{ #category : #'lsp - completion' }
+PLSAbstractServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
+
+	<jrpc: #'textDocument/inlineCompletion'>
+	self subclassResponsibility
+]
+
 { #category : #accessing }
 PLSAbstractServer >> withStdIO [
 
