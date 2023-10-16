@@ -1,5 +1,5 @@
 Class {
-	#name : #PLCDummyClient,
+	#name : #PLPDummyClient,
 	#superclass : #Object,
 	#traits : 'TPLCClient',
 	#classTraits : 'TPLCClient classTrait',
@@ -7,14 +7,14 @@ Class {
 }
 
 { #category : #converting }
-PLCDummyClient >> initialize [
+PLPDummyClient >> initialize [
 
 	super initialize.
 	self clientInit
 ]
 
 { #category : #'lsp - window' }
-PLCDummyClient >> windowLogMessage: message withType: type [
+PLPDummyClient >> windowLogMessage: message withType: type [
 
 	<jrpc: #'window/logMessage'>
 	message asString recordInfo

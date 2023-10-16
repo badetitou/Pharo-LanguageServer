@@ -15,8 +15,8 @@ PLPTests >> setUp [
 	| openPort |
 	super setUp.
 
-	client := PLCDummyClient new.
-	server := PLSServer new.
+	client := PLPDummyClient new.
+	server := PLPDummyServer new.
 	server debugMode: true.
 	server serverLoopPriority: Processor activeProcess priority.
 	client answerLoopPriority: Processor activeProcess priority.
@@ -35,6 +35,20 @@ PLPTests >> tearDown [
 	serverProcess terminate.
 	server stop.
 	super tearDown
+]
+
+{ #category : #running }
+PLPTests >> testCancelRequest [
+	"I test that the client can cancel a long processing request of the server"
+
+	client start.
+	[ client answerProcessor answerHandlers isEmpty ] whileFalse.
+	self
+		assert: (server context clientContext clientInfo at: #name)
+		equals: 'PLCClient'.
+	self
+		assert: (client serverContext at: #name)
+		equals: 'Pharo Language Server'
 ]
 
 { #category : #running }
