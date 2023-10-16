@@ -41,14 +41,12 @@ PLPTests >> tearDown [
 PLPTests >> testCancelRequest [
 	"I test that the client can cancel a long processing request of the server"
 
+	self timeLimit: 3 seconds.
 	client start.
+	client sendLongServerMethod.
+	client sendCancelRequest: client currentId.
 	[ client answerProcessor answerHandlers isEmpty ] whileFalse.
-	self
-		assert: (server context clientContext clientInfo at: #name)
-		equals: 'PLCClient'.
-	self
-		assert: (client serverContext at: #name)
-		equals: 'Pharo Language Server'
+	[ server context messageProcesses isEmpty ] whileFalse
 ]
 
 { #category : #running }

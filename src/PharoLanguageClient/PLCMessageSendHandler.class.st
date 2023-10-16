@@ -18,7 +18,7 @@ PLCMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 		JRPCInvalidParameters signal ]
 ]
 
-{ #category : #'parameters-checking' }
+{ #category : #evaluation }
 PLCMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 
 	| arguments |
@@ -35,7 +35,9 @@ PLCMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 	^ self send: self messageSelector to: self receiver with: arguments
 ]
 
-{ #category : #'parameters-checking' }
+{ #category : #accessing }
 PLCMessageSendHandler >> parametersNames [
-	^ (self receiver class lookupSelector: self messageSelector) argumentNames
+
+	^ (self receiver class lookupSelector: self messageSelector)
+		  argumentNames
 ]

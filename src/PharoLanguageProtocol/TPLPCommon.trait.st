@@ -106,6 +106,14 @@ TPLPCommon >> nextId [
 	^ currentId := currentId + 1
 ]
 
+{ #category : #'plp - base protocol' }
+TPLPCommon >> sendCancelRequest: id [
+
+	self notifyMethod: '$/cancelRequest' arguments: (PLPCancelParams new
+			 id: id;
+			 yourself) asJRPCJSON
+]
+
 { #category : #'plp - answerLoop' }
 TPLPCommon >> startAnswerLoop [
 

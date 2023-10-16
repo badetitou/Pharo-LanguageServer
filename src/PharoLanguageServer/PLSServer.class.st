@@ -367,6 +367,7 @@ PLSServer >> serverInitialized [
 
 { #category : #'lsp - initialization' }
 PLSServer >> serverShutdown [
+
 	<jrpc: #shutdown>
 	SmalltalkImage current snapshot: false andQuit: true
 ]

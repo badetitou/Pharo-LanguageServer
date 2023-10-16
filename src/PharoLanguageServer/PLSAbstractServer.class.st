@@ -50,11 +50,14 @@ PLSAbstractServer >> applyWorkspaceEdit: workspaceEdit withLabel: aLabel [
 
 { #category : #'lsp - initialization' }
 PLSAbstractServer >> cancelRequest: id [
+
 	<jrpc: #'$/cancelRequest' >
 	self context messageProcesses
 		at: id
-		ifPresent: [ :process2 | process2 terminate ]
-		ifAbsent: [ ]
+		ifPresent: [ :process2 |
+			process2 terminate.
+			self context messageProcesses removeKey: id ]
+		ifAbsent: [  ]
 ]
 
 { #category : #accessing }

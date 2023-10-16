@@ -6,7 +6,8 @@ Trait {
 	#instVars : [
 		'port',
 		'serverContext',
-		'answerProcessor'
+		'answerProcessor',
+		'context'
 	],
 	#traits : 'JRPCParser + TPLPCommon',
 	#classTraits : 'JRPCParser classTrait + TPLPCommon classTrait',
@@ -40,6 +41,7 @@ TPLCClient >> callMethod: aString arguments: anObject withId: anInteger [
 { #category : #api }
 TPLCClient >> callMethod: aString withId: anInteger [
 	"Call a method which takes no arguments."
+
 	^ self callMethod: aString arguments: nil withId: anInteger
 ]
 
@@ -65,8 +67,9 @@ TPLCClient >> clientInit [
 
 { #category : #'lsp - initialization' }
 TPLCClient >> clientInitializeWith: capabilities fromServerInfo: serverInfo [
+
 	<jrpc: #initialize>
-	self serverContext: serverInfo.
+	self serverContext: serverInfo
 ]
 
 { #category : #accessing }
@@ -103,6 +106,15 @@ TPLCClient >> isClient [
 	^ true
 ]
 
+{ #category : #api }
+TPLCClient >> notifyMethod: aString arguments: anArrayOrString [
+
+	self sendNotification: (JRPCNotificationObject new
+			 method: aString;
+			 params: anArrayOrString;
+			 yourself)
+]
+
 { #category : #accessing }
 TPLCClient >> port [
 
@@ -115,7 +127,16 @@ TPLCClient >> port: anObject [
 	port := anObject
 ]
 
-{ #category : #api }
+{ #category : #'plp - base protocol' }
+TPLCClient >> sendCancelRequest: id [
+
+	self notifyMethod: '$/cancelRequest' arguments: (PLPCancelParams new
+			 id: id;
+			 yourself) asJRPCJSON.
+	self answerProcessor removeHandlerWithId: id
+]
+
+{ #category : #'lsp - initialization' }
 TPLCClient >> sendInitialize [
 
 	self
@@ -128,6 +149,14 @@ TPLCClient >> sendInitialize [
 				 processId: nil;
 				 yourself) asJRPCJSON
 		withId: self nextId
+]
+
+{ #category : #api }
+TPLCClient >> sendNotification: aJRPCNotificationObject [
+	"When a notification is sent to the server, we do not expect an answer."
+	[ 
+		self sendRequest: aJRPCNotificationObject
+	] on: JRPCIncorrectJSON, STONReaderError do: [ "Does nothing on purpose." ]
 ]
 
 { #category : #api }
@@ -161,5 +190,5 @@ TPLCClient >> start [
 	self connect.
 	answerLoop := true.
 	self startAnswerLoop.
-	self sendInitialize.
+	self sendInitialize
 ]

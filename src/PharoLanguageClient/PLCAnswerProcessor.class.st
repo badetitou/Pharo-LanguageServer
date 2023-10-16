@@ -20,7 +20,7 @@ PLCAnswerProcessor class >> for: aTPLCClient [
 PLCAnswerProcessor >> addHandlerFor: aRequest [
 
 	(Pragma allNamed: #jrpc: in: client class)
-		detect: [ :pragma | (pragma argumentNamed: #jrpc:) = aRequest method  ]
+		detect: [ :pragma | (pragma argumentNamed: #jrpc:) = aRequest method ]
 		ifFound: [ :pragma |
 			self answerHandlers at: aRequest id put: (PLSMessageSendHandler new
 					 receiver: client;
@@ -82,4 +82,10 @@ PLCAnswerProcessor >> initialize [
 
 	super initialize.
 	self answerHandlers: Dictionary new
+]
+
+{ #category : #adding }
+PLCAnswerProcessor >> removeHandlerWithId: anID [
+
+	self answerHandlers removeKey: anID ifAbsent: [  ]
 ]

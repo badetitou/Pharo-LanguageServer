@@ -13,6 +13,23 @@ PLPDummyClient >> initialize [
 	self clientInit
 ]
 
+{ #category : #'plp - tests' }
+PLPDummyClient >> longServerMethod: answer [
+	"Should never go here"
+
+	<jrpc: #'plptest/longServerMethod'>
+	
+]
+
+{ #category : #'plp - tests' }
+PLPDummyClient >> sendLongServerMethod [
+
+	self
+		callMethod: 'plptest/longServerMethod'
+		arguments: nil
+		withId: self nextId
+]
+
 { #category : #'lsp - window' }
 PLPDummyClient >> windowLogMessage: message withType: type [
 
