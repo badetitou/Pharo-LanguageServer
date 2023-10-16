@@ -9,6 +9,6 @@ PLPDummyServer >> longServerMethod [
 
 	<jrpc: #'plptest/longServerMethod'>
 	'hello' traceCr.
-	5 second wait.
+	30 second wait.
 	^ { (#answer -> 'until the end') } asDictionary asJRPCJSON
 ]

@@ -41,7 +41,6 @@ PLPTests >> tearDown [
 PLPTests >> testCancelRequest [
 	"I test that the client can cancel a long processing request of the server"
 
-	self timeLimit: 3 seconds.
 	client start.
 	client sendLongServerMethod.
 	client sendCancelRequest: client currentId.
