@@ -3,6 +3,7 @@
 [![Continuous](https://github.com/badetitou/Pharo-LanguageServer/actions/workflows/continuous.yml/badge.svg)](https://github.com/badetitou/Pharo-LanguageServer/actions/workflows/continuous.yml)
 [![Pharo 10](https://img.shields.io/badge/Pharo-11-%23aac9ff.svg)](https://github.com/pharo-project/pharo)
 [![Moose version](https://img.shields.io/badge/Moose-11-%23aac9ff.svg)](https://github.com/moosetechnology/Moose)
+[![Coverage Status](https://coveralls.io/repos/github/badetitou/Pharo-LanguageServer/badge.svg?branch=v4)](https://coveralls.io/github/badetitou/Pharo-LanguageServer?branch=v4)
 
 I am an implementation of the [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/implementors/servers/) for the [Pharo programming language](https://pharo.org/).
 My main goal is to provide a unique interface for several generic IDE to manipulate a Pharo environment.
