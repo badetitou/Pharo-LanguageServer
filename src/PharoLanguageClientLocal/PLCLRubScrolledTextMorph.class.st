@@ -18,20 +18,21 @@ PLCLRubScrolledTextMorph >> clientInlineCompletiongFrom: items [
 { #category : #'lsp - completion' }
 PLCLRubScrolledTextMorph >> initialize [
 
-	self startWithLocalServer.
-	"self sendDidOpenTextDocument: (PLPTextDocumentItem new
+	"self startWithLocalServer.
+	self sendDidOpenTextDocument: (PLPTextDocumentItem new
 			 uri: self plpURI;
 			 languageId: 'smalltalk';
 			 version: 0;
-			 text: '').
-"
+			 text: '')."
+
+
 	super initialize
 ]
 
 { #category : #'event handling' }
 PLCLRubScrolledTextMorph >> plpURI [
 
-	^ #'workspace/' , self identityHash printString
+	^ 'workspace/' , self identityHash printString
 ]
 
 { #category : #'lsp - initialization' }
