@@ -72,6 +72,13 @@ TPLCClient >> clientInitializeWith: capabilities fromServerInfo: serverInfo [
 	self serverContext: serverInfo
 ]
 
+{ #category : #'lsp - completion' }
+TPLCClient >> clientInlineCompletiongFrom: items [
+
+	<jrpc: #'textDocument/inlineCompletion'>
+	self subclassResponsibility
+]
+
 { #category : #accessing }
 TPLCClient >> clientOutStream [
 
@@ -170,6 +177,21 @@ TPLCClient >> sendRequest: aJRPCRequestObject [
 	clientOutStream
 		nextPutAllFlush: answer;
 		flush
+]
+
+{ #category : #'lsp - completion' }
+TPLCClient >> sendTextDocumentInlineCompletionAt: aPosition [
+
+	self
+		callMethod: #'textDocument/inlineCompletion'
+		arguments: (PLPInlineCompletionParams new
+				 context: (PLPInlineCompletionContext new
+						  triggerKind: PLPInlineCompletionTriggerKind automatic;
+						  yourself);
+				 position: aPosition;
+				 textDocument: nil;
+				 yourself) asJRPCJSON
+		withId: self nextId "to fill" "to fill"
 ]
 
 { #category : #accessing }

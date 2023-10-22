@@ -33,7 +33,12 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 		with: [ spec repository: 'github://badetitou/MoreLogger:main/src' ].
 	spec
 		baseline: 'SpecGtk'
-		with: [ spec repository: 'github://pharo-spec/Spec-Gtk:/src' ]
+		with: [ spec repository: 'github://pharo-spec/Spec-Gtk:/src' ].
+
+	spec
+		baseline: 'PharoHuggingFace'
+		with: [ 
+		spec repository: 'github://Evref-BL/Pharo-HuggingFace:main/src' ]
 ]
 
 { #category : #baselines }
@@ -72,7 +77,8 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 		package: 'PLSDAP-Helpers';
 		package: 'PharoLanguageServer' with: [ 
 			spec requires:
-					#( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' 'PharoLanguageProtocol' ) ];
+					#( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' 'PharoLanguageProtocol'
+					   'PharoHuggingFace' ) ];
 		package: 'PharoLanguageServer-Tests'
 		with: [ spec requires: #( 'PharoLanguageServer' ) ];
 		package: 'PharoDAP'

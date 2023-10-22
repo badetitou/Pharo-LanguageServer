@@ -382,19 +382,21 @@ PLSServer >> startDapServer [
 
 { #category : #'lsp - completion' }
 PLSServer >> textDocumentCompletionWithContext: context position: position textDocument: textDocument [
+
 	<jrpc: #'textDocument/completion'>
 	| completionList completionTool |
 	completionTool := PLSCompletion new
-		source: (self context textItem: (textDocument at: #uri)) text;
-		position: position;
-		yourself.
-	(self isTonelDocument: textDocument)
-		ifTrue: [ completionTool
-				sourceClass:
-					(([ PLSTonelParser
-						parseString: (self context textItem: (textDocument at: #uri)) text ]
-						on: Error
-						do: [ ^ {} ]) detect: #isClassDefinition) actualClass ].
+		                  source:
+			                  (self context textItem: (textDocument at: #uri))
+				                  text;
+		                  position: position;
+		                  yourself.
+	(self isTonelDocument: textDocument) ifTrue: [ 
+		completionTool sourceClass: (([ 
+			  PLSTonelParser parseString:
+				  (self context textItem: (textDocument at: #uri)) text ]
+				  on: Error
+				  do: [ ^ {  } ]) detect: #isClassDefinition) actualClass ].
 	completionList := PLSCompletionList new.
 	completionList completionItems: completionTool entries asArray.
 	^ completionList
@@ -411,6 +413,23 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 		position: position;
 		yourself.
 	^ { #contents -> hover contents } asDictionary
+]
+
+{ #category : #'lsp - completion' }
+PLSServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
+
+	<jrpc: #'textDocument/inlineCompletion'>
+	| text api answer |
+	text := self context textItem: (textDocument at: #uri).
+	api := HFAPI new.
+	answer := api query:
+		          'Complete the following smalltalk piece of code.
+```st
+' , text , '
+```'.
+	^ (PLSInlineCompletionList new
+		   items: { (PLSInlineCompletionItem new insertText: answer) };
+		   yourself) asJRPCJSON
 ]
 
 { #category : #'lsp - signature help' }
