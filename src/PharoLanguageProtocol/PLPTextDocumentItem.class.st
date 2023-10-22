@@ -17,7 +17,7 @@ PLPTextDocumentItem >> asJRPCJSON [
 		  (#languageId -> self languageId asJRPCJSON).
 		  (#text -> self text asJRPCJSON).
 		  (#uri -> self uri asJRPCJSON).
-		  (#version -> self version asJRPCJSON) }
+		  (#version -> self version asJRPCJSON) } asDictionary
 ]
 
 { #category : #accessing }
