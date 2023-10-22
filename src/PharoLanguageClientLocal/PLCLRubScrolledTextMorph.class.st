@@ -15,6 +15,25 @@ PLCLRubScrolledTextMorph >> clientInlineCompletiongFrom: items [
 				  yourself))
 ]
 
+{ #category : #'lsp - completion' }
+PLCLRubScrolledTextMorph >> initialize [
+
+	"self startWithLocalServer."
+	"self sendDidOpenTextDocument: (PLPTextDocumentItem new
+			 uri: self plpURI;
+			 languageId: 'smalltalk';
+			 version: 0;
+			 text: '')."
+
+	super initialize
+]
+
+{ #category : #'event handling' }
+PLCLRubScrolledTextMorph >> plpURI [
+
+	^ #'workspace/' , self identityHash printString
+]
+
 { #category : #'lsp - initialization' }
 PLCLRubScrolledTextMorph >> sendInitialize [
 
@@ -38,14 +57,17 @@ PLCLRubScrolledTextMorph >> whenTextChangedInTextArea: anAnnouncement [
 
 	| txt |
 	super whenTextChangedInTextArea: anAnnouncement.
+	"self
+		sendDidChangeTextDocument: self plpURI
+		withChanges: { (PLPTextDocumentContentChangeEvent new
+				 text: self text asString;
+				 yourself) }.
 	txt := self text.
 	txt := txt withIndexSelect: [ :val :idx | 
 		       (txt runs at: idx) anySatisfy: [ :el | 
 			       (el isKindOf: TextGhost) not ] ].
 	self scrollPane setTextWith: txt.
-
-	anAnnouncement text = '$²' ifTrue: [ 
+	anAnnouncement text asString = '$²' ifTrue: [ 
 		self sendTextDocumentInlineCompletionAt:
-			(anAnnouncement text toLineCharacter:
-				 (anAnnouncement text size min: anAnnouncement stop)) ]
+			(anAnnouncement text asString toLineCharacter: anAnnouncement start) ]"
 ]

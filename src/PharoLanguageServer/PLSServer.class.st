@@ -99,20 +99,21 @@ PLSServer >> compilerFor: fileURI [
 
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didChange: textDocument contentChanges: contentChanges [
+
 	<jrpc: #'textDocument/didChange'>
 	| document |
 	document := self context
-		textItem: (textDocument at: #uri)
-		ifAbsent: [ self didOpen: textDocument.
-			textDocument ].
+		            textItem: (textDocument at: #uri)
+		            ifAbsent: [ 
+			            self didOpen: textDocument.
+			            textDocument ].
 	document version: (textDocument at: #version).
 	document text: (contentChanges anyOne at: #text).
 	self
-		sendData:
-			(self
-				convertJRPCJsonableObjectToJSON:
-					((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
-						params: document diagnostics) asJRPCJSON  )
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method:
+					   'textDocument/publishDiagnostics') params:
+					  document diagnostics) asJRPCJSON)
 		toClient: clientOutStream
 ]
 

@@ -143,6 +143,22 @@ TPLCClient >> sendCancelRequest: id [
 	self answerProcessor removeHandlerWithId: id
 ]
 
+{ #category : #'lsp - text synchronisation' }
+TPLCClient >> sendDidChangeTextDocument: textDocumentItem withChanges: contentChanges [
+
+	self notifyMethod: 'textDocument/didChange' arguments: { 
+			(#textDocument -> textDocumentItem).
+			(#contentChanges -> contentChanges) } asDictionary asJRPCJSON
+]
+
+{ #category : #'lsp - text synchronisation' }
+TPLCClient >> sendDidOpenTextDocument: textDocumentItem [
+
+	self
+		notifyMethod: 'textDocument/didOpen'
+		arguments: { (#textDocument -> textDocumentItem) } asJRPCJSON
+]
+
 { #category : #'lsp - initialization' }
 TPLCClient >> sendInitialize [
 
@@ -213,4 +229,25 @@ TPLCClient >> start [
 	answerLoop := true.
 	self startAnswerLoop.
 	self sendInitialize
+]
+
+{ #category : #api }
+TPLCClient >> startWithLocalServer [
+
+	"This method is to use with a Local PLSServer"
+
+	| server serverProcess openPort |
+	self clientInit.
+	server := PLSServer new.
+	server debugMode: true.
+	server serverLoopPriority: Processor lowIOPriority.
+	self answerLoopPriority: Processor lowIOPriority.
+	serverProcess := [ server start ]
+		                 forkAt: Processor activeProcess priority
+		                 named: 'Local PLS server'.
+
+	[ server port = 0 ] whileTrue.
+	openPort := server port.
+	self port: openPort.
+	self start
 ]

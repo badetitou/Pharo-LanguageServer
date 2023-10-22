@@ -48,9 +48,56 @@ PLPTextDocumentClientCapabilities >> asJRPCJSON [
 	self codeLens ifNotNil: [ :el | dic at: #codeLens put: el asJRPCJSON ].
 	self colorProvider ifNotNil: [ :el | 
 		dic at: #colorProvider put: el asJRPCJSON ].
-	self window ifNotNil: [ :el | dic at: #window put: el asJRPCJSON ].
-	self workspace ifNotNil: [ :el | 
-		dic at: #workspace put: el asJRPCJSON ].
+	self completion ifNotNil: [ :el | 
+		dic at: #completion put: el asJRPCJSON ].
+	self declaration ifNotNil: [ :el | 
+		dic at: #declaration put: el asJRPCJSON ].
+	self diagnostic ifNotNil: [ :el | 
+		dic at: #diagnostic put: el asJRPCJSON ].
+	self documentHighlight ifNotNil: [ :el | 
+		dic at: #documentHighlight put: el asJRPCJSON ].
+	self documentLink ifNotNil: [ :el | 
+		dic at: #documentLink put: el asJRPCJSON ].
+	self documentSymbol ifNotNil: [ :el | 
+		dic at: #documentSymbol put: el asJRPCJSON ].
+	self foldingRange ifNotNil: [ :el | 
+		dic at: #foldingRange put: el asJRPCJSON ].
+	self formatting ifNotNil: [ :el | 
+		dic at: #formatting put: el asJRPCJSON ].
+	self hover ifNotNil: [ :el | dic at: #hover put: el asJRPCJSON ].
+	self implementation ifNotNil: [ :el | 
+		dic at: #implementation put: el asJRPCJSON ].
+	self inlayHint ifNotNil: [ :el | 
+		dic at: #inlayHint put: el asJRPCJSON ].
+	self inlineCompletion ifNotNil: [ :el | 
+		dic at: #inlineCompletion put: el asJRPCJSON ].
+	self inlineValue ifNotNil: [ :el | 
+		dic at: #inlineValue put: el asJRPCJSON ].
+	self linkedEditingRange ifNotNil: [ :el | 
+		dic at: #linkedEditingRange put: el asJRPCJSON ].
+	self moniker ifNotNil: [ :el | dic at: #moniker put: el asJRPCJSON ].
+	self onTypeFormatting ifNotNil: [ :el | 
+		dic at: #onTypeFormatting put: el asJRPCJSON ].
+	self publishDiagnostics ifNotNil: [ :el | 
+		dic at: #publishDiagnostics put: el asJRPCJSON ].
+	self rangeFormatting ifNotNil: [ :el | 
+		dic at: #rangeFormatting put: el asJRPCJSON ].
+	self references ifNotNil: [ :el | 
+		dic at: #references put: el asJRPCJSON ].
+	self rename ifNotNil: [ :el | dic at: #rename put: el asJRPCJSON ].
+	self selectionRange ifNotNil: [ :el | 
+		dic at: #selectionRange put: el asJRPCJSON ].
+	self semanticTokens ifNotNil: [ :el | 
+		dic at: #semanticTokens put: el asJRPCJSON ].
+	self signatureHelp ifNotNil: [ :el | 
+		dic at: #signatureHelp put: el asJRPCJSON ].
+	self synchronization ifNotNil: [ :el | 
+		dic at: #synchronization put: el asJRPCJSON ].
+	self typeDefinition ifNotNil: [ :el | 
+		dic at: #typeDefinition put: el asJRPCJSON ].
+	self typeHierarchy ifNotNil: [ :el | 
+		dic at: #typeHierarchy put: el asJRPCJSON ].
+
 	^ dic
 ]
 
