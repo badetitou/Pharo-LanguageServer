@@ -100,6 +100,12 @@ TPLPCommon >> handleRequest: request toClient: outputStream [
 	self explicitRequirement
 ]
 
+{ #category : #'plp - answerLoop' }
+TPLPCommon >> log: aString [
+
+	aString record
+]
+
 { #category : #id }
 TPLPCommon >> nextId [
 
