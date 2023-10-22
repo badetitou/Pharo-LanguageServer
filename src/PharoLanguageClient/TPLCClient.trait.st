@@ -156,7 +156,8 @@ TPLCClient >> sendDidOpenTextDocument: textDocumentItem [
 
 	self
 		notifyMethod: 'textDocument/didOpen'
-		arguments: { (#textDocument -> textDocumentItem) } asJRPCJSON
+		arguments:
+		{ (#textDocument -> textDocumentItem) } asDictionary asJRPCJSON
 ]
 
 { #category : #'lsp - initialization' }
