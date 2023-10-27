@@ -432,7 +432,7 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 			api max_new_tokens: 255.
 			api max_time: 2.
 			answer := api query:
-				          'Complete the following smalltalk piece of code.
+				          'You are a AI that assists developers in their developing task in Pharo Smalltalk. You have to be creative and complete code with text to help the developer. Complete the following smalltalk piece of code.
 ```st
 ' , internalTextDocument text , '
 ```' ].

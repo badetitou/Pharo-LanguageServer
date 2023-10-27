@@ -20,9 +20,23 @@ TextGhost >> dominates: other [
 	^ true
 ]
 
+{ #category : 'printing' }
+TextGhost >> emphasizeScanner: scanner [
+	"Set the emphasis for text scanning"
+
+	scanner addEmphasis: 2.
+	scanner textColor: color
+]
+
 { #category : 'comparing' }
 TextGhost >> hash [
 	^ color hash
+]
+
+{ #category : 'comparing' }
+TextGhost >> initialize [
+	super initialize.
+	color := Color lightGray
 ]
 
 { #category : 'printing' }

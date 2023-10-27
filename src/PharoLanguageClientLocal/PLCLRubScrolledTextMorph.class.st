@@ -12,7 +12,8 @@ Class {
 { #category : 'lsp - completion' }
 PLCLRubScrolledTextMorph >> clientInlineCompletionFrom: items [
 
-	self scrollPane setTextWith: (self text append: ((items anyOne at: #insertText) asText
+	self scrollPane setTextWith:
+		(self text append: ((items anyOne at: #insertText) asText
 				  addAttribute: TextGhost new;
 				  yourself))
 ]
@@ -25,8 +26,8 @@ PLCLRubScrolledTextMorph >> initialize [
 			 uri: self plpURI;
 			 languageId: 'smalltalk';
 			 version: version;
-			 text: '') for: self."
-
+			 text: '') for: self.
+"
 	super initialize
 ]
 
