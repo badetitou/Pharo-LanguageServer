@@ -105,9 +105,9 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 	| document |
 	document := self context
 		            textItem: (textDocument at: #uri)
-		            ifAbsent: [ 
+		            ifAbsent: [
 			            self didOpen: textDocument.
-			            textDocument ].
+			            self context textItem: (textDocument at: #uri) ].
 	document version: (textDocument at: #version).
 	document text: (contentChanges anyOne at: #text).
 	self

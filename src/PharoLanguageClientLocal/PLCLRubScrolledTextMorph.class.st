@@ -12,7 +12,7 @@ Class {
 { #category : 'lsp - completion' }
 PLCLRubScrolledTextMorph >> clientInlineCompletionFrom: items [
 
-	self scrollPane setTextWith: (self text append: (items anyOne asText
+	self scrollPane setTextWith: (self text append: ((items anyOne at: #insertText) asText
 				  addAttribute: TextGhost new;
 				  yourself))
 ]
@@ -60,5 +60,9 @@ PLCLRubScrolledTextMorph >> whenTextChangedInTextArea: anAnnouncement [
 	txt := txt withIndexSelect: [ :val :idx |
 		       (txt runs at: idx) anySatisfy: [ :el |
 			       (el isKindOf: TextGhost) not ] ].
-	self scrollPane setTextWith: txt"
+	self scrollPane setTextWith: txt.
+	PLCClient default
+		sendTextDocument: self versionedTextDocumentIdentifier
+		inlineCompletionAt:
+		(anAnnouncement text asString toLineCharacter: anAnnouncement start)"
 ]
