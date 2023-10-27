@@ -26,7 +26,7 @@ PLCAnswerProcessor >> addHandlerFor: aRequest [
 		ifFound: [ :pragma |
 			self answerHandlers
 				at: aRequest id
-				put: (PLSMessageSendHandler new
+				put: (PLCMessageSendHandler new
 						 receiver: client;
 						 methodName: pragma arguments first;
 						 messageSelector: pragma methodSelector;
