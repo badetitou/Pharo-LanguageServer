@@ -63,7 +63,8 @@ TPLCClient >> clientInit [
 
 	currentId := 0.
 	answerProcessor := PLCAnswerProcessor for: self.
-	data := ''
+	data := ''.
+	context := PLCContext new
 ]
 
 { #category : 'lsp - initialization' }
