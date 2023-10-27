@@ -1,14 +1,16 @@
 Class {
-	#name : #PLPTextDocumentPositionParams,
-	#superclass : #Object,
+	#name : 'PLPTextDocumentPositionParams',
+	#superclass : 'Object',
 	#instVars : [
 		'textDocument',
 		'position'
 	],
-	#category : #'PharoLanguageProtocol-Completion'
+	#category : 'PharoLanguageProtocol-Completion',
+	#package : 'PharoLanguageProtocol',
+	#tag : 'Completion'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLPTextDocumentPositionParams >> asJRPCJSON [
 
 	^ { 
@@ -16,25 +18,25 @@ PLPTextDocumentPositionParams >> asJRPCJSON [
 		  (#textDocument -> self textDocument asJRPCJSON) } asDictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentPositionParams >> position [
 
 	^ position
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentPositionParams >> position: anObject [
 
 	position := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentPositionParams >> textDocument [
 
 	^ textDocument
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentPositionParams >> textDocument: anObject [
 
 	textDocument := anObject

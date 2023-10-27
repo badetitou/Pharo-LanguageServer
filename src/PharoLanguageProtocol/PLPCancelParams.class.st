@@ -2,15 +2,17 @@
 [Documentation](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#cancelRequest)
 "
 Class {
-	#name : #PLPCancelParams,
-	#superclass : #Object,
+	#name : 'PLPCancelParams',
+	#superclass : 'Object',
 	#instVars : [
 		'id'
 	],
-	#category : #'PharoLanguageProtocol-BaseProtocol'
+	#category : 'PharoLanguageProtocol-BaseProtocol',
+	#package : 'PharoLanguageProtocol',
+	#tag : 'BaseProtocol'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLPCancelParams >> asJRPCJSON [
 
 	| dic |
@@ -19,13 +21,13 @@ PLPCancelParams >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPCancelParams >> id [
 
 	^ id
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPCancelParams >> id: anObject [
 
 	id := anObject

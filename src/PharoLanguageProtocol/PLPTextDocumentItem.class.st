@@ -1,16 +1,18 @@
 Class {
-	#name : #PLPTextDocumentItem,
-	#superclass : #Object,
+	#name : 'PLPTextDocumentItem',
+	#superclass : 'Object',
 	#instVars : [
 		'uri',
 		'languageId',
 		'version',
 		'text'
 	],
-	#category : #'PharoLanguageProtocol-TextDocument'
+	#category : 'PharoLanguageProtocol-TextDocument',
+	#package : 'PharoLanguageProtocol',
+	#tag : 'TextDocument'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentItem >> asJRPCJSON [
 
 	^ { 
@@ -20,49 +22,49 @@ PLPTextDocumentItem >> asJRPCJSON [
 		  (#version -> self version asJRPCJSON) } asDictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentItem >> languageId [
 
 	^ languageId
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentItem >> languageId: anObject [
 
 	languageId := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentItem >> text [
 
 	^ text
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentItem >> text: anObject [
 
 	text := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentItem >> uri [
 
 	^ uri
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentItem >> uri: anObject [
 
 	uri := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentItem >> version [
 
 	^ version
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentItem >> version: anObject [
 
 	version := anObject

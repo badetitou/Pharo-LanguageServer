@@ -1,6 +1,6 @@
 Class {
-	#name : #PLPTextDocumentClientCapabilities,
-	#superclass : #Object,
+	#name : 'PLPTextDocumentClientCapabilities',
+	#superclass : 'Object',
 	#instVars : [
 		'synchronization',
 		'completion',
@@ -33,10 +33,12 @@ Class {
 		'diagnostic',
 		'inlineCompletion'
 	],
-	#category : #'PharoLanguageProtocol-Initialize'
+	#category : 'PharoLanguageProtocol-Initialize',
+	#package : 'PharoLanguageProtocol',
+	#tag : 'Initialize'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> asJRPCJSON [
 
 	| dic |
@@ -101,361 +103,361 @@ PLPTextDocumentClientCapabilities >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> callHierarchy [
 
 	^ callHierarchy
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> callHierarchy: anObject [
 
 	callHierarchy := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> codeAction [
 
 	^ codeAction
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> codeAction: anObject [
 
 	codeAction := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> codeLens [
 
 	^ codeLens
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> codeLens: anObject [
 
 	codeLens := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> colorProvider [
 
 	^ colorProvider
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> colorProvider: anObject [
 
 	colorProvider := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> completion [
 
 	^ completion
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> completion: anObject [
 
 	completion := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> declaration [
 
 	^ declaration
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> declaration: anObject [
 
 	declaration := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> diagnostic [
 
 	^ diagnostic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> diagnostic: anObject [
 
 	diagnostic := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> documentHighlight [
 
 	^ documentHighlight
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> documentHighlight: anObject [
 
 	documentHighlight := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> documentLink [
 
 	^ documentLink
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> documentLink: anObject [
 
 	documentLink := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> documentSymbol [
 
 	^ documentSymbol
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> documentSymbol: anObject [
 
 	documentSymbol := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> foldingRange [
 
 	^ foldingRange
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> foldingRange: anObject [
 
 	foldingRange := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> formatting [
 
 	^ formatting
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> formatting: anObject [
 
 	formatting := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> hover [
 
 	^ hover
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> hover: anObject [
 
 	hover := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> implementation [
 
 	^ implementation
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> implementation: anObject [
 
 	implementation := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> inlayHint [
 
 	^ inlayHint
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> inlayHint: anObject [
 
 	inlayHint := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> inlineCompletion [
 
 	^ inlineCompletion
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> inlineCompletion: anObject [
 
 	inlineCompletion := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> inlineValue [
 
 	^ inlineValue
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> inlineValue: anObject [
 
 	inlineValue := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> linkedEditingRange [
 
 	^ linkedEditingRange
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> linkedEditingRange: anObject [
 
 	linkedEditingRange := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> moniker [
 
 	^ moniker
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> moniker: anObject [
 
 	moniker := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> onTypeFormatting [
 
 	^ onTypeFormatting
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> onTypeFormatting: anObject [
 
 	onTypeFormatting := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> publishDiagnostics [
 
 	^ publishDiagnostics
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> publishDiagnostics: anObject [
 
 	publishDiagnostics := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> rangeFormatting [
 
 	^ rangeFormatting
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> rangeFormatting: anObject [
 
 	rangeFormatting := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> references [
 
 	^ references
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> references: anObject [
 
 	references := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> rename [
 
 	^ rename
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> rename: anObject [
 
 	rename := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> selectionRange [
 
 	^ selectionRange
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> selectionRange: anObject [
 
 	selectionRange := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> semanticTokens [
 
 	^ semanticTokens
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> semanticTokens: anObject [
 
 	semanticTokens := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> signatureHelp [
 
 	^ signatureHelp
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> signatureHelp: anObject [
 
 	signatureHelp := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> synchronization [
 
 	^ synchronization
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> synchronization: anObject [
 
 	synchronization := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> typeDefinition [
 
 	^ typeDefinition
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> typeDefinition: anObject [
 
 	typeDefinition := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> typeHierarchy [
 
 	^ typeHierarchy
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentClientCapabilities >> typeHierarchy: anObject [
 
 	typeHierarchy := anObject

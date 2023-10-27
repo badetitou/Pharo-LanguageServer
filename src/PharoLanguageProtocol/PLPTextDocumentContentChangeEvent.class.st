@@ -1,14 +1,16 @@
 Class {
-	#name : #PLPTextDocumentContentChangeEvent,
-	#superclass : #Object,
+	#name : 'PLPTextDocumentContentChangeEvent',
+	#superclass : 'Object',
 	#instVars : [
 		'text',
 		'range'
 	],
-	#category : #'PharoLanguageProtocol-TextDocument'
+	#category : 'PharoLanguageProtocol-TextDocument',
+	#package : 'PharoLanguageProtocol',
+	#tag : 'TextDocument'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentContentChangeEvent >> asJRPCJSON [
 
 	| dic |
@@ -17,25 +19,25 @@ PLPTextDocumentContentChangeEvent >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentContentChangeEvent >> range [
 
 	^ range
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentContentChangeEvent >> range: anObject [
 
 	range := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentContentChangeEvent >> text [
 
 	^ text
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPTextDocumentContentChangeEvent >> text: anObject [
 
 	text := anObject

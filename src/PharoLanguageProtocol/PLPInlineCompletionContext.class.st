@@ -1,14 +1,16 @@
 Class {
-	#name : #PLPInlineCompletionContext,
-	#superclass : #Object,
+	#name : 'PLPInlineCompletionContext',
+	#superclass : 'Object',
 	#instVars : [
 		'triggerKind',
 		'selectedCompletionInfo'
 	],
-	#category : #'PharoLanguageProtocol-Completion'
+	#category : 'PharoLanguageProtocol-Completion',
+	#package : 'PharoLanguageProtocol',
+	#tag : 'Completion'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLPInlineCompletionContext >> asJRPCJSON [
 
 	| dic |
@@ -19,25 +21,25 @@ PLPInlineCompletionContext >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInlineCompletionContext >> selectedCompletionInfo [
 
 	^ selectedCompletionInfo
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInlineCompletionContext >> selectedCompletionInfo: anObject [
 
 	selectedCompletionInfo := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInlineCompletionContext >> triggerKind [
 
 	^ triggerKind
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInlineCompletionContext >> triggerKind: anObject [
 
 	triggerKind := anObject

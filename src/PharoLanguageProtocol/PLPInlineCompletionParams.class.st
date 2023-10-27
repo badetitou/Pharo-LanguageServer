@@ -1,13 +1,15 @@
 Class {
-	#name : #PLPInlineCompletionParams,
-	#superclass : #PLPTextDocumentPositionParams,
+	#name : 'PLPInlineCompletionParams',
+	#superclass : 'PLPTextDocumentPositionParams',
 	#instVars : [
 		'context'
 	],
-	#category : #'PharoLanguageProtocol-Completion'
+	#category : 'PharoLanguageProtocol-Completion',
+	#package : 'PharoLanguageProtocol',
+	#tag : 'Completion'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInlineCompletionParams >> asJRPCJSON [
 
 	| dict |
@@ -16,13 +18,13 @@ PLPInlineCompletionParams >> asJRPCJSON [
 	^ dict
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInlineCompletionParams >> context [
 
 	^ context
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInlineCompletionParams >> context: anObject [
 
 	context := anObject

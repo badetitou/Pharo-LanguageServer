@@ -1,1 +1,1 @@
-Package { #name : #PharoLanguageProtocol }
+Package { #name : 'PharoLanguageProtocol' }

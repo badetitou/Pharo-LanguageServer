@@ -1,11 +1,12 @@
 Class {
-	#name : #PLCLTextStyler,
-	#superclass : #SHRBTextStyler,
+	#name : 'PLCLTextStyler',
+	#superclass : 'SHRBTextStyler',
 	#classTraits : 'TRBProgramNodeVisitor classTrait',
-	#category : #PharoLanguageClientLocal
+	#category : 'PharoLanguageClientLocal',
+	#package : 'PharoLanguageClientLocal'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCLTextStyler >> style: aText [
 	aText ifEmpty: [ ^ self ].
 	self terminateBackgroundStylingProcess.

@@ -1,30 +1,31 @@
 Class {
-	#name : #TextGhost,
-	#superclass : #TextAttribute,
+	#name : 'TextGhost',
+	#superclass : 'TextAttribute',
 	#instVars : [
 		'color'
 	],
-	#category : #PharoLanguageClientLocal
+	#category : 'PharoLanguageClientLocal',
+	#package : 'PharoLanguageClientLocal'
 }
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TextGhost >> = other [
 
 	^ other class == self class
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 TextGhost >> dominates: other [
 "Only one color attribute on a same portion of text."
 	^ true
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TextGhost >> hash [
 	^ color hash
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TextGhost >> printOn: aStream [
 
 	super printOn: aStream
