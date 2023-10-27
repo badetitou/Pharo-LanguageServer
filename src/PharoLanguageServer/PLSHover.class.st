@@ -1,15 +1,16 @@
 Class {
-	#name : #PLSHover,
-	#superclass : #Object,
+	#name : 'PLSHover',
+	#superclass : 'Object',
 	#instVars : [
 		'source',
 		'position',
 		'context'
 	],
-	#category : #PharoLanguageServer
+	#category : 'PharoLanguageServer',
+	#package : 'PharoLanguageServer'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSHover >> contents [
 	| word |
 	word := self source text wordAt: (self source text plsToPosition: position).
@@ -26,32 +27,32 @@ PLSHover >> contents [
 				ifFalse: [ '' ] ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSHover >> context [
 	^ context
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSHover >> context: anObject [
 	context := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSHover >> position [
 	^ position
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSHover >> position: aDictionaryLineCharacter [
 	position := aDictionaryLineCharacter
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSHover >> source [
 	^ source
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSHover >> source: anObject [
 	source := anObject
 ]

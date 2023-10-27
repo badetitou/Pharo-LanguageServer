@@ -1,36 +1,38 @@
 Class {
-	#name : #PLSSignatureHelpClientCapabilities,
-	#superclass : #Object,
+	#name : 'PLSSignatureHelpClientCapabilities',
+	#superclass : 'Object',
 	#instVars : [
 		'triggerCharacters',
 		'retriggerCharacters'
 	],
-	#category : #'PharoLanguageServer-Structure-Capabilities'
+	#category : 'PharoLanguageServer-Structure-Capabilities',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-Capabilities'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSSignatureHelpClientCapabilities >> asJRPCJSON [
 	^ {(#triggerCharacters -> self triggerCharacters asJRPCJSON).
 	(#retriggerCharacters -> self retriggerCharacters asJRPCJSON).
 	(#workDoneProgress -> false)} asDictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSSignatureHelpClientCapabilities >> retriggerCharacters [
 	^ retriggerCharacters
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSSignatureHelpClientCapabilities >> retriggerCharacters: anObject [
 	retriggerCharacters := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSSignatureHelpClientCapabilities >> triggerCharacters [
 	^ triggerCharacters
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSSignatureHelpClientCapabilities >> triggerCharacters: anObject [
 	triggerCharacters := anObject
 ]

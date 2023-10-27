@@ -1,6 +1,6 @@
-Extension { #name : #Object }
+Extension { #name : 'Object' }
 
-{ #category : #'*PharoLanguageServer' }
+{ #category : '*PharoLanguageServer' }
 Object >> asPLSCellOutput [
 
 	^ { (PLSCellOutput
@@ -8,7 +8,7 @@ Object >> asPLSCellOutput [
 		   mimetype: PLSCellMimetype html) }
 ]
 
-{ #category : #'*PharoLanguageServer' }
+{ #category : '*PharoLanguageServer' }
 Object >> plsPrintString [
 	^ String streamContents: [ :stream | self printOn: stream ]
 ]

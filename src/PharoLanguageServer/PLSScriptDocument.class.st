@@ -1,31 +1,34 @@
 Class {
-	#name : #PLSScriptDocument,
-	#superclass : #PLSDocument,
-	#category : #'PharoLanguageServer-Document'
+	#name : 'PLSScriptDocument',
+	#superclass : 'PLSDocument',
+	#category : 'PharoLanguageServer-Document',
+	#package : 'PharoLanguageServer',
+	#tag : 'Document'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PLSScriptDocument class >> fromDocumentDictionary: aDocumentDictionary [
+
 	^ self new
-		version: (aDocumentDictionary at: #version);
-		text: (aDocumentDictionary at: #text);
-		languageId: (aDocumentDictionary at: #languageId);
-		uri: (aDocumentDictionary at: #uri);
-		yourself
+		  version: (aDocumentDictionary at: #version);
+		  text: (aDocumentDictionary at: #text ifAbsent: '');
+		  languageId: (aDocumentDictionary at: #languageId ifAbsent: '');
+		  uri: (aDocumentDictionary at: #uri);
+		  yourself
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSScriptDocument >> diagnostics [
 	^ ((PLSDiagnosticsParamsEngine document: self) requestor: self binder)
 		computeDiagnostics asJRPCJSON
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 PLSScriptDocument >> isScriptDocument [
 	^ true
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSScriptDocument >> nodeAt: aPosition [
 	| positionChar |
 	positionChar := self text plsToPosition: aPosition.

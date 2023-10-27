@@ -26,8 +26,17 @@ PLCClient class >> default: aPLCClient [
 PLCClient class >> reset [
 
 	<script>
-	self default stop.
+	default ifNotNil: [ default stop ].
 	self default: nil
+]
+
+{ #category : 'lsp - completion' }
+PLCClient >> clientInlineCompletionFrom: items fromRequest: originRequest [
+
+	<jrpc: #'textDocument/inlineCompletion'>
+	| originUri |
+	originUri := originRequest params at: #textDocument at: #uri.
+	(context textItem: originUri) clientInlineCompletionFrom: items
 ]
 
 { #category : 'initialization' }

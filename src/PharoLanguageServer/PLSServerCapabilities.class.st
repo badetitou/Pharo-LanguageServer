@@ -1,6 +1,6 @@
 Class {
-	#name : #PLSServerCapabilities,
-	#superclass : #Object,
+	#name : 'PLSServerCapabilities',
+	#superclass : 'Object',
 	#instVars : [
 		'codeLens',
 		'completionProvider',
@@ -14,10 +14,12 @@ Class {
 		'diagnosticProvider',
 		'inlineCompletionProvider'
 	],
-	#category : #'PharoLanguageServer-Structure-Capabilities'
+	#category : 'PharoLanguageServer-Structure-Capabilities',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-Capabilities'
 }
 
-{ #category : #public }
+{ #category : 'public' }
 PLSServerCapabilities class >> forPharo [
 
 	^ self new
@@ -41,7 +43,7 @@ PLSServerCapabilities class >> forPharo [
 		  yourself
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLSServerCapabilities >> asJRPCJSON [
 
 	| dic |
@@ -79,133 +81,133 @@ PLSServerCapabilities >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> codeActionProvider [
 
 	^ codeActionProvider
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> codeActionProvider: anObject [
 
 	codeActionProvider := anObject
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 PLSServerCapabilities >> codeLens [
 
 	^ codeLens
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> codeLens: anObject [
 
 	codeLens := anObject
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 PLSServerCapabilities >> completionProvider [
 
 	^ completionProvider
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> completionProvider: anObject [
 
 	completionProvider := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> diagnosticProvider [
 
 	^ diagnosticProvider
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> diagnosticProvider: anObject [
 
 	diagnosticProvider := anObject
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLSServerCapabilities >> documentFormattingProvider [
 
 	^ documentFormattingProvider
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> documentFormattingProvider: anObject [
 
 	documentFormattingProvider := anObject
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLSServerCapabilities >> documentSymbolProvider [
 
 	^ documentSymbolProvider
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> documentSymbolProvider: anObject [
 
 	documentSymbolProvider := anObject
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLSServerCapabilities >> hoverProvider [
 
 	^ hoverProvider
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> hoverProvider: anObject [
 
 	hoverProvider := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> inlineCompletionProvider [
 
 	^ inlineCompletionProvider
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> inlineCompletionProvider: anObject [
 
 	inlineCompletionProvider := anObject
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 PLSServerCapabilities >> signatureHelp [
 
 	^ signatureHelp
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> signatureHelp: anObject [
 
 	signatureHelp := anObject
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLSServerCapabilities >> textDocumentSync [
 
 	^ textDocumentSync
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> textDocumentSync: anObject [
 
 	textDocumentSync := anObject
 ]
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLSServerCapabilities >> typeDefinitionOptions [
 
 	^ typeDefinitionOptions
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServerCapabilities >> typeDefinitionOptions: anObject [
 
 	typeDefinitionOptions := anObject

@@ -1,14 +1,16 @@
 Class {
-	#name : #PLSTextDocumentEdit,
-	#superclass : #Object,
+	#name : 'PLSTextDocumentEdit',
+	#superclass : 'Object',
 	#instVars : [
 		'textDocument',
 		'edits'
 	],
-	#category : #'PharoLanguageServer-Structure-TextDocument'
+	#category : 'PharoLanguageServer-Structure-TextDocument',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-TextDocument'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSTextDocumentEdit >> asJRPCJSON [
 
 	^ {
@@ -16,25 +18,25 @@ PLSTextDocumentEdit >> asJRPCJSON [
 		  (#textDocument -> self textDocument asJRPCJSON) } asDictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSTextDocumentEdit >> edits [
 
 	^ edits
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSTextDocumentEdit >> edits: anObject [
 
 	edits := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSTextDocumentEdit >> textDocument [
 
 	^ textDocument
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSTextDocumentEdit >> textDocument: anObject [
 
 	textDocument := anObject

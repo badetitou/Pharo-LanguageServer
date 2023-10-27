@@ -1,14 +1,16 @@
 Class {
-	#name : #PLSUnchangedDocumentDiagnosticReport,
-	#superclass : #Object,
+	#name : 'PLSUnchangedDocumentDiagnosticReport',
+	#superclass : 'Object',
 	#instVars : [
 		'kind',
 		'resultId'
 	],
-	#category : #'PharoLanguageServer-Structure-Diagnostic'
+	#category : 'PharoLanguageServer-Structure-Diagnostic',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-Diagnostic'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSUnchangedDocumentDiagnosticReport >> asJRPCJSON [
 
 	^ { 
@@ -16,31 +18,31 @@ PLSUnchangedDocumentDiagnosticReport >> asJRPCJSON [
 		  (#resultId -> self resultId asJRPCJSON) } asDictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSUnchangedDocumentDiagnosticReport >> initialize [
 	super initialize.
 	self kind: 'unchanged'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSUnchangedDocumentDiagnosticReport >> kind [
 
 	^ kind
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSUnchangedDocumentDiagnosticReport >> kind: anObject [
 
 	kind := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSUnchangedDocumentDiagnosticReport >> resultId [
 
 	^ resultId
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSUnchangedDocumentDiagnosticReport >> resultId: anObject [
 
 	resultId := anObject

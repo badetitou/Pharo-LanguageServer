@@ -1,15 +1,17 @@
 Class {
-	#name : #PLSErroredMCMethodDefinition,
-	#superclass : #PLSMCMethodDefinition,
-	#category : #'PharoLanguageServer-TonelUtils'
+	#name : 'PLSErroredMCMethodDefinition',
+	#superclass : 'PLSMCMethodDefinition',
+	#category : 'PharoLanguageServer-TonelUtils',
+	#package : 'PharoLanguageServer',
+	#tag : 'TonelUtils'
 }
 
-{ #category : #testing }
+{ #category : 'testing' }
 PLSErroredMCMethodDefinition >> isErrorDefinition [
 	^ true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 PLSErroredMCMethodDefinition >> load [
 	self inform: #'problem with at least one method definition'
 ]

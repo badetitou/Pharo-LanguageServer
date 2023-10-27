@@ -2,17 +2,19 @@
 Based on https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#workspaceEdit
 "
 Class {
-	#name : #PLSWorkspaceEdit,
-	#superclass : #Object,
+	#name : 'PLSWorkspaceEdit',
+	#superclass : 'Object',
 	#instVars : [
 		'changes',
 		'documentChanges',
 		'changeAnnotations'
 	],
-	#category : #'PharoLanguageServer-Structure-Workspace'
+	#category : 'PharoLanguageServer-Structure-Workspace',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-Workspace'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSWorkspaceEdit >> asJRPCJSON [
 
 	| dic |
@@ -26,37 +28,37 @@ PLSWorkspaceEdit >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSWorkspaceEdit >> changeAnnotations [
 
 	^ changeAnnotations
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSWorkspaceEdit >> changeAnnotations: anObject [
 
 	changeAnnotations := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSWorkspaceEdit >> changes [
 
 	^ changes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSWorkspaceEdit >> changes: anObject [
 
 	changes := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSWorkspaceEdit >> documentChanges [
 
 	^ documentChanges
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSWorkspaceEdit >> documentChanges: anObject [
 
 	documentChanges := anObject

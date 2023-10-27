@@ -1,6 +1,6 @@
 Class {
-	#name : #PLSDocument,
-	#superclass : #Object,
+	#name : 'PLSDocument',
+	#superclass : 'Object',
 	#instVars : [
 		'version',
 		'text',
@@ -8,10 +8,12 @@ Class {
 		'uri',
 		'binder'
 	],
-	#category : #'PharoLanguageServer-Document'
+	#category : 'PharoLanguageServer-Document',
+	#package : 'PharoLanguageServer',
+	#tag : 'Document'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PLSDocument class >> from: aTextDocument [
 	"return a script document or a tonel document with the built from the textDocument dictionary"
 
@@ -20,12 +22,12 @@ PLSDocument class >> from: aTextDocument [
 		ifFalse: [ PLSScriptDocument fromDocumentDictionary: aTextDocument ]
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PLSDocument class >> fromDocumentDictionary: aDocumentDictionary [
 	self subclassResponsibility
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PLSDocument class >> fromURI: aTextDocumentURI [
 	"this is a backup solution"
 
@@ -34,93 +36,93 @@ PLSDocument class >> fromURI: aTextDocumentURI [
 		ifFalse: [ PLSScriptDocument new uri: aTextDocumentURI; yourself ]
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PLSDocument class >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PLSDocument class >> isURIFromTonelDocument: textDocumentURI [
 	^ (textDocumentURI endsWith: 'class.st')
 		or: [ textDocumentURI endsWith: 'extension.st' ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> binder [
 	^ binder
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSDocument >> codeLens [
 	^ {}
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSDocument >> diagnostics [
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> initialize [
 	binder := PLSBinder new
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 PLSDocument >> isScriptDocument [
 	^ false
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 PLSDocument >> isTonelDocument [
 	^ false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> languageId [
 	^ languageId
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> languageId: anObject [
 	languageId := anObject
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSDocument >> nodeAt: aPosition [
 	self parsed
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSDocument >> symbols [
 	^ {}
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> text [
 	^ text
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> text: anObject [
 	text := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> uri [
 	^ uri
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> uri: anObject [
 	uri := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> version [
 	^ version
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDocument >> version: anObject [
 	version := anObject
 ]

@@ -3,8 +3,8 @@ I am the Diagnotic structure.
 I report an error with an error message, at a position, with a message
 "
 Class {
-	#name : #PLSDiagnostic,
-	#superclass : #Object,
+	#name : 'PLSDiagnostic',
+	#superclass : 'Object',
 	#instVars : [
 		'range',
 		'message',
@@ -13,10 +13,12 @@ Class {
 		'data',
 		'code'
 	],
-	#category : #'PharoLanguageServer-Structure-Diagnostic'
+	#category : 'PharoLanguageServer-Structure-Diagnostic',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-Diagnostic'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> asJRPCJSON [
 
 	| dic |
@@ -31,74 +33,74 @@ PLSDiagnostic >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> code [
 
 	^ code
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> code: anObject [
 
 	code := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> codeDescription [
 
 	^ codeDescription
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> codeDescription: anObject [
 
 	codeDescription := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> data [
 
 	^ data
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> data: anObject [
 
 	data := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> initialize [
 	super initialize.
 	source := 'Pharo Language Server'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> message [
 	^ message
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> message: anObject [
 	message := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> range [
 	^ range
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> range: anObject [
 	range := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> source [
 	^ source
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSDiagnostic >> source: anObject [
 	source := anObject
 ]

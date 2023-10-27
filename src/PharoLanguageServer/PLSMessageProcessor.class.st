@@ -1,10 +1,12 @@
 Class {
-	#name : #PLSMessageProcessor,
-	#superclass : #JRPCMessageProcessor,
-	#category : #'PharoLanguageServer-Handler'
+	#name : 'PLSMessageProcessor',
+	#superclass : 'JRPCMessageProcessor',
+	#category : 'PharoLanguageServer-Handler',
+	#package : 'PharoLanguageServer',
+	#tag : 'Handler'
 }
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 PLSMessageProcessor >> addHandler: aJRPCHandler [
 
 	(self handlers includes: aJRPCHandler) ifTrue: [ "handler has been override" 
@@ -13,7 +15,7 @@ PLSMessageProcessor >> addHandler: aJRPCHandler [
 	handlers add: aJRPCHandler
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 PLSMessageProcessor >> addHandlersFromPragmasIn: anObject [
 	(anObject class withAllSuperclasses select: [ :class | 
 		 (class inheritsFrom: PLSAbstractServer) or: [ 
@@ -26,12 +28,12 @@ PLSMessageProcessor >> addHandlersFromPragmasIn: anObject [
 					 yourself) ] ]
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 PLSMessageProcessor >> handleJRPCSuccessResponseObject: aJRPCSuccessResponseObject [ 
 	^ JRPCEmptyResponseObject new
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 PLSMessageProcessor >> handleJSON: jrpcMessage [
 	"Gets aJSONString being a request or notification serialized in JSON format as input
 	 and returns a JSON string being the answer serialized in JSON format.

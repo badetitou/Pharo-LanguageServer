@@ -21,13 +21,17 @@ PLCAnswerProcessor class >> for: aTPLCClient [
 PLCAnswerProcessor >> addHandlerFor: aRequest [
 
 	(Pragma allNamed: #jrpc: in: client class)
-		detect: [ :pragma | (pragma argumentNamed: #jrpc:) = aRequest method ]
+		detect: [ :pragma |
+		(pragma argumentNamed: #jrpc:) = aRequest method ]
 		ifFound: [ :pragma |
-			self answerHandlers at: aRequest id put: (PLSMessageSendHandler new
-					 receiver: client;
-					 methodName: pragma arguments first;
-					 messageSelector: pragma methodSelector;
-					 yourself) ]
+			self answerHandlers
+				at: aRequest id
+				put: (PLSMessageSendHandler new
+						 receiver: client;
+						 methodName: pragma arguments first;
+						 messageSelector: pragma methodSelector;
+						 originRequest: aRequest;
+						 yourself) ]
 ]
 
 { #category : 'accessing' }

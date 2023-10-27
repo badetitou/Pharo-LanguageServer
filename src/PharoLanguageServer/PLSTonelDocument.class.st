@@ -1,10 +1,12 @@
 Class {
-	#name : #PLSTonelDocument,
-	#superclass : #PLSDocument,
-	#category : #'PharoLanguageServer-Document'
+	#name : 'PLSTonelDocument',
+	#superclass : 'PLSDocument',
+	#category : 'PharoLanguageServer-Document',
+	#package : 'PharoLanguageServer',
+	#tag : 'Document'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PLSTonelDocument class >> fromDocumentDictionary: aDocumentDictionary [
 	^ self new
 		version: (aDocumentDictionary at: #version);
@@ -14,7 +16,7 @@ PLSTonelDocument class >> fromDocumentDictionary: aDocumentDictionary [
 		yourself
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSTonelDocument >> codeLens [
 
 	| parsed className |
@@ -52,7 +54,7 @@ PLSTonelDocument >> codeLens [
 				     arguments: { className })) }) asArray
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSTonelDocument >> diagnostics [
 
 	| diagnostics parsed |
@@ -84,12 +86,12 @@ PLSTonelDocument >> diagnostics [
 		   yourself) asJRPCJSON
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 PLSTonelDocument >> isTonelDocument [
 	^ true
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSTonelDocument >> nodeAt: aPosition [
 
 	| charPos parsed methodDefinition |
@@ -111,12 +113,12 @@ PLSTonelDocument >> nodeAt: aPosition [
 			   to: charPos - methodDefinition bodyStartPos + methodDefinition selector size - 1)
 ]
 
-{ #category : #private }
+{ #category : 'private' }
 PLSTonelDocument >> parsed [
 	^ PLSTonelParser parseString: self text
 ]
 
-{ #category : #'lsp - accessing' }
+{ #category : 'lsp - accessing' }
 PLSTonelDocument >> symbols [
 	| parsed classDef children |
 	[ parsed := self parsed ]

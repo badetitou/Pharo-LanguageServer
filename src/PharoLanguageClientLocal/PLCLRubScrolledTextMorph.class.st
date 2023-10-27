@@ -10,9 +10,8 @@ Class {
 }
 
 { #category : 'lsp - completion' }
-PLCLRubScrolledTextMorph >> clientInlineCompletiongFrom: items [
+PLCLRubScrolledTextMorph >> clientInlineCompletionFrom: items [
 
-	<jrpc: #'textDocument/inlineCompletion'>
 	self scrollPane setTextWith: (self text append: (items anyOne asText
 				  addAttribute: TextGhost new;
 				  yourself))
@@ -22,11 +21,11 @@ PLCLRubScrolledTextMorph >> clientInlineCompletiongFrom: items [
 PLCLRubScrolledTextMorph >> initialize [
 
 	version := 0.
-	PLCClient default sendDidOpenTextDocument: (PLPTextDocumentItem new
+	"PLCClient default sendDidOpenTextDocument: (PLPTextDocumentItem new
 			 uri: self plpURI;
 			 languageId: 'smalltalk';
 			 version: version;
-			 text: '').
+			 text: '') for: self."
 
 	super initialize
 ]
@@ -38,25 +37,28 @@ PLCLRubScrolledTextMorph >> plpURI [
 ]
 
 { #category : 'event handling' }
+PLCLRubScrolledTextMorph >> versionedTextDocumentIdentifier [
+
+	^ PLSVersionedTextDocumentIdentifier new
+		  uri: self plpURI;
+		  version: version;
+		  yourself
+]
+
+{ #category : 'event handling' }
 PLCLRubScrolledTextMorph >> whenTextChangedInTextArea: anAnnouncement [
 
 	| txt |
 	super whenTextChangedInTextArea: anAnnouncement.
 	version := version + 1.
-	PLCClient default
-		sendDidChangeTextDocument: (PLSVersionedTextDocumentIdentifier new
-				 uri: 'test';
-				 version: version;
-				 yourself)
+	"PLCClient default
+		sendDidChangeTextDocument: self versionedTextDocumentIdentifier
 		withChanges: { (PLPTextDocumentContentChangeEvent new
 				 text: self text asString;
-				 yourself) }
-	"txt := self text.
-txt := txt withIndexSelect: [ :val :idx |
-	       (txt runs at: idx) anySatisfy: [ :el |
-		       (el isKindOf: TextGhost) not ] ].
-self scrollPane setTextWith: txt.
-anAnnouncement text asString = '$²' ifTrue: [
-	PLCClient default sendTextDocumentInlineCompletionAt:
-		(anAnnouncement text asString toLineCharacter: anAnnouncement start) ]"
+				 yourself) }.
+	txt := self text.
+	txt := txt withIndexSelect: [ :val :idx |
+		       (txt runs at: idx) anySatisfy: [ :el |
+			       (el isKindOf: TextGhost) not ] ].
+	self scrollPane setTextWith: txt"
 ]

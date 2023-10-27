@@ -1,6 +1,6 @@
-Extension { #name : #AbstractBinaryFileStream }
+Extension { #name : 'AbstractBinaryFileStream' }
 
-{ #category : #'*PharoLanguageServer' }
+{ #category : '*PharoLanguageServer' }
 AbstractBinaryFileStream >> nextInto: aCollection startingAt: startIndex [
 	"Read the next elements of the receiver into aCollection.
 	Return aCollection or a partial copy if less than aCollection

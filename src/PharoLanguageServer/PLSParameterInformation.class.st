@@ -1,34 +1,36 @@
 Class {
-	#name : #PLSParameterInformation,
-	#superclass : #Object,
+	#name : 'PLSParameterInformation',
+	#superclass : 'Object',
 	#instVars : [
 		'label',
 		'documentation'
 	],
-	#category : #'PharoLanguageServer-Structure-Signature'
+	#category : 'PharoLanguageServer-Structure-Signature',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-Signature'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLSParameterInformation >> asJRPCJSON [
 	^ {(#label -> self label asJRPCJSON)} asDictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSParameterInformation >> documentation [
 	^ documentation
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSParameterInformation >> documentation: anObject [
 	documentation := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSParameterInformation >> label [
 	^ label
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSParameterInformation >> label: anObject [
 	label := anObject
 ]

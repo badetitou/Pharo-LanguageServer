@@ -1,6 +1,6 @@
-Extension { #name : #Class }
+Extension { #name : 'Class' }
 
-{ #category : #'*PharoLanguageServer' }
+{ #category : '*PharoLanguageServer' }
 Class >> plsURIString [
 
 	^ 'pharoImage://' , self package name , '/' , self name , '.class.st'

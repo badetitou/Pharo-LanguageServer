@@ -74,7 +74,7 @@ TPLCClient >> clientInitializeWith: capabilities fromServerInfo: serverInfo [
 ]
 
 { #category : 'lsp - completion' }
-TPLCClient >> clientInlineCompletiongFrom: items [
+TPLCClient >> clientInlineCompletionFrom: items fromRequest: originRequest [
 
 	<jrpc: #'textDocument/inlineCompletion'>
 	self subclassResponsibility
@@ -100,6 +100,18 @@ TPLCClient >> connect [
 	tcpSocket connectTo: NetNameResolver loopBackAddress port: self port.
 	clientInStream := SocketStream on: tcpSocket.
 	clientOutStream := clientInStream
+]
+
+{ #category : 'accessing' }
+TPLCClient >> context [
+
+	^ context
+]
+
+{ #category : 'accessing' }
+TPLCClient >> context: anObject [
+
+	context := anObject
 ]
 
 { #category : 'plp - answerLoop' }
@@ -153,8 +165,11 @@ TPLCClient >> sendDidChangeTextDocument: textDocumentItem withChanges: contentCh
 ]
 
 { #category : 'lsp - text synchronisation' }
-TPLCClient >> sendDidOpenTextDocument: textDocumentItem [
+TPLCClient >> sendDidOpenTextDocument: textDocumentItem for: aConcreteTextDocument [
 
+	self context
+		textItem: textDocumentItem uri
+		put: aConcreteTextDocument.
 	self
 		notifyMethod: 'textDocument/didOpen'
 		arguments:
@@ -198,7 +213,7 @@ TPLCClient >> sendRequest: aJRPCRequestObject [
 ]
 
 { #category : 'lsp - completion' }
-TPLCClient >> sendTextDocumentInlineCompletionAt: aPosition [
+TPLCClient >> sendTextDocument: textDocumentIdentifier inlineCompletionAt: aPosition [
 
 	self
 		callMethod: #'textDocument/inlineCompletion'
@@ -207,7 +222,7 @@ TPLCClient >> sendTextDocumentInlineCompletionAt: aPosition [
 						  triggerKind: PLPInlineCompletionTriggerKind automatic;
 						  yourself);
 				 position: aPosition;
-				 textDocument: nil;
+				 textDocument: textDocumentIdentifier;
 				 yourself) asJRPCJSON
 		withId: self nextId "to fill" "to fill"
 ]

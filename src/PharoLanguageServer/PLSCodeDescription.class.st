@@ -1,25 +1,27 @@
 Class {
-	#name : #PLSCodeDescription,
-	#superclass : #Object,
+	#name : 'PLSCodeDescription',
+	#superclass : 'Object',
 	#instVars : [
 		'href'
 	],
-	#category : #'PharoLanguageServer-Structure-Diagnostic'
+	#category : 'PharoLanguageServer-Structure-Diagnostic',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-Diagnostic'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeDescription >> asJRPCJSON [
 
 	^ { (#href -> self href asJRPCJSON) } asDictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeDescription >> href [
 
 	^ href
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeDescription >> href: anObject [
 
 	href := anObject
