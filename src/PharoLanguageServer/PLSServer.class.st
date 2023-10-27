@@ -425,6 +425,7 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 	(HFAPI apiKey isNil or: [ HFAPI apiKey isEmpty ])
 		ifTrue: [ answer := 'Set a HuggingFace API KEY in the settings' ]
 		ifFalse: [
+			[
 			internalTextDocument := self context textItem:
 				                        (textDocument at: #uri).
 			api := HFAPI new.
@@ -435,7 +436,9 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 				          'You are a AI that assists developers in their developing task in Pharo Smalltalk. You have to be creative and complete code with text to help the developer. Complete the following smalltalk piece of code.
 ```st
 ' , internalTextDocument text , '
-```' ].
+```' ]
+				on: HFAPIError
+				do: [ answer := 'HuggingFace rate limit' ] ].
 	^ (PLSInlineCompletionList new
 		   items: { (PLSInlineCompletionItem new insertText: answer) };
 		   yourself) asJRPCJSON
