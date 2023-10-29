@@ -1,28 +1,27 @@
 Class {
-	#name : 'PLCClient',
-	#superclass : 'Object',
+	#name : #PLCClient,
+	#superclass : #Object,
 	#traits : 'TPLCClient',
 	#classTraits : 'TPLCClient classTrait',
 	#classInstVars : [
 		'default'
 	],
-	#category : 'PharoLanguageClientLocal',
-	#package : 'PharoLanguageClientLocal'
+	#category : 'PharoLanguageClientLocal'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLCClient class >> default [
 
 	^ default ifNil: [ default := self new ]
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLCClient class >> default: aPLCClient [
 
 	default := aPLCClient
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLCClient class >> reset [
 
 	<script>
@@ -30,7 +29,7 @@ PLCClient class >> reset [
 	self default: nil
 ]
 
-{ #category : 'lsp - completion' }
+{ #category : #'lsp - completion' }
 PLCClient >> clientInlineCompletionFrom: items fromRequest: originRequest [
 
 	<jrpc: #'textDocument/inlineCompletion'>
@@ -39,14 +38,14 @@ PLCClient >> clientInlineCompletionFrom: items fromRequest: originRequest [
 	(context textItem: originUri) clientInlineCompletionFrom: items
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLCClient >> initialize [
 
 	self startWithLocalServer.
 	super initialize
 ]
 
-{ #category : 'lsp - initialization' }
+{ #category : #'lsp - initialization' }
 PLCClient >> sendInitialize [
 
 	self

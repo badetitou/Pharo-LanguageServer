@@ -1,1 +1,1 @@
-Package { #name : 'PharoLanguageClientLocal' }
+Package { #name : #PharoLanguageClientLocal }

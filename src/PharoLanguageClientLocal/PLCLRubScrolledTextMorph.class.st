@@ -1,15 +1,14 @@
 Class {
-	#name : 'PLCLRubScrolledTextMorph',
-	#superclass : 'SpRubScrolledTextMorph',
+	#name : #PLCLRubScrolledTextMorph,
+	#superclass : #SpRubScrolledTextMorph,
 	#classTraits : 'TPLCClient classTrait',
 	#instVars : [
 		'version'
 	],
-	#category : 'PharoLanguageClientLocal',
-	#package : 'PharoLanguageClientLocal'
+	#category : 'PharoLanguageClientLocal'
 }
 
-{ #category : 'lsp - completion' }
+{ #category : #'lsp - completion' }
 PLCLRubScrolledTextMorph >> clientInlineCompletionFrom: items [
 
 	self scrollPane setTextWith:
@@ -18,7 +17,7 @@ PLCLRubScrolledTextMorph >> clientInlineCompletionFrom: items [
 				  yourself))
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLCLRubScrolledTextMorph >> initialize [
 
 	version := 0.
@@ -31,13 +30,13 @@ PLCLRubScrolledTextMorph >> initialize [
 	super initialize
 ]
 
-{ #category : 'event handling' }
+{ #category : #'event handling' }
 PLCLRubScrolledTextMorph >> plpURI [
 
 	^ 'workspace/' , self identityHash printString
 ]
 
-{ #category : 'event handling' }
+{ #category : #'event handling' }
 PLCLRubScrolledTextMorph >> versionedTextDocumentIdentifier [
 
 	^ PLSVersionedTextDocumentIdentifier new
@@ -46,7 +45,7 @@ PLCLRubScrolledTextMorph >> versionedTextDocumentIdentifier [
 		  yourself
 ]
 
-{ #category : 'event handling' }
+{ #category : #'event handling' }
 PLCLRubScrolledTextMorph >> whenTextChangedInTextArea: anAnnouncement [
 
 	| txt |
