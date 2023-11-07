@@ -1,6 +1,6 @@
-Extension { #name : 'String' }
+Extension { #name : #String }
 
-{ #category : '*PharoLanguageServer' }
+{ #category : #'*PharoLanguageServer' }
 String >> plsLineIndicesDo: aBlock [
 	"execute aBlock with 3 arguments for each line:
 	- start index of line
@@ -40,14 +40,14 @@ String >> plsLineIndicesDo: aBlock [
 	aBlock value: start value: sz value: sz
 ]
 
-{ #category : '*PharoLanguageServer' }
+{ #category : #'*PharoLanguageServer' }
 String >> plsLines [
 	"Same as lines but empty line exist"
 	^Array new: (self size // 60 max: 16)
             streamContents: [:lines | self plsLinesDo: [:aLine | lines nextPut: aLine]]
 ]
 
-{ #category : '*PharoLanguageServer' }
+{ #category : #'*PharoLanguageServer' }
 String >> plsLinesDo: aBlock [
 	"Same as linesDo but empty line exist"
 
@@ -61,7 +61,7 @@ String >> plsLinesDo: aBlock [
 					aBlock value: (self copyFrom: begin to: end) "]" ]
 ]
 
-{ #category : '*PharoLanguageServer' }
+{ #category : #'*PharoLanguageServer' }
 String >> plsToPosition: aLineCharacter [
 	| sum currentLine lines |
 	sum := aLineCharacter at: #character.
@@ -73,7 +73,7 @@ String >> plsToPosition: aLineCharacter [
 	^ sum
 ]
 
-{ #category : '*PharoLanguageServer' }
+{ #category : #'*PharoLanguageServer' }
 String >> toLineCharacter: position [
 	"given a position, return a dictionnary with the line and character of the cursor at this position"
 
@@ -86,7 +86,7 @@ String >> toLineCharacter: position [
 	(#character -> (copy last size max: 0))} asDictionary
 ]
 
-{ #category : '*PharoLanguageServer' }
+{ #category : #'*PharoLanguageServer' }
 String >> toPLSSnippet [
 	| idx number |
 	idx := 1.
@@ -109,7 +109,7 @@ String >> toPLSSnippet [
 		, '$0'
 ]
 
-{ #category : '*PharoLanguageServer' }
+{ #category : #'*PharoLanguageServer' }
 String >> wordAt: anIndex [
 	"('word before index' wordAt: 4) >>> 'word'"
 

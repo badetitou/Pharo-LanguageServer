@@ -1,47 +1,45 @@
 Class {
-	#name : 'PLSMCMethodDefinition',
-	#superclass : 'MCMethodDefinition',
+	#name : #PLSMCMethodDefinition,
+	#superclass : #MCMethodDefinition,
 	#instVars : [
 		'startPos',
 		'endPos',
 		'bodyStartPos'
 	],
-	#category : 'PharoLanguageServer-TonelUtils',
-	#package : 'PharoLanguageServer',
-	#tag : 'TonelUtils'
+	#category : 'PharoLanguageServer-TonelUtils'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSMCMethodDefinition >> bodyStartPos [
 	^ bodyStartPos
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSMCMethodDefinition >> bodyStartPos: anObject [
 	bodyStartPos := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSMCMethodDefinition >> endPos [
 	^ endPos
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSMCMethodDefinition >> endPos: anObject [
 	endPos := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSMCMethodDefinition >> isErrorDefinition [
 	^ false
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSMCMethodDefinition >> startPos [
 	^ startPos
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSMCMethodDefinition >> startPos: anObject [
 	startPos := anObject
 ]

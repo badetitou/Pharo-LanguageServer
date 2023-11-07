@@ -1,15 +1,13 @@
 Class {
-	#name : 'PLSTonelFormater',
-	#superclass : 'Object',
+	#name : #PLSTonelFormater,
+	#superclass : #Object,
 	#instVars : [
 		'sourceCode'
 	],
-	#category : 'PharoLanguageServer-Structure-Formater',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Formater'
+	#category : 'PharoLanguageServer-Structure-Formater'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTonelFormater >> formated [
 	| definitions |
 	definitions := (PLSTonelParser parseString: sourceCode asByteArray utf8Decoded).
@@ -18,12 +16,12 @@ PLSTonelFormater >> formated [
 	^ String streamContents: [ :stream | TonelWriter exportClass: definitions anyOne actualClass on: stream ]
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTonelFormater >> sourceCode [
 	^ sourceCode
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTonelFormater >> sourceCode: anObject [
 	sourceCode := anObject
 ]

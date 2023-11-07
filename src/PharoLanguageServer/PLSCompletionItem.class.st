@@ -1,6 +1,6 @@
 Class {
-	#name : 'PLSCompletionItem',
-	#superclass : 'Object',
+	#name : #PLSCompletionItem,
+	#superclass : #Object,
 	#instVars : [
 		'label',
 		'kind',
@@ -19,22 +19,20 @@ Class {
 		'command',
 		'data'
 	],
-	#category : 'PharoLanguageServer-Structure-Completion',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Completion'
+	#category : 'PharoLanguageServer-Structure-Completion'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> additionalTextEdits [
 	^ additionalTextEdits
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> additionalTextEdits: anObject [
 	additionalTextEdits := anObject
 ]
 
-{ #category : 'lsp' }
+{ #category : #lsp }
 PLSCompletionItem >> asJRPCJSON [
 	| dictionary |
 	dictionary := {(#label -> self label).
@@ -47,142 +45,142 @@ PLSCompletionItem >> asJRPCJSON [
 	^ dictionary
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> command [
 	^ command
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> command: anObject [
 	command := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> commitCharacters [
 	^ commitCharacters
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> commitCharacters: anObject [
 	commitCharacters := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> data [
 	^ data
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> data: anObject [
 	data := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> detail [
 	^ detail
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> detail: anObject [
 	detail := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> documentation [
 	^ documentation
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> documentation: anObject [
 	documentation := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> filterText [
 	^ filterText
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> filterText: anObject [
 	filterText := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> insertText [
 	^ insertText
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> insertText: anObject [
 	insertText := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> insertTextFormat [
 	^ insertTextFormat
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> insertTextFormat: anObject [
 	insertTextFormat := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> kind [
 	^ kind
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> kind: anObject [
 	kind := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> label [
 	^ label
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> label: anObject [
 	label := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> preselect [
 	^ preselect
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> preselect: anObject [
 	preselect := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> sortText [
 	^ sortText
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> sortText: anObject [
 	sortText := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> tags [
 	^ tags
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> tags: anObject [
 	tags := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> textEdit [
 	^ textEdit
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletionItem >> textEdit: anObject [
 	textEdit := anObject
 ]

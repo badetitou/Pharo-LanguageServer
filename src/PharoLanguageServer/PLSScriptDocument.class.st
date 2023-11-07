@@ -1,12 +1,10 @@
 Class {
-	#name : 'PLSScriptDocument',
-	#superclass : 'PLSDocument',
-	#category : 'PharoLanguageServer-Document',
-	#package : 'PharoLanguageServer',
-	#tag : 'Document'
+	#name : #PLSScriptDocument,
+	#superclass : #PLSDocument,
+	#category : 'PharoLanguageServer-Document'
 }
 
-{ #category : 'instance creation' }
+{ #category : #'instance creation' }
 PLSScriptDocument class >> fromDocumentDictionary: aDocumentDictionary [
 
 	^ self new
@@ -17,18 +15,18 @@ PLSScriptDocument class >> fromDocumentDictionary: aDocumentDictionary [
 		  yourself
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : #'lsp - accessing' }
 PLSScriptDocument >> diagnostics [
 	^ ((PLSDiagnosticsParamsEngine document: self) requestor: self binder)
 		computeDiagnostics asJRPCJSON
 ]
 
-{ #category : 'testing' }
+{ #category : #testing }
 PLSScriptDocument >> isScriptDocument [
 	^ true
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : #'lsp - accessing' }
 PLSScriptDocument >> nodeAt: aPosition [
 	| positionChar |
 	positionChar := self text plsToPosition: aPosition.

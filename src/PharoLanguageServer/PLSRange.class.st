@@ -9,18 +9,16 @@ A range in a text document expressed as (zero-based) start and end positions. A 
 ```
 "
 Class {
-	#name : 'PLSRange',
-	#superclass : 'Object',
+	#name : #PLSRange,
+	#superclass : #Object,
 	#instVars : [
 		'start',
 		'end'
 	],
-	#category : 'PharoLanguageServer-Structure',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure'
+	#category : 'PharoLanguageServer-Structure'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 PLSRange class >> start: start end: end [
 	^ self new
 		start: start;
@@ -28,30 +26,30 @@ PLSRange class >> start: start end: end [
 		yourself
 ]
 
-{ #category : 'converting' }
+{ #category : #converting }
 PLSRange >> asJRPCJSON [
 	^ {(#start -> self start asJRPCJSON).
 	(#end -> self end asJRPCJSON)} asDictionary 
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSRange >> end [
 	"The range's end position."
 	^ end
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSRange >> end: anObject [
 	end := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSRange >> start [
 	"The range's start position."
 	^ start
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSRange >> start: anObject [
 	start := anObject
 ]

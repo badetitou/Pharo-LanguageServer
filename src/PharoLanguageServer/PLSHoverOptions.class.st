@@ -1,12 +1,10 @@
 Class {
-	#name : 'PLSHoverOptions',
-	#superclass : 'Object',
-	#category : 'PharoLanguageServer-Structure-Capabilities',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Capabilities'
+	#name : #PLSHoverOptions,
+	#superclass : #Object,
+	#category : 'PharoLanguageServer-Structure-Capabilities'
 }
 
-{ #category : 'converting' }
+{ #category : #converting }
 PLSHoverOptions >> asJRPCJSON [
 	^ {(#workDoneProgress -> false asJRPCJSON)} asDictionary
 ]

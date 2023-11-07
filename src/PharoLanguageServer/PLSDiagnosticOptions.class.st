@@ -1,17 +1,15 @@
 Class {
-	#name : 'PLSDiagnosticOptions',
-	#superclass : 'Object',
+	#name : #PLSDiagnosticOptions,
+	#superclass : #Object,
 	#instVars : [
 		'identifier',
 		'interFileDependencies',
 		'workspaceDiagnostics'
 	],
-	#category : 'PharoLanguageServer-Structure-Capabilities',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Capabilities'
+	#category : 'PharoLanguageServer-Structure-Capabilities'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticOptions >> asJRPCJSON [
 
 	| dic |
@@ -25,37 +23,37 @@ PLSDiagnosticOptions >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticOptions >> identifier [
 
 	^ identifier
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticOptions >> identifier: anObject [
 
 	identifier := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticOptions >> interFileDependencies [
 
 	^ interFileDependencies
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticOptions >> interFileDependencies: anObject [
 
 	interFileDependencies := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticOptions >> workspaceDiagnostics [
 
 	^ workspaceDiagnostics
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticOptions >> workspaceDiagnostics: anObject [
 
 	workspaceDiagnostics := anObject

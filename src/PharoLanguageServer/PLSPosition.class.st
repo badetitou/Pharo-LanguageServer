@@ -2,18 +2,16 @@
 Position in a text document expressed as zero-based line and zero-based character offset. A position is between two characters like an ‘insert’ cursor in a editor. Special values like for example -1 to denote the end of a line are not supported.
 "
 Class {
-	#name : 'PLSPosition',
-	#superclass : 'Object',
+	#name : #PLSPosition,
+	#superclass : #Object,
 	#instVars : [
 		'line',
 		'character'
 	],
-	#category : 'PharoLanguageServer-Structure',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure'
+	#category : 'PharoLanguageServer-Structure'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 PLSPosition class >> line: line character: character [
 	^ self new
 		line: line;
@@ -21,13 +19,13 @@ PLSPosition class >> line: line character: character [
 		yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSPosition >> asJRPCJSON [
 	^ {(#line -> self line asJRPCJSON).
 	(#character -> self character asJRPCJSON)} asDictionary
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSPosition >> character [
 	"Character offset on a line in a document (zero-based).
 	Assuming that the line is represented as a string, the `character` value represents the gap between the `character` and `character + 1`.
@@ -37,18 +35,18 @@ PLSPosition >> character [
 	^ character
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSPosition >> character: anObject [
 	character := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSPosition >> line [
 	"Line position in a document (zero-based)."
 	^ line
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSPosition >> line: anObject [
 	line := anObject
 ]

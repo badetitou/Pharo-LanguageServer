@@ -1,12 +1,10 @@
 Class {
-	#name : 'PLSMessageSendHandler',
-	#superclass : 'JRPCMessageSendHandler',
-	#category : 'PharoLanguageServer-Handler',
-	#package : 'PharoLanguageServer',
-	#tag : 'Handler'
+	#name : #PLSMessageSendHandler,
+	#superclass : #JRPCMessageSendHandler,
+	#category : 'PharoLanguageServer-Handler'
 }
 
-{ #category : 'parameters-checking' }
+{ #category : #'parameters-checking' }
 PLSMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 
 	aJRPCRequestObject params ifNil: [ 
@@ -20,7 +18,7 @@ PLSMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 		JRPCInvalidParameters signal ]
 ]
 
-{ #category : 'parameters-checking' }
+{ #category : #'parameters-checking' }
 PLSMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 
 	| arguments |
@@ -37,7 +35,7 @@ PLSMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 	^ self send: self messageSelector to: self receiver with: arguments
 ]
 
-{ #category : 'parameters-checking' }
+{ #category : #'parameters-checking' }
 PLSMessageSendHandler >> parametersNames [
 	^ (self receiver class lookupSelector: self messageSelector) argumentNames
 ]

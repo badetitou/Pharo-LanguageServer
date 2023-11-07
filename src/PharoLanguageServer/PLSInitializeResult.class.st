@@ -1,16 +1,14 @@
 Class {
-	#name : 'PLSInitializeResult',
-	#superclass : 'Object',
+	#name : #PLSInitializeResult,
+	#superclass : #Object,
 	#instVars : [
 		'capabilities',
 		'serverInfo'
 	],
-	#category : 'PharoLanguageServer-Structure',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure'
+	#category : 'PharoLanguageServer-Structure'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInitializeResult >> asJRPCJSON [
 	^ { 
 	#'capabilities' -> self capabilities asJRPCJSON.
@@ -18,17 +16,17 @@ PLSInitializeResult >> asJRPCJSON [
 	 } asDictionary 
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInitializeResult >> capabilities [
 	^ capabilities
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInitializeResult >> capabilities: anObject [
 	capabilities := anObject
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLSInitializeResult >> initialize [
 	super initialize.
 	serverInfo := Dictionary new.
@@ -37,12 +35,12 @@ PLSInitializeResult >> initialize [
 	capabilities := PLSServerCapabilities forPharo.
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInitializeResult >> serverInfo [
 	^ serverInfo
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInitializeResult >> serverInfo: anObject [
 	serverInfo := anObject
 ]

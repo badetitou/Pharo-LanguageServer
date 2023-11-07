@@ -1,27 +1,25 @@
 Class {
-	#name : 'PLSTextDocumentIdentifier',
-	#superclass : 'Object',
+	#name : #PLSTextDocumentIdentifier,
+	#superclass : #Object,
 	#instVars : [
 		'uri'
 	],
-	#category : 'PharoLanguageServer-Structure-TextDocument',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-TextDocument'
+	#category : 'PharoLanguageServer-Structure-TextDocument'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentIdentifier >> asJRPCJSON [
 
 	^ { (#uri -> self uri asJRPCJSON) } asDictionary
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentIdentifier >> uri [
 
 	^ uri
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentIdentifier >> uri: anObject [
 
 	uri := anObject

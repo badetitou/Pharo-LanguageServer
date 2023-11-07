@@ -1,27 +1,25 @@
 Class {
-	#name : 'PLSCommand',
-	#superclass : 'Object',
+	#name : #PLSCommand,
+	#superclass : #Object,
 	#instVars : [
 		'title',
 		'command',
 		'arguments'
 	],
-	#category : 'PharoLanguageServer-Structure',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure'
+	#category : 'PharoLanguageServer-Structure'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCommand >> arguments [
 	^ arguments
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCommand >> arguments: anObject [
 	arguments := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCommand >> asJRPCJSON [
 
 	| dic |
@@ -33,22 +31,22 @@ PLSCommand >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCommand >> command [
 	^ command
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCommand >> command: anObject [
 	command := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCommand >> title [
 	^ title
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCommand >> title: anObject [
 	title := anObject
 ]

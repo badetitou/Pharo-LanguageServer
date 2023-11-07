@@ -1,17 +1,15 @@
 Class {
-	#name : 'PLSFullDocumentDiagnosticsReport',
-	#superclass : 'Object',
+	#name : #PLSFullDocumentDiagnosticsReport,
+	#superclass : #Object,
 	#instVars : [
 		'kind',
 		'resultId',
 		'items'
 	],
-	#category : 'PharoLanguageServer-Structure-Diagnostic',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Diagnostic'
+	#category : 'PharoLanguageServer-Structure-Diagnostic'
 }
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLSFullDocumentDiagnosticsReport >> asJRPCJSON [
 
 	| dic |
@@ -23,43 +21,43 @@ PLSFullDocumentDiagnosticsReport >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLSFullDocumentDiagnosticsReport >> initialize [
 	super initialize.
 	self kind: 'full'
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSFullDocumentDiagnosticsReport >> items [
 
 	^ items
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSFullDocumentDiagnosticsReport >> items: anObject [
 
 	items := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSFullDocumentDiagnosticsReport >> kind [
 
 	^ kind
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSFullDocumentDiagnosticsReport >> kind: anObject [
 
 	kind := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSFullDocumentDiagnosticsReport >> resultId [
 
 	^ resultId
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSFullDocumentDiagnosticsReport >> resultId: anObject [
 
 	resultId := anObject

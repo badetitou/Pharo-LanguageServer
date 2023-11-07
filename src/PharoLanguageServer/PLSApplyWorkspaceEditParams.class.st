@@ -1,16 +1,14 @@
 Class {
-	#name : 'PLSApplyWorkspaceEditParams',
-	#superclass : 'Object',
+	#name : #PLSApplyWorkspaceEditParams,
+	#superclass : #Object,
 	#instVars : [
 		'label',
 		'edit'
 	],
-	#category : 'PharoLanguageServer-Structure-Workspace',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Workspace'
+	#category : 'PharoLanguageServer-Structure-Workspace'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSApplyWorkspaceEditParams >> asJRPCJSON [
 
 	| dic |
@@ -19,25 +17,25 @@ PLSApplyWorkspaceEditParams >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSApplyWorkspaceEditParams >> edit [
 
 	^ edit
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSApplyWorkspaceEditParams >> edit: anObject [
 
 	edit := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSApplyWorkspaceEditParams >> label [
 
 	^ label
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSApplyWorkspaceEditParams >> label: anObject [
 
 	label := anObject

@@ -2,20 +2,18 @@
 I create a Publish Diagnotics Params from the document and the current requestor (that defines variables)
 "
 Class {
-	#name : 'PLSDiagnosticsParamsEngine',
-	#superclass : 'Object',
+	#name : #PLSDiagnosticsParamsEngine,
+	#superclass : #Object,
 	#instVars : [
 		'document',
 		'requestor',
 		'source',
 		'sourceIsMethod'
 	],
-	#category : 'PharoLanguageServer-Structure-Diagnostic',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Diagnostic'
+	#category : 'PharoLanguageServer-Structure-Diagnostic'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine class >> document: aDocument [
 
 	"Document is aDictionary with uri, version, and sourceCode"
@@ -27,7 +25,7 @@ PLSDiagnosticsParamsEngine class >> document: aDocument [
 		  yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine >> computeDiagnostics [
 
 	| ast compiler diagnostics |
@@ -53,44 +51,44 @@ PLSDiagnosticsParamsEngine >> computeDiagnostics [
 		  yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine >> document [
 	^ document
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine >> document: anObject [
 	document := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine >> requestor [
 	^ requestor
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine >> requestor: anObject [
 	requestor := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine >> source [
 
 	^ source
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine >> source: anObject [
 
 	source := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine >> sourceIsMethod [
 	^ sourceIsMethod
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDiagnosticsParamsEngine >> sourceIsMethod: boolean [
 	sourceIsMethod := boolean
 ]

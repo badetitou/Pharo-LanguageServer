@@ -2,8 +2,8 @@
 Defines how the host (editor) should sync document changes to the language server.
 "
 Class {
-	#name : 'PLSTextDocumentSyncOptions',
-	#superclass : 'Object',
+	#name : #PLSTextDocumentSyncOptions,
+	#superclass : #Object,
 	#instVars : [
 		'openClose',
 		'change',
@@ -11,12 +11,10 @@ Class {
 		'willSaveWaitUntil',
 		'save'
 	],
-	#category : 'PharoLanguageServer-Structure-Capabilities',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Capabilities'
+	#category : 'PharoLanguageServer-Structure-Capabilities'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> asJRPCJSON [
 	^ {(#change -> self change asJRPCJSON).
 	(#openClose -> self openClose asJRPCJSON).
@@ -25,7 +23,7 @@ PLSTextDocumentSyncOptions >> asJRPCJSON [
 	(#save -> self save asJRPCJSON)} asDictionary
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> change [
 	"Change notifications are sent to the server. 
 	 See TextDocumentSyncKind.None, TextDocumentSyncKind.Full,  and TextDocumentSyncKind.Incremental.
@@ -33,12 +31,12 @@ PLSTextDocumentSyncOptions >> change [
 	^ change
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> change: anObject [
 	change := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> openClose [
 	"Open and close notifications are sent to the server. 
 	If omitted open close notification should not be sent."
@@ -46,37 +44,37 @@ PLSTextDocumentSyncOptions >> openClose [
 	^ openClose
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> openClose: anObject [
 	openClose := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> save [
 	^ save
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> save: anObject [
 	save := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> willSave [
 	^ willSave
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> willSave: anObject [
 	willSave := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> willSaveWaitUntil [
 	^ willSaveWaitUntil
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSTextDocumentSyncOptions >> willSaveWaitUntil: anObject [
 	willSaveWaitUntil := anObject
 ]

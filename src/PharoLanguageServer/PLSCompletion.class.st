@@ -1,27 +1,26 @@
 Class {
-	#name : 'PLSCompletion',
-	#superclass : 'Object',
+	#name : #PLSCompletion,
+	#superclass : #Object,
 	#instVars : [
 		'completionContext',
 		'source',
 		'position',
 		'sourceClass'
 	],
-	#category : 'PharoLanguageServer',
-	#package : 'PharoLanguageServer'
+	#category : 'PharoLanguageServer'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletion >> completionContext [
 	^ completionContext
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletion >> completionContext: anObject [
 	completionContext := anObject
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLSCompletion >> entries [
 	completionContext := CompletionContext
 		engine: PLSCompletionEngine new
@@ -40,12 +39,12 @@ PLSCompletion >> entries [
 				yourself ]
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLSCompletion >> position [
 	^ position
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLSCompletion >> position: aDictionaryLineCharacter [
 	| current |
 	current := 0.
@@ -58,22 +57,22 @@ PLSCompletion >> position: aDictionaryLineCharacter [
 	^ -1
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLSCompletion >> source [
 	^ source
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLSCompletion >> source: aSource [
 	source := aSource
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletion >> sourceClass [
 	^ sourceClass
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCompletion >> sourceClass: anObject [
 	sourceClass := anObject
 ]

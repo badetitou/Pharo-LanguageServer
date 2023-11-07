@@ -1,6 +1,6 @@
-Extension { #name : 'Exception' }
+Extension { #name : #Exception }
 
-{ #category : '*PharoLanguageServer' }
+{ #category : #'*PharoLanguageServer' }
 Exception >> asPLSCellOutput [
 
 	^ { (PLSCellOutput

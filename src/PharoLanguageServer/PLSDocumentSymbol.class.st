@@ -3,8 +3,8 @@ Represents programming constructs like variables, classes, interfaces *etc.* tha
 Document symbols can be hierarchical and they have two ranges: one that encloses its definition and one that points to its most interesting range, *e.g.* the range of an identifier.
 "
 Class {
-	#name : 'PLSDocumentSymbol',
-	#superclass : 'Object',
+	#name : #PLSDocumentSymbol,
+	#superclass : #Object,
 	#instVars : [
 		'name',
 		'detail',
@@ -14,12 +14,10 @@ Class {
 		'selectionRange',
 		'children'
 	],
-	#category : 'PharoLanguageServer-Structure-Symbols',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Symbols'
+	#category : 'PharoLanguageServer-Structure-Symbols'
 }
 
-{ #category : 'converting' }
+{ #category : #converting }
 PLSDocumentSymbol >> asJRPCJSON [
 	| dic |
 	dic := {(#name -> self name asJRPCJSON).
@@ -33,72 +31,72 @@ PLSDocumentSymbol >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> children [
 	^ children
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> children: anObject [
 	children := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> detail [
 	^ detail
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> detail: anObject [
 	detail := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> kind [
 	^ kind
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> kind: anObject [
 	kind := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> name [
 	^ name
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> name: anObject [
 	name := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> range [
 	^ range
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> range: anObject [
 	range := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> selectionRange [
 	^ selectionRange
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> selectionRange: anObject [
 	selectionRange := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> tags [
 	^ tags
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSDocumentSymbol >> tags: anObject [
 	tags := anObject
 ]

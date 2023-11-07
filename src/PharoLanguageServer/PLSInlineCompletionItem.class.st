@@ -2,20 +2,18 @@
 An inline completion item represents a text snippet that is proposed inline to complete text that is being typed.
 "
 Class {
-	#name : 'PLSInlineCompletionItem',
-	#superclass : 'Object',
+	#name : #PLSInlineCompletionItem,
+	#superclass : #Object,
 	#instVars : [
 		'insertText',
 		'filterText',
 		'range',
 		'command'
 	],
-	#category : 'PharoLanguageServer-Structure-InlineCompletion',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-InlineCompletion'
+	#category : 'PharoLanguageServer-Structure-InlineCompletion'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInlineCompletionItem >> asJRPCJSON [
 
 	| dic |
@@ -29,19 +27,19 @@ PLSInlineCompletionItem >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInlineCompletionItem >> command [
 
 	^ command
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInlineCompletionItem >> command: anObject [
 
 	command := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInlineCompletionItem >> filterText [
 	" A text that is used to decide if this inline completion should be shown. When `falsy` the {@link InlineCompletionItem.insertText} is used.
 
@@ -50,13 +48,13 @@ An inline completion is shown if the text to replace is a prefix of the filter t
 	^ filterText
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInlineCompletionItem >> filterText: anObject [
 
 	filterText := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInlineCompletionItem >> insertText [
 	"The text to replace the range with. Must be set.
 	 Is used both for the preview and the accept operation."
@@ -64,19 +62,19 @@ PLSInlineCompletionItem >> insertText [
 	^ insertText
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInlineCompletionItem >> insertText: anObject [
 
 	insertText := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInlineCompletionItem >> range [
 
 	^ range
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSInlineCompletionItem >> range: anObject [
 
 	range := anObject

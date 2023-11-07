@@ -1,18 +1,16 @@
 Class {
-	#name : 'PLSVariable',
-	#superclass : 'Object',
+	#name : #PLSVariable,
+	#superclass : #Object,
 	#instVars : [
 		'name',
 		'value',
 		'variableReference',
 		'isDirectory'
 	],
-	#category : 'PharoLanguageServer-Structure-Variables',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Variables'
+	#category : 'PharoLanguageServer-Structure-Variables'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVariable >> asJRPCJSON [
 	^ {(#name -> self name asJRPCJSON).
 	(#value -> self value1 asJRPCJSON).
@@ -20,43 +18,43 @@ PLSVariable >> asJRPCJSON [
 	(#isDirectory -> self isDirectory asJRPCJSON)} asDictionary
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVariable >> isDirectory [
 	"Does this variable has subvariables"
 	^ isDirectory
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVariable >> isDirectory: anObject [
 	isDirectory := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVariable >> name [
 	^ name
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVariable >> name: anObject [
 	name := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVariable >> value1 [
 	^ value
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVariable >> value: anObject [
 	value := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVariable >> variableReference [
 	^ variableReference
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVariable >> variableReference: anObject [
 	variableReference := anObject
 ]

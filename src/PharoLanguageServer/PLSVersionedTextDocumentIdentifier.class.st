@@ -1,15 +1,13 @@
 Class {
-	#name : 'PLSVersionedTextDocumentIdentifier',
-	#superclass : 'PLSTextDocumentIdentifier',
+	#name : #PLSVersionedTextDocumentIdentifier,
+	#superclass : #PLSTextDocumentIdentifier,
 	#instVars : [
 		'version'
 	],
-	#category : 'PharoLanguageServer-Structure-TextDocument',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-TextDocument'
+	#category : 'PharoLanguageServer-Structure-TextDocument'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVersionedTextDocumentIdentifier >> asJRPCJSON [
 
 	| dic |
@@ -18,13 +16,13 @@ PLSVersionedTextDocumentIdentifier >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVersionedTextDocumentIdentifier >> version [
 
 	^ version
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSVersionedTextDocumentIdentifier >> version: anObject [
 
 	version := anObject

@@ -1,14 +1,13 @@
 Class {
-	#name : 'PLSUIManager',
-	#superclass : 'MorphicUIManager',
+	#name : #PLSUIManager,
+	#superclass : #MorphicUIManager,
 	#instVars : [
 		'plsServer'
 	],
-	#category : 'PharoLanguageServer',
-	#package : 'PharoLanguageServer'
+	#category : 'PharoLanguageServer'
 }
 
-{ #category : 'instance creation' }
+{ #category : #'instance creation' }
 PLSUIManager class >> withPLSServer: aPLSServer [
 	^ self new
 		plsServer: aPLSServer;
@@ -16,7 +15,7 @@ PLSUIManager class >> withPLSServer: aPLSServer [
 		yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSUIManager >> debugProcess: process context: context label: title fullView: bool notification: notificationString [
 	
 	(OupsDebugRequest newForContext: context)
@@ -25,7 +24,7 @@ PLSUIManager >> debugProcess: process context: context label: title fullView: bo
 		submit
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSUIManager >> handleDebugRequest: aDebugRequest [
 	| debuggerOpeningStrategy oupsSystem |
   
@@ -38,20 +37,20 @@ PLSUIManager >> handleDebugRequest: aDebugRequest [
 	oupsSystem suspendDebuggedProcess: aDebugRequest
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSUIManager >> handleError: anError log: shouldLog [
 
 	self handleDebugRequest: (OupsDebugRequest newForException: anError)
 
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSUIManager >> handleWarningDebugRequest: aWarningDebugRequest [
 
 	self handleDebugRequest:  aWarningDebugRequest	
 ]
 
-{ #category : 'default actions' }
+{ #category : #'default actions' }
 PLSUIManager >> inform: aStringOrText [
 	plsServer
 		ifNotNil: [ plsServer
@@ -59,17 +58,17 @@ PLSUIManager >> inform: aStringOrText [
 				ofType: PLSMessageType info ]
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSUIManager >> plsServer [
 	^ plsServer
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSUIManager >> plsServer: anObject [
 	plsServer := anObject
 ]
 
-{ #category : 'default actions' }
+{ #category : #'default actions' }
 PLSUIManager >> unhandledErrorDefaultAction: anException [
 
 	anException debug

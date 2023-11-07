@@ -1,18 +1,16 @@
 Class {
-	#name : 'PLSShowDocument',
-	#superclass : 'Object',
+	#name : #PLSShowDocument,
+	#superclass : #Object,
 	#instVars : [
 		'uri',
 		'external',
 		'takeFocus',
 		'selection'
 	],
-	#category : 'PharoLanguageServer-Structure-ShowDocument',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-ShowDocument'
+	#category : 'PharoLanguageServer-Structure-ShowDocument'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSShowDocument >> asJRPCJSON [
 
 	| dic |
@@ -24,49 +22,49 @@ PLSShowDocument >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSShowDocument >> external [
 
 	^ external
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSShowDocument >> external: anObject [
 
 	external := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSShowDocument >> selection [
 
 	^ selection
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSShowDocument >> selection: anObject [
 
 	selection := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSShowDocument >> takeFocus [
 
 	^ takeFocus
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSShowDocument >> takeFocus: anObject [
 
 	takeFocus := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSShowDocument >> uri [
 
 	^ uri
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSShowDocument >> uri: anObject [
 
 	uri := anObject

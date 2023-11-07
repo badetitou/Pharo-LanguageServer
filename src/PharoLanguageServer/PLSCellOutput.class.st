@@ -1,16 +1,14 @@
 Class {
-	#name : 'PLSCellOutput',
-	#superclass : 'Object',
+	#name : #PLSCellOutput,
+	#superclass : #Object,
 	#instVars : [
 		'mimetype',
 		'content'
 	],
-	#category : 'PharoLanguageServer-Structure-Moosebook',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Moosebook'
+	#category : 'PharoLanguageServer-Structure-Moosebook'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 PLSCellOutput class >> content: content mimetype: aPLSCellMimetypeValue [
 	^ self new
 		content: content;
@@ -18,31 +16,31 @@ PLSCellOutput class >> content: content mimetype: aPLSCellMimetypeValue [
 		yourself
 ]
 
-{ #category : 'converting' }
+{ #category : #converting }
 PLSCellOutput >> asJRPCJSON [
 	^ {(#mimetype -> self mimetype asJRPCJSON).
 	(#content -> self content asJRPCJSON)} asDictionary
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCellOutput >> content [
 
 	^ content
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCellOutput >> content: anObject [
 
 	content := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCellOutput >> mimetype [
 
 	^ mimetype
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSCellOutput >> mimetype: anObject [
 
 	mimetype := anObject

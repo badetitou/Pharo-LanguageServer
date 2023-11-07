@@ -1,60 +1,58 @@
 Class {
-	#name : 'PLSSignatureInformation',
-	#superclass : 'Object',
+	#name : #PLSSignatureInformation,
+	#superclass : #Object,
 	#instVars : [
 		'label',
 		'documentation',
 		'parameters',
 		'activeParameter'
 	],
-	#category : 'PharoLanguageServer-Structure-Signature',
-	#package : 'PharoLanguageServer',
-	#tag : 'Structure-Signature'
+	#category : 'PharoLanguageServer-Structure-Signature'
 }
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSSignatureInformation >> activeParameter [
 	^ activeParameter
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSSignatureInformation >> activeParameter: anObject [
 	activeParameter := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSSignatureInformation >> asJRPCJSON [
 	^ {(#label -> self label asJRPCJSON).
 	(#documentation -> self documentation asJRPCJSON).
 	(#parameters -> self parameters asJRPCJSON)} asDictionary
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSSignatureInformation >> documentation [
 	^ documentation
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSSignatureInformation >> documentation: anObject [
 	documentation := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSSignatureInformation >> label [
 	^ label
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSSignatureInformation >> label: anObject [
 	label := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSSignatureInformation >> parameters [
 	^ parameters
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSSignatureInformation >> parameters: anObject [
 	parameters := anObject
 ]

@@ -1,16 +1,14 @@
 Class {
-	#name : 'PLSLogMessage',
-	#superclass : 'Object',
+	#name : #PLSLogMessage,
+	#superclass : #Object,
 	#instVars : [
 		'type',
 		'message'
 	],
-	#category : 'PharoLanguageServer-Strcuture-LogMessage',
-	#package : 'PharoLanguageServer',
-	#tag : 'Strcuture-LogMessage'
+	#category : 'PharoLanguageServer-Strcuture-LogMessage'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : #'as yet unclassified' }
 PLSLogMessage class >> message: aMessage type: aTypeMessage [
 	^ self new
 		message: aMessage;
@@ -18,28 +16,28 @@ PLSLogMessage class >> message: aMessage type: aTypeMessage [
 		yourself
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSLogMessage >> asJRPCJSON [
 	^ {(#message -> self message asJRPCJSON).
 	(#type -> self type asJRPCJSON)} asDictionary
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSLogMessage >> message [
 	^ message
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSLogMessage >> message: anObject [
 	message := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSLogMessage >> type [
 	^ type
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLSLogMessage >> type: anObject [
 	type := anObject
 ]
