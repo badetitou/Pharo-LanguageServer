@@ -1,24 +1,23 @@
 Class {
-	#name : #PLCLRubScrolledTextMorph,
-	#superclass : #SpRubScrolledTextMorph,
-	#classTraits : 'TPLCClient classTrait',
+	#name : #StPLCPPlaygroundPagePresenter,
+	#superclass : #StPlaygroundPagePresenter,
 	#instVars : [
 		'version'
 	],
 	#category : #PharoLanguageClientLocal
 }
 
-{ #category : #'lsp - completion' }
-PLCLRubScrolledTextMorph >> clientInlineCompletionFrom: items [
+{ #category : #'event handling' }
+StPLCPPlaygroundPagePresenter >> clientInlineCompletionFrom: items [
 
-	self scrollPane setTextWith:
+	text setTextWith:
 		(self text append: ((items anyOne at: #insertText) asText
 				  addAttribute: TextGhost new;
 				  yourself))
 ]
 
 { #category : #initialization }
-PLCLRubScrolledTextMorph >> initialize [
+StPLCPPlaygroundPagePresenter >> initialize [
 
 	version := 0.
 	"PLCClient default sendDidOpenTextDocument: (PLPTextDocumentItem new
@@ -27,32 +26,16 @@ PLCLRubScrolledTextMorph >> initialize [
 			 version: version;
 			 text: '') for: self."
 
-	super initialize.
-
+	super initialize
 ]
 
 { #category : #'event handling' }
-PLCLRubScrolledTextMorph >> plpURI [
+StPLCPPlaygroundPagePresenter >> initializePresenters [
 
-	^ 'workspace/' , self identityHash printString
-]
-
-{ #category : #'event handling' }
-PLCLRubScrolledTextMorph >> versionedTextDocumentIdentifier [
-
-	^ PLSVersionedTextDocumentIdentifier new
-		  uri: self plpURI;
-		  version: version;
-		  yourself
-]
-
-{ #category : #'event handling' }
-PLCLRubScrolledTextMorph >> whenTextChangedInTextArea: anAnnouncement [
-
-	| txt |
-	super whenTextChangedInTextArea: anAnnouncement.
-	version := version + 1.
-	"PLCClient default
+	super initializePresenters.
+	text whenTextChangedDo: [ :aString |
+		version := version + 1
+		"PLCClient default
 		sendDidChangeTextDocument: self versionedTextDocumentIdentifier
 		withChanges: { (PLPTextDocumentContentChangeEvent new
 				 text: self text asString;
@@ -65,5 +48,20 @@ PLCLRubScrolledTextMorph >> whenTextChangedInTextArea: anAnnouncement [
 	PLCClient default
 		sendTextDocument: self versionedTextDocumentIdentifier
 		inlineCompletionAt:
-		(anAnnouncement text asString toLineCharacter: anAnnouncement start)"
+		(anAnnouncement text asString toLineCharacter: anAnnouncement start)" ]
+]
+
+{ #category : #'event handling' }
+StPLCPPlaygroundPagePresenter >> plpURI [
+
+	^ 'workspace/' , self identityHash printString
+]
+
+{ #category : #'event handling' }
+StPLCPPlaygroundPagePresenter >> versionedTextDocumentIdentifier [
+
+	^ PLSVersionedTextDocumentIdentifier new
+		  uri: self plpURI;
+		  version: version;
+		  yourself
 ]
