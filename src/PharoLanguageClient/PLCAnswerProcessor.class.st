@@ -50,8 +50,11 @@ PLCAnswerProcessor >> cancelRequestBefore: textDocumentIdentifier [
 
 	self answerHandlers
 		select: [ :handler |
-			((handler originRequest params at: #textDocument) at: #version)
-			< textDocumentIdentifier version ]
+			handler originRequest params
+				at: #textDocument
+				ifPresent: [ :td |
+				(td at: #version) < textDocumentIdentifier version ]
+				ifAbsent: [ false ] ]
 		thenDo: [ :handler |
 			self client sendCancelRequest: handler originRequest id.
 			self removeHandlerWithId: handler originRequest id ]
