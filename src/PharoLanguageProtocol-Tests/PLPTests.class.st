@@ -49,6 +49,27 @@ PLPTests >> testCancelRequest [
 ]
 
 { #category : #running }
+PLPTests >> testDidOpenTextDocuement [
+	"I test that the client can cancel a long processing request of the server"
+
+	| obj document |
+	obj := Object new.
+	document := PLPTextDocumentItem new
+		            uri: '#test/plp';
+		            languageId: 'smalltalk';
+		            version: 42;
+		            text: ''.
+	client start.
+	client sendDidOpenTextDocument: document for: obj.
+	[ client answerProcessor answerHandlers isEmpty ] whileFalse.
+	[ server context messageProcesses isEmpty ] whileFalse.
+	self assert: (client context textItem: '#test/plp') equals: obj.
+	self assert: (server context textItem: '#test/plp') text equals: ''.
+	self assert: (server context textItem: '#test/plp') uri equals: '#test/plp'.
+	self assert: (server context textItem: '#test/plp') version equals: 42.
+]
+
+{ #category : #running }
 PLPTests >> testInitialize [
 
 	client start.
