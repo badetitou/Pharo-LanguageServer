@@ -19,16 +19,21 @@ PLCLRubScrolledTextMorph >> beForSmalltalkScripting [
 { #category : #'lsp - completion' }
 PLCLRubScrolledTextMorph >> resetInlineCompletion [
 
-	self textArea setTextWith:
-		(self getText withIndexSelect: [ :val :idx |
-			 (self getText runs at: idx) noneSatisfy: [ :run |
-				 run isKindOf: TextGhost ] ])
+	self textArea updateTextWith: self textWithoutGhost
 ]
 
 { #category : #'lsp - completion' }
 PLCLRubScrolledTextMorph >> setInlineCompletionWith: aText [
 
-	self setTextWith: (self getText append: (aText asText
-			 addAttribute: TextGhost new;
-			 yourself))
+	self updateTextWith: (self textWithoutGhost append: (aText asText
+				  addAttribute: TextGhost new;
+				  yourself))
+]
+
+{ #category : #'lsp - completion' }
+PLCLRubScrolledTextMorph >> textWithoutGhost [
+
+	^ self getText withIndexSelect: [ :val :idx |
+		  (self getText runs at: idx) noneSatisfy: [ :run |
+			  run isKindOf: TextGhost ] ]
 ]

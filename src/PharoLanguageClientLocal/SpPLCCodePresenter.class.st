@@ -14,6 +14,5 @@ SpPLCCodePresenter >> resetInlineCompletion [
 SpPLCCodePresenter >> setInlineCompletionWith: anInlineCompletionText [
 
 	self withAdapterDo: [ :anAdapter |
-		anAdapter resetInlineCompletion.
 		anAdapter setInlineCompletionWith: anInlineCompletionText ]
 ]

@@ -22,6 +22,13 @@ PLCClient class >> default: aPLCClient [
 ]
 
 { #category : #accessing }
+PLCClient class >> initialize [
+
+	Smalltalk addToStartUpList: self.
+	self reset
+]
+
+{ #category : #accessing }
 PLCClient class >> inspect [
 
 	<script>
@@ -34,6 +41,12 @@ PLCClient class >> reset [
 	<script>
 	default ifNotNil: [ default stop ].
 	self default: nil
+]
+
+{ #category : #accessing }
+PLCClient class >> startUp: isImageStarting [
+
+	isImageStarting ifTrue: [ self reset ]
 ]
 
 { #category : #'lsp - completion' }
