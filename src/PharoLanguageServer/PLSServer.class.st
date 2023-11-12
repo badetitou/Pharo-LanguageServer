@@ -450,7 +450,6 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 
 	<jrpc: #'textDocument/inlineCompletion'>
 	| internalTextDocument api answer |
-	2 seconds wait.
 	(HFAPI apiKey isNil or: [ HFAPI apiKey isEmpty ])
 		ifTrue: [ answer := 'Set a HuggingFace API KEY in the settings' ]
 		ifFalse: [
@@ -460,7 +459,7 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 			api := HFAPI new.
 			api model: HFCodeLlama13bModel new.
 			api return_full_text: false.
-			api temperature: 1.
+			api temperature: 0.1.
 			api max_new_tokens: 50.
 			api max_time: 2.
 			answer := api query:
