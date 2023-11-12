@@ -19,13 +19,13 @@ PLCLRubScrolledTextMorph >> beForSmalltalkScripting [
 { #category : #'lsp - completion' }
 PLCLRubScrolledTextMorph >> resetInlineCompletion [
 
-	self textArea updateTextWith: self textWithoutGhost
+	self textArea setTextWith: self textWithoutGhost
 ]
 
 { #category : #'lsp - completion' }
 PLCLRubScrolledTextMorph >> setInlineCompletionWith: aText [
 
-	self updateTextWith: (self textWithoutGhost append: (aText asText
+	self setTextWith: (self textWithoutGhost append: (aText asText
 				  addAttribute: TextGhost new;
 				  yourself))
 ]

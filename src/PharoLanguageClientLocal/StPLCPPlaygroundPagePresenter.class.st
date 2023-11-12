@@ -53,8 +53,8 @@ StPLCPPlaygroundPagePresenter >> initializePresenters [
 		"before taking focus position will be nil, ensure I have the correct one"
 		whenFocusReceivedDo: [ self updateLineNumber ].
 	text whenTextChangedDo: [ :aString |
+		self resetInlineCompletion.
 		version := version + 1.
-
 		PLCClient default
 			sendDidChangeTextDocument: self versionedTextDocumentIdentifier
 			withChanges: { (PLPTextDocumentContentChangeEvent new
@@ -72,6 +72,12 @@ StPLCPPlaygroundPagePresenter >> initializePresenters [
 StPLCPPlaygroundPagePresenter >> plpURI [
 
 	^ 'playground/' , self identityHash printString
+]
+
+{ #category : #'event handling' }
+StPLCPPlaygroundPagePresenter >> resetInlineCompletion [
+
+	text resetInlineCompletion
 ]
 
 { #category : #'event handling' }
