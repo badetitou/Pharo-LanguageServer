@@ -10,6 +10,12 @@ Class {
 }
 
 { #category : #running }
+PLPTests >> plpURI [
+
+	^ '#test/plp'
+]
+
+{ #category : #running }
 PLPTests >> setUp [
 
 	| openPort |
@@ -49,24 +55,52 @@ PLPTests >> testCancelRequest [
 ]
 
 { #category : #running }
-PLPTests >> testDidOpenTextDocuement [
+PLPTests >> testDidChangeTextDocument [
+	"I test that the client can cancel a long processing request of the server"
+
+	| documentIdentifier |
+	self testDidOpenTextDocument.
+	documentIdentifier := PLSVersionedTextDocumentIdentifier new
+		                      uri: self plpURI;
+		                      version: 43;
+		                      yourself.
+	client
+		sendDidChangeTextDocument: documentIdentifier
+		withChanges: { (PLPTextDocumentContentChangeEvent new
+				 text: 'Hello world 43';
+				 yourself) }.
+	[ client answerProcessor answerHandlers isEmpty ] whileFalse.
+	[ (server context textItem: self plpURI) version = 43 ] whileFalse.
+
+	self
+		assert: (server context textItem: self plpURI) text
+		equals: 'Hello world 43'
+]
+
+{ #category : #running }
+PLPTests >> testDidOpenTextDocument [
 	"I test that the client can cancel a long processing request of the server"
 
 	| obj document |
 	obj := Object new.
 	document := PLPTextDocumentItem new
-		            uri: '#test/plp';
+		            uri: self plpURI;
 		            languageId: 'smalltalk';
 		            version: 42;
 		            text: ''.
 	client start.
 	client sendDidOpenTextDocument: document for: obj.
 	[ client answerProcessor answerHandlers isEmpty ] whileFalse.
-	[ server context messageProcesses isEmpty ] whileFalse.
-	self assert: (client context textItem: '#test/plp') equals: obj.
-	self assert: (server context textItem: '#test/plp') text equals: ''.
-	self assert: (server context textItem: '#test/plp') uri equals: '#test/plp'.
-	self assert: (server context textItem: '#test/plp') version equals: 42.
+	[
+	server context messageProcesses isEmpty and: [
+		(server context
+			 textItem: self plpURI
+			 ifAbsent: [ PLPTextDocumentItem new ]) version = 42 ] ] whileFalse.
+	self assert: (client context textItem: self plpURI) equals: obj.
+	self assert: (server context textItem: self plpURI) text equals: ''.
+	self
+		assert: (server context textItem: self plpURI) uri
+		equals: '#test/plp'
 ]
 
 { #category : #running }
