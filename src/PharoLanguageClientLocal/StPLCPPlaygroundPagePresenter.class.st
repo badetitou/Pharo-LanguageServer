@@ -19,12 +19,11 @@ StPLCPPlaygroundPagePresenter >> clientInlineCompletionFrom: items [
 StPLCPPlaygroundPagePresenter >> initialize [
 
 	version := 0.
-	"PLCClient default sendDidOpenTextDocument: (PLPTextDocumentItem new
+	PLCClient default sendDidOpenTextDocument: (PLPTextDocumentItem new
 			 uri: self plpURI;
 			 languageId: 'smalltalk';
 			 version: version;
-			 text: '') for: self."
-
+			 text: '') for: self.
 	super initialize
 ]
 
@@ -55,29 +54,24 @@ StPLCPPlaygroundPagePresenter >> initializePresenters [
 		whenFocusReceivedDo: [ self updateLineNumber ].
 	text whenTextChangedDo: [ :aString |
 		version := version + 1.
-		'text change' recordInfo.
-		self clientInlineCompletionFrom:
-			{ { (#insertText -> 'hello') } asDictionary }
-		"PLCClient default
-		sendDidChangeTextDocument: self versionedTextDocumentIdentifier
-		withChanges: { (PLPTextDocumentContentChangeEvent new
-				 text: self text asString;
-				 yourself) }.
-	txt := self text.
-	txt := txt withIndexSelect: [ :val :idx |
-		       (txt runs at: idx) anySatisfy: [ :el |
-			       (el isKindOf: TextGhost) not ] ].
-	self scrollPane setTextWith: txt.
-	PLCClient default
-		sendTextDocument: self versionedTextDocumentIdentifier
-		inlineCompletionAt:
-		(anAnnouncement text asString toLineCharacter: anAnnouncement start)" ]
+
+		PLCClient default
+			sendDidChangeTextDocument: self versionedTextDocumentIdentifier
+			withChanges: { (PLPTextDocumentContentChangeEvent new
+					 text: self text asString;
+					 yourself) }.
+		self text cursorPosition ifNotNil: [ :cursorPosition |
+			PLCClient default
+				sendTextDocument: self versionedTextDocumentIdentifier
+				inlineCompletionAt: {
+						(#line -> cursorPosition y).
+						(#character -> cursorPosition x) } asDictionary ] ]
 ]
 
 { #category : #'event handling' }
 StPLCPPlaygroundPagePresenter >> plpURI [
 
-	^ 'workspace/' , self identityHash printString
+	^ 'playground/' , self identityHash printString
 ]
 
 { #category : #'event handling' }

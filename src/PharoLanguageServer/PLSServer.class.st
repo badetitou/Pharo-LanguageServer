@@ -245,6 +245,35 @@ PLSServer >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
+{ #category : #'lsp - completion' }
+PLSServer >> oldTextDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
+
+	"<jrpc: #'textDocument/inlineCompletion'>"
+	| internalTextDocument api answer |
+	(HFAPI apiKey isNil or: [ HFAPI apiKey isEmpty ])
+		ifTrue: [ answer := 'Set a HuggingFace API KEY in the settings' ]
+		ifFalse: [
+			[
+			internalTextDocument := self context textItem:
+				                        (textDocument at: #uri).
+			api := HFAPI new.
+			api model: HFCodeLlama13bModel new.
+			api return_full_text: false.
+			api max_new_tokens: 50.
+			api max_time: 2.
+			answer := api query:
+				          'Complete the following code.
+Be creative! Only give me the code without any explanation. Do not add comment in the code.
+```st
+' , internalTextDocument text , '
+```' ]
+				on: HFAPIError
+				do: [ answer := 'HuggingFace rate limit' ] ].
+	^ (PLSInlineCompletionList new
+		   items: { (PLSInlineCompletionItem new insertText: answer) };
+		   yourself) asJRPCJSON
+]
+
 { #category : #'lsp - initialization' }
 PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 
@@ -428,15 +457,13 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 			internalTextDocument := self context textItem:
 				                        (textDocument at: #uri).
 			api := HFAPI new.
+			api model: HFCodeLlama13bModel new.
 			api return_full_text: false.
-			api max_new_tokens: 250.
+			api max_new_tokens: 50.
 			api max_time: 2.
 			answer := api query:
-				          'Complete the following code.
-Be creative! Only give me the code without any explanation. Do not add comment in the code.
-```st
-' , internalTextDocument text , '
-```' ]
+				          '<PRE> ' , internalTextDocument text , '
+<SUF> <MID>' ]
 				on: HFAPIError
 				do: [ answer := 'HuggingFace rate limit' ] ].
 	^ (PLSInlineCompletionList new
