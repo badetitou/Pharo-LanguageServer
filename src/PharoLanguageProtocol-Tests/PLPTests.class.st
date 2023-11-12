@@ -78,6 +78,35 @@ PLPTests >> testDidChangeTextDocument [
 ]
 
 { #category : #running }
+PLPTests >> testDidChangeTextDocumentCancelLongInlineCompletion [
+	"I test that the client can cancel a long processing request of the server"
+
+	| documentIdentifier documentIdentifier42 |
+	self testDidOpenTextDocument.
+
+	documentIdentifier42 := PLSVersionedTextDocumentIdentifier new
+		                        uri: self plpURI;
+		                        version: 42;
+		                        yourself.
+
+	client sendTextDocument: documentIdentifier42 inlineCompletionAt: {
+			(#line -> 0).
+			(#character -> 0) } asDictionary.
+
+	documentIdentifier := PLSVersionedTextDocumentIdentifier new
+		                      uri: self plpURI;
+		                      version: 43;
+		                      yourself.
+	client
+		sendDidChangeTextDocument: documentIdentifier
+		withChanges: { (PLPTextDocumentContentChangeEvent new
+				 text: 'Hello world 43';
+				 yourself) }.
+	[ client answerProcessor answerHandlers isEmpty ] whileFalse.
+	[ (server context textItem: self plpURI) version = 43 ] whileFalse
+]
+
+{ #category : #running }
 PLPTests >> testDidOpenTextDocument [
 	"I test that the client can cancel a long processing request of the server"
 

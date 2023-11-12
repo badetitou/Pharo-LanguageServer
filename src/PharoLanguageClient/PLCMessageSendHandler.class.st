@@ -1,14 +1,13 @@
 Class {
-	#name : 'PLCMessageSendHandler',
-	#superclass : 'JRPCMessageSendHandler',
+	#name : #PLCMessageSendHandler,
+	#superclass : #JRPCMessageSendHandler,
 	#instVars : [
 		'originRequest'
 	],
-	#category : 'PharoLanguageClient',
-	#package : 'PharoLanguageClient'
+	#category : 'PharoLanguageClient'
 }
 
-{ #category : 'parameters-checking' }
+{ #category : #'parameters-checking' }
 PLCMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 
 	aJRPCRequestObject params ifNil: [ 
@@ -22,7 +21,7 @@ PLCMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 		JRPCInvalidParameters signal ]
 ]
 
-{ #category : 'evaluation' }
+{ #category : #evaluation }
 PLCMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 
 	| arguments |
@@ -41,19 +40,19 @@ PLCMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 	^ self send: self messageSelector to: self receiver with: arguments
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLCMessageSendHandler >> originRequest [
 
 	^ originRequest
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLCMessageSendHandler >> originRequest: anObject [
 
 	originRequest := anObject
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLCMessageSendHandler >> parametersNames [
 
 	^ (self receiver class lookupSelector: self messageSelector)

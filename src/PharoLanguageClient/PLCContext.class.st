@@ -1,45 +1,44 @@
 Class {
-	#name : 'PLCContext',
-	#superclass : 'Object',
+	#name : #PLCContext,
+	#superclass : #Object,
 	#instVars : [
 		'textItems'
 	],
-	#category : 'PharoLanguageClient',
-	#package : 'PharoLanguageClient'
+	#category : 'PharoLanguageClient'
 }
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLCContext >> initialize [
 
 	super initialize.
 	textItems := Dictionary new
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLCContext >> removeTextItem: aURI [
 
 	^ self textItems removeKey: aURI
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLCContext >> textItem: aURI [
 
 	^ self textItems at: aURI
 ]
 
-{ #category : 'initialization' }
+{ #category : #initialization }
 PLCContext >> textItem: aURI put: aTextItem [
 
 	^ self textItems at: aURI put: aTextItem
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLCContext >> textItems [
 
 	^ textItems
 ]
 
-{ #category : 'accessing' }
+{ #category : #accessing }
 PLCContext >> textItems: anObject [
 
 	textItems := anObject
