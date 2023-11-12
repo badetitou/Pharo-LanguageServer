@@ -4,7 +4,7 @@ Class {
 	#instVars : [
 		'color'
 	],
-	#category : 'PharoLanguageClientLocal'
+	#category : #'PharoLanguageClientLocal-GraphicalStack'
 }
 
 { #category : #comparing }

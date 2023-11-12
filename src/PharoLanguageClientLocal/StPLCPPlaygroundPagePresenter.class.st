@@ -4,16 +4,15 @@ Class {
 	#instVars : [
 		'version'
 	],
-	#category : #PharoLanguageClientLocal
+	#category : #'PharoLanguageClientLocal-GraphicalStack'
 }
 
 { #category : #'event handling' }
 StPLCPPlaygroundPagePresenter >> clientInlineCompletionFrom: items [
 
-	text setTextWith:
-		(self text append: ((items anyOne at: #insertText) asText
-				  addAttribute: TextGhost new;
-				  yourself))
+	text setInlineCompletionWith: ((items anyOne at: #insertText) asText
+			 addAttribute: TextGhost new;
+			 yourself)
 ]
 
 { #category : #initialization }
@@ -29,12 +28,36 @@ StPLCPPlaygroundPagePresenter >> initialize [
 	super initialize
 ]
 
-{ #category : #'event handling' }
+{ #category : #initialization }
 StPLCPPlaygroundPagePresenter >> initializePresenters [
 
-	super initializePresenters.
+	self initializeToolbar.
+	self initializeStatusbar.
+
+	(text := self instantiate: SpPLCCodePresenter)
+		interactionModel: StPlaygroundInteractionModel new;
+		lineNumbers: self showLineNumbers;
+		overridingContextMenu;
+		withEditionContextMenu;
+		contextMenu: [ (self menuActionsFor: text) asMenuPresenter ];
+		contextKeyBindings: (self menuActionsFor: text) asKMCategory;
+		whenTextChangedDo: [ :aString | page contents: aString ].
+
+	text announcer
+		when: SpCodeWillBeEvaluatedAnnouncement
+		send: #ensureContentsFlushed
+		to: self.
+
+	text eventHandler
+		whenKeyUpDo: [ :event | self updateLineNumber ];
+		whenMouseUpDo: [ :event | self updateLineNumber ];
+		"before taking focus position will be nil, ensure I have the correct one"
+		whenFocusReceivedDo: [ self updateLineNumber ].
 	text whenTextChangedDo: [ :aString |
-		version := version + 1
+		version := version + 1.
+		'text change' recordInfo.
+		self clientInlineCompletionFrom:
+			{ { (#insertText -> 'hello') } asDictionary }
 		"PLCClient default
 		sendDidChangeTextDocument: self versionedTextDocumentIdentifier
 		withChanges: { (PLPTextDocumentContentChangeEvent new
