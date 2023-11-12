@@ -459,6 +459,7 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 			api := HFAPI new.
 			api model: HFCodeLlama13bModel new.
 			api return_full_text: false.
+			api temperature: 1.
 			api max_new_tokens: 50.
 			api max_time: 2.
 			answer := api query:

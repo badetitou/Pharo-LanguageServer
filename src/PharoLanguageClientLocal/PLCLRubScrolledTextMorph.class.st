@@ -28,7 +28,7 @@ PLCLRubScrolledTextMorph >> resetInlineCompletion [
 { #category : #'lsp - completion' }
 PLCLRubScrolledTextMorph >> setInlineCompletionWith: aText [
 
-	self getText append: (aText asText
+	self setTextWith: (self getText append: (aText asText
 			 addAttribute: TextGhost new;
-			 yourself)
+			 yourself))
 ]

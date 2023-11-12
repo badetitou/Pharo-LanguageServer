@@ -6,7 +6,7 @@ Class {
 	#classInstVars : [
 		'default'
 	],
-	#category : 'PharoLanguageClientLocal'
+	#category : #PharoLanguageClientLocal
 }
 
 { #category : #accessing }
@@ -19,6 +19,13 @@ PLCClient class >> default [
 PLCClient class >> default: aPLCClient [
 
 	default := aPLCClient
+]
+
+{ #category : #accessing }
+PLCClient class >> inspect [
+
+	<script>
+	self default inspect
 ]
 
 { #category : #accessing }
