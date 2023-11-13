@@ -459,12 +459,9 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 			api := HFAPI new.
 			api model: HFCodeLlama13bModel new.
 			api return_full_text: false.
-			api temperature: 0.1.
 			api max_new_tokens: 50.
 			api max_time: 2.
-			answer := api query:
-				          '<PRE> ' , internalTextDocument text , '
-<SUF> <MID>' ]
+			answer := api query: internalTextDocument text ]
 				on: HFAPIError
 				do: [ answer := 'HuggingFace rate limit' ] ].
 	^ (PLSInlineCompletionList new
