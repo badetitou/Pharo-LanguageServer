@@ -35,43 +35,12 @@ Most of the features are available for both formats.
 
 ## Installation
 
-There is two ways to download this project: 
 
-- by downloading a pre-build image (in [releases](https://github.com/badetitou/Pharo-LanguageServer/releases) or from the pharo launcher)
-- by loading the code in a Pharo Image
-
-### Add project in PharoLauncher
-
-To add this project into the pharo launcher:
-
-1. Download the [PharoLauncher](https://pharo.org/download)
-2. Open PharoLauncher
-3. Open a playground (Ctrl + O, Ctrl + W)
-4. Execute the following piece of code
-
-```Smalltalk
-| sources |
-sources := {
-    PhLTemplateSource new
-        type: #HttpListing;
-        name: 'Pharo Language Server';
-        url: 'https://github.com/badetitou/Pharo-LanguageServer/releases/expanded_assets/v3.0.1';
-        filterPattern: 'href="([^"]*/(Pharo|Moose)[0-9][^"]*.zip)"';
-        templateNameFormat: '{6} ({5})' }.
-    PhLUserTemplateSources sourcesFile writeStreamDo: [ :s | 
-        (STON writer on: s)
-            newLine: String lf;
-            prettyPrint: true;
-            nextPut: sources ]
-```
-
-### Load the code
-
-Execute this code in any Pharo Image
+Execute this code in any Pharo10/11 Image
 
 ```Smalltalk
 Metacello new
-  githubUser: 'badetitou' project: 'Pharo-LanguageServer' commitish: 'v3' path: 'src';
+  githubUser: 'badetitou' project: 'Pharo-LanguageServer' commitish: 'v4' path: 'src';
   baseline: 'PharoLanguageServer';
   load
 ```
