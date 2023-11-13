@@ -461,7 +461,9 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 			api return_full_text: false.
 			api max_new_tokens: 50.
 			api max_time: 2.
-			answer := api query: internalTextDocument text ]
+			answer := internalTextDocument text
+				          ifEmpty: [ '' ]
+				          ifNotEmpty: [ api query: internalTextDocument text ] ]
 				on: HFAPIError
 				do: [ answer := 'HuggingFace rate limit' ] ].
 	^ (PLSInlineCompletionList new
