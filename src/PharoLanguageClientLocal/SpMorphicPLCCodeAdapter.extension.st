@@ -1,13 +1,13 @@
-Extension { #name : #SpMorphicCodeAdapter }
+Extension { #name : #SpMorphicPLCCodeAdapter }
 
 { #category : #'*PharoLanguageClientLocal' }
-SpMorphicCodeAdapter >> resetInlineCompletion [
+SpMorphicPLCCodeAdapter >> resetInlineCompletion [
 
 	self widget resetInlineCompletion
 ]
 
 { #category : #'*PharoLanguageClientLocal' }
-SpMorphicCodeAdapter >> setInlineCompletionWith: aText [
+SpMorphicPLCCodeAdapter >> setInlineCompletionWith: aText [
 
 	self widget setInlineCompletionWith: aText
 ]

@@ -4,6 +4,12 @@ Class {
 	#category : #'PharoLanguageClientLocal-GraphicalStack'
 }
 
+{ #category : #specs }
+SpPLCCodePresenter class >> adapterName [
+
+	^ #SpMorphicPLCCodeAdapter
+]
+
 { #category : #initialization }
 SpPLCCodePresenter >> resetInlineCompletion [
 
