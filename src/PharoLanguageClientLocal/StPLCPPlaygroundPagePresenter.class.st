@@ -58,7 +58,7 @@ StPLCPPlaygroundPagePresenter >> initializePresenters [
 		PLCClient default
 			sendDidChangeTextDocument: self versionedTextDocumentIdentifier
 			withChanges: { (PLPTextDocumentContentChangeEvent new
-					 text: self text asString;
+					 text: self text text asString;
 					 yourself) }.
 		self text cursorPosition ifNotNil: [ :cursorPosition |
 			PLCClient default
