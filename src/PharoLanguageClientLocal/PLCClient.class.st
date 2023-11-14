@@ -36,6 +36,14 @@ PLCClient class >> inspect [
 ]
 
 { #category : #accessing }
+PLCClient class >> menuCommandOn: aBuilder [
+	<worldMenu>
+	
+	(aBuilder item: #PharoLanguageClient)
+		order: 410
+]
+
+{ #category : #accessing }
 PLCClient class >> reset [
 
 	<script>
