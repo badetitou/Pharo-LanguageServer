@@ -98,14 +98,6 @@ PLSAbstractServer >> documentDiagnosticFor: textDocument withIdentifier: identif
 ]
 
 { #category : #starting }
-PLSAbstractServer >> extractLengthOf: data [
-	(data beginsWith: 'Content-Length: ')
-		ifTrue:
-			[ ^ (data copyFrom: 16 to: (data indexOf: Character cr)) asInteger ]
-		ifFalse: [ ^ -1 ]
-]
-
-{ #category : #starting }
 PLSAbstractServer >> getHeaderFor: answer into: aStream [
 	aStream << 'Content-Length: ' << answer utf8Encoded size asString << String crlf << 'Content-Type: application/vscode-jsonrpc; charset=utf-8'
 		<< String crlf << String crlf
