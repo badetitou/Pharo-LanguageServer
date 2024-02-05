@@ -106,11 +106,6 @@ PLSAbstractServer >> extractLengthOf: data [
 ]
 
 { #category : #starting }
-PLSAbstractServer >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
-	clientSocket nextInto: existingData startingAt: startingPoint
-]
-
-{ #category : #starting }
 PLSAbstractServer >> getHeaderFor: answer into: aStream [
 	aStream << 'Content-Length: ' << answer utf8Encoded size asString << String crlf << 'Content-Type: application/vscode-jsonrpc; charset=utf-8'
 		<< String crlf << String crlf

@@ -84,6 +84,7 @@ TPLPCommon >> extractRequestFrom: stream [
 
 { #category : #'plp - answerLoop' }
 TPLPCommon >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
+
 	clientSocket nextInto: existingData startingAt: startingPoint
 ]
 
