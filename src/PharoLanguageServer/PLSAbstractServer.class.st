@@ -7,11 +7,9 @@ Class {
 		'port',
 		'process',
 		'serverContext',
-		'data',
 		'messagesProcesses',
 		'clientInStream',
 		'clientOutStream',
-		'lastId',
 		'withStdIO'
 	],
 	#category : #PharoLanguageServer
