@@ -189,7 +189,7 @@ PLSAbstractServer >> initialize [
 	data := ''.
 	messagesProcesses := Dictionary new.
 	serverLoop := true.
-	serverLoopPriority := Processor lowIOPriority.
+	answerLoopPriority := Processor lowIOPriority.
 	currentId := 0
 ]
 
