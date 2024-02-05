@@ -99,20 +99,21 @@ PLSServer >> compilerFor: fileURI [
 
 { #category : #'lsp - text synchronisation' }
 PLSServer >> didChange: textDocument contentChanges: contentChanges [
+
 	<jrpc: #'textDocument/didChange'>
 	| document |
 	document := self context
-		textItem: (textDocument at: #uri)
-		ifAbsent: [ self didOpen: textDocument.
-			textDocument ].
+		            textItem: (textDocument at: #uri)
+		            ifAbsent: [
+			            self didOpen: textDocument.
+			            self context textItem: (textDocument at: #uri) ].
 	document version: (textDocument at: #version).
 	document text: (contentChanges anyOne at: #text).
 	self
-		sendData:
-			(self
-				convertJRPCJsonableObjectToJSON:
-					((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
-						params: document diagnostics) asJRPCJSON  )
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method:
+					   'textDocument/publishDiagnostics') params:
+					  document diagnostics) asJRPCJSON)
 		toClient: clientOutStream
 ]
 
@@ -244,6 +245,35 @@ PLSServer >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
+{ #category : #'lsp - completion' }
+PLSServer >> oldTextDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
+
+	"<jrpc: #'textDocument/inlineCompletion'>"
+	| internalTextDocument api answer |
+	(HFAPI apiKey isNil or: [ HFAPI apiKey isEmpty ])
+		ifTrue: [ answer := 'Set a HuggingFace API KEY in the settings' ]
+		ifFalse: [
+			[
+			internalTextDocument := self context textItem:
+				                        (textDocument at: #uri).
+			api := HFAPI new.
+			api model: HFCodeLlama13bModel new.
+			api return_full_text: false.
+			api max_new_tokens: 50.
+			api max_time: 2.
+			answer := api query:
+				          'Complete the following code.
+Be creative! Only give me the code without any explanation. Do not add comment in the code.
+```st
+' , internalTextDocument text , '
+```' ]
+				on: HFAPIError
+				do: [ answer := 'HuggingFace rate limit' ] ].
+	^ (PLSInlineCompletionList new
+		   items: { (PLSInlineCompletionItem new insertText: answer) };
+		   yourself) asJRPCJSON
+]
+
 { #category : #'lsp - initialization' }
 PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 
@@ -367,6 +397,7 @@ PLSServer >> serverInitialized [
 
 { #category : #'lsp - initialization' }
 PLSServer >> serverShutdown [
+
 	<jrpc: #shutdown>
 	SmalltalkImage current snapshot: false andQuit: true
 ]
@@ -381,19 +412,21 @@ PLSServer >> startDapServer [
 
 { #category : #'lsp - completion' }
 PLSServer >> textDocumentCompletionWithContext: context position: position textDocument: textDocument [
+
 	<jrpc: #'textDocument/completion'>
 	| completionList completionTool |
 	completionTool := PLSCompletion new
-		source: (self context textItem: (textDocument at: #uri)) text;
-		position: position;
-		yourself.
-	(self isTonelDocument: textDocument)
-		ifTrue: [ completionTool
-				sourceClass:
-					(([ PLSTonelParser
-						parseString: (self context textItem: (textDocument at: #uri)) text ]
-						on: Error
-						do: [ ^ {} ]) detect: #isClassDefinition) actualClass ].
+		                  source:
+			                  (self context textItem: (textDocument at: #uri))
+				                  text;
+		                  position: position;
+		                  yourself.
+	(self isTonelDocument: textDocument) ifTrue: [ 
+		completionTool sourceClass: (([ 
+			  PLSTonelParser parseString:
+				  (self context textItem: (textDocument at: #uri)) text ]
+				  on: Error
+				  do: [ ^ {  } ]) detect: #isClassDefinition) actualClass ].
 	completionList := PLSCompletionList new.
 	completionList completionItems: completionTool entries asArray.
 	^ completionList
@@ -410,6 +443,32 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 		position: position;
 		yourself.
 	^ { #contents -> hover contents } asDictionary
+]
+
+{ #category : #'lsp - completion' }
+PLSServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
+
+	<jrpc: #'textDocument/inlineCompletion'>
+	| internalTextDocument api answer |
+	(HFAPI apiKey isNil or: [ HFAPI apiKey isEmpty ])
+		ifTrue: [ answer := 'Set a HuggingFace API KEY in the settings' ]
+		ifFalse: [
+			[
+			internalTextDocument := self context textItem:
+				                        (textDocument at: #uri).
+			api := HFAPI new.
+			api model: HFCodeLlama13bModel new.
+			api return_full_text: false.
+			api max_new_tokens: 50.
+			api max_time: 2.
+			answer := internalTextDocument text
+				          ifEmpty: [ '' ]
+				          ifNotEmpty: [ api query: internalTextDocument text ] ]
+				on: HFAPIError
+				do: [ answer := 'HuggingFace rate limit' ] ].
+	^ (PLSInlineCompletionList new
+		   items: { (PLSInlineCompletionItem new insertText: answer) };
+		   yourself) asJRPCJSON
 ]
 
 { #category : #'lsp - signature help' }

@@ -9,7 +9,7 @@ Trait {
 		'data',
 		'answerLoopPriority'
 	],
-	#category : #PharoLanguageProtocol
+	#category : 'PharoLanguageProtocol'
 }
 
 { #category : #'plp - answerLoop' }
@@ -100,10 +100,24 @@ TPLPCommon >> handleRequest: request toClient: outputStream [
 	self explicitRequirement
 ]
 
+{ #category : #'plp - answerLoop' }
+TPLPCommon >> log: aString [
+
+	aString record
+]
+
 { #category : #id }
 TPLPCommon >> nextId [
 
 	^ currentId := currentId + 1
+]
+
+{ #category : #'plp - base protocol' }
+TPLPCommon >> sendCancelRequest: id [
+
+	self notifyMethod: '$/cancelRequest' arguments: (PLPCancelParams new
+			 id: id;
+			 yourself) asJRPCJSON
 ]
 
 { #category : #'plp - answerLoop' }
@@ -117,4 +131,10 @@ TPLPCommon >> startAnswerLoop [
 		           self handleRequest: request toClient: clientOutStream ] ]
 		           forkAt: self answerLoopPriority
 		           named: 'JRPC TCP connection'
+]
+
+{ #category : #'plp - answerLoop' }
+TPLPCommon >> stopAnswerLoop [
+
+	answerLoop := false
 ]

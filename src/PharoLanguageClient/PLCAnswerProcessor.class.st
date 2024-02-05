@@ -20,13 +20,17 @@ PLCAnswerProcessor class >> for: aTPLCClient [
 PLCAnswerProcessor >> addHandlerFor: aRequest [
 
 	(Pragma allNamed: #jrpc: in: client class)
-		detect: [ :pragma | (pragma argumentNamed: #jrpc:) = aRequest method  ]
+		detect: [ :pragma |
+		(pragma argumentNamed: #jrpc:) = aRequest method ]
 		ifFound: [ :pragma |
-			self answerHandlers at: aRequest id put: (PLSMessageSendHandler new
-					 receiver: client;
-					 methodName: pragma arguments first;
-					 messageSelector: pragma methodSelector;
-					 yourself) ]
+			self answerHandlers
+				at: aRequest id
+				put: (PLCMessageSendHandler new
+						 receiver: client;
+						 methodName: pragma arguments first;
+						 messageSelector: pragma methodSelector;
+						 originRequest: aRequest;
+						 yourself) ]
 ]
 
 { #category : #accessing }
@@ -39,6 +43,21 @@ PLCAnswerProcessor >> answerHandlers [
 PLCAnswerProcessor >> answerHandlers: anObject [
 
 	answerHandlers := anObject
+]
+
+{ #category : #adding }
+PLCAnswerProcessor >> cancelRequestBefore: textDocumentIdentifier [
+
+	self answerHandlers
+		select: [ :handler |
+			handler originRequest params
+				at: #textDocument
+				ifPresent: [ :td |
+				(td at: #version) < textDocumentIdentifier version ]
+				ifAbsent: [ false ] ]
+		thenDo: [ :handler |
+			self client sendCancelRequest: handler originRequest id.
+			self removeHandlerWithId: handler originRequest id ]
 ]
 
 { #category : #accessing }
@@ -82,4 +101,10 @@ PLCAnswerProcessor >> initialize [
 
 	super initialize.
 	self answerHandlers: Dictionary new
+]
+
+{ #category : #adding }
+PLCAnswerProcessor >> removeHandlerWithId: anID [
+
+	self answerHandlers removeKey: anID ifAbsent: [  ]
 ]

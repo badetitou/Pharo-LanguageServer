@@ -50,11 +50,14 @@ PLSAbstractServer >> applyWorkspaceEdit: workspaceEdit withLabel: aLabel [
 
 { #category : #'lsp - initialization' }
 PLSAbstractServer >> cancelRequest: id [
+
 	<jrpc: #'$/cancelRequest' >
 	self context messageProcesses
 		at: id
-		ifPresent: [ :process2 | process2 terminate ]
-		ifAbsent: [ ]
+		ifPresent: [ :process2 |
+			process2 terminate.
+			self context messageProcesses removeKey: id ]
+		ifAbsent: [  ]
 ]
 
 { #category : #accessing }
@@ -394,6 +397,13 @@ PLSAbstractServer >> textDocumentCompletionWithContext: context position: positi
 { #category : #'lsp - hover' }
 PLSAbstractServer >> textDocumentHoverWithPosition: position textDocument: textDocument [
 	<jrpc: #'textDocument/hover'>
+	self subclassResponsibility
+]
+
+{ #category : #'lsp - completion' }
+PLSAbstractServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
+
+	<jrpc: #'textDocument/inlineCompletion'>
 	self subclassResponsibility
 ]
 

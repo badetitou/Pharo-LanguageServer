@@ -33,17 +33,19 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 		with: [ spec repository: 'github://badetitou/MoreLogger:main/src' ].
 	spec
 		baseline: 'SpecGtk'
-		with: [ spec repository: 'github://pharo-spec/Spec-Gtk:/src' ]
+		with: [ spec repository: 'github://pharo-spec/Spec-Gtk:/src' ].
+
+	spec
+		baseline: 'PharoHuggingFace'
+		with: [ 
+		spec repository: 'github://Evref-BL/Pharo-HuggingFace:main/src' ]
 ]
 
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> defineGroups: spec [
 
 	spec group: 'default' with: #( 'LSP' 'DAP' 'LSC' 'Tests' ).
-	spec
-		group: 'LSC'
-		with:
-			#( 'PharoLanguageClient' ).
+	spec group: 'LSC' with: #( 'PharoLanguageClient' ).
 	spec
 		group: 'LSP'
 		with:
@@ -51,28 +53,28 @@ BaselineOfPharoLanguageServer >> defineGroups: spec [
 			   'PLS-Pharo9-Extension' ).
 	spec group: 'LSP-GTK' with: #( 'LSP' 'PharoLanguageServer-Gtk' ).
 	spec group: 'DAP' with: #( 'PharoDAP' ).
+	spec group: 'Tests' with: #( 'PharoLanguageProtocol-Tests' ).
 	spec
-		group: 'Tests'
-		with:
-			#( 'PharoLanguageProtocol-Tests' )
+		group: 'localClient'
+		with: #( 'default' 'PharoLanguageClienLocal' )
 ]
 
 { #category : #baselines }
 BaselineOfPharoLanguageServer >> definePackages: spec [
-
 	"common"
 
 	spec package: 'PharoLanguageProtocol'.
 	spec
 		package: 'PharoLanguageProtocol-Tests'
-		with: [ 
+		with: [
 		spec requires: #( 'PharoLanguageServer' 'PharoLanguageClient' ) ].
 	"server"
 	spec
 		package: 'PLSDAP-Helpers';
-		package: 'PharoLanguageServer' with: [ 
+		package: 'PharoLanguageServer' with: [
 			spec requires:
-					#( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' 'PharoLanguageProtocol' ) ];
+					#( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' 'PharoLanguageProtocol'
+					   'PharoHuggingFace' ) ];
 		package: 'PharoLanguageServer-Tests'
 		with: [ spec requires: #( 'PharoLanguageServer' ) ];
 		package: 'PharoDAP'
@@ -84,5 +86,9 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 	"client"
 	spec
 		package: 'PharoLanguageClient'
-		with: [ spec requires: #( 'JRPC' 'PharoLanguageProtocol' ) ]
+		with: [ spec requires: #( 'JRPC' 'PharoLanguageProtocol' ) ].
+
+	spec
+		package: 'PharoLanguageClienLocal'
+		with: [ spec requires: #( 'PharoLanguageClient' ) ]
 ]

@@ -1,17 +1,18 @@
 Class {
 	#name : #PLSScriptDocument,
 	#superclass : #PLSDocument,
-	#category : #'PharoLanguageServer-Document'
+	#category : 'PharoLanguageServer-Document'
 }
 
 { #category : #'instance creation' }
 PLSScriptDocument class >> fromDocumentDictionary: aDocumentDictionary [
+
 	^ self new
-		version: (aDocumentDictionary at: #version);
-		text: (aDocumentDictionary at: #text);
-		languageId: (aDocumentDictionary at: #languageId);
-		uri: (aDocumentDictionary at: #uri);
-		yourself
+		  version: (aDocumentDictionary at: #version);
+		  text: (aDocumentDictionary at: #text ifAbsent: '');
+		  languageId: (aDocumentDictionary at: #languageId ifAbsent: '');
+		  uri: (aDocumentDictionary at: #uri);
+		  yourself
 ]
 
 { #category : #'lsp - accessing' }

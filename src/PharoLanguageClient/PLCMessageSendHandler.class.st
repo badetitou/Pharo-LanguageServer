@@ -1,7 +1,10 @@
 Class {
 	#name : #PLCMessageSendHandler,
 	#superclass : #JRPCMessageSendHandler,
-	#category : #PharoLanguageClient
+	#instVars : [
+		'originRequest'
+	],
+	#category : 'PharoLanguageClient'
 }
 
 { #category : #'parameters-checking' }
@@ -18,7 +21,7 @@ PLCMessageSendHandler >> checkParametersForRequest: aJRPCRequestObject [
 		JRPCInvalidParameters signal ]
 ]
 
-{ #category : #'parameters-checking' }
+{ #category : #evaluation }
 PLCMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 
 	| arguments |
@@ -26,7 +29,9 @@ PLCMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 
 	anArrayOrDictionary ifNil: [ arguments := #(  ) ].
 
-	anArrayOrDictionary isDictionary ifTrue: [ 
+	anArrayOrDictionary isDictionary ifTrue: [
+		self originRequest ifNotNil: [ :ori |
+			anArrayOrDictionary at: #originRequest put: ori ].
 		arguments := OrderedCollection new.
 		self parametersNames do: [ :name |
 			arguments add: (anArrayOrDictionary at: name ifAbsent: [ nil ]) ].
@@ -35,7 +40,21 @@ PLCMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 	^ self send: self messageSelector to: self receiver with: arguments
 ]
 
-{ #category : #'parameters-checking' }
+{ #category : #accessing }
+PLCMessageSendHandler >> originRequest [
+
+	^ originRequest
+]
+
+{ #category : #accessing }
+PLCMessageSendHandler >> originRequest: anObject [
+
+	originRequest := anObject
+]
+
+{ #category : #accessing }
 PLCMessageSendHandler >> parametersNames [
-	^ (self receiver class lookupSelector: self messageSelector) argumentNames
+
+	^ (self receiver class lookupSelector: self messageSelector)
+		  argumentNames
 ]

@@ -11,9 +11,10 @@ Class {
 		'textDocumentSync',
 		'typeDefinitionOptions',
 		'codeActionProvider',
-		'diagnosticProvider'
+		'diagnosticProvider',
+		'inlineCompletionProvider'
 	],
-	#category : #'PharoLanguageServer-Structure-Capabilities'
+	#category : 'PharoLanguageServer-Structure-Capabilities'
 }
 
 { #category : #public }
@@ -45,32 +46,36 @@ PLSServerCapabilities >> asJRPCJSON [
 
 	| dic |
 	dic := Dictionary new.
-	self completionProvider ifNotNil: [ 
+	self completionProvider ifNotNil: [
 		dic at: #completionProvider put: self completionProvider asJRPCJSON ].
-	self textDocumentSync ifNotNil: [ 
+	self textDocumentSync ifNotNil: [
 		dic at: #textDocumentSync put: self textDocumentSync asJRPCJSON ].
-	self hoverProvider ifNotNil: [ 
+	self hoverProvider ifNotNil: [
 		dic at: #hoverProvider put: self hoverProvider asJRPCJSON ].
-	self documentFormattingProvider ifNotNil: [ 
+	self documentFormattingProvider ifNotNil: [
 		dic
 			at: #documentFormattingProvider
 			put: self documentFormattingProvider asJRPCJSON ].
-	self signatureHelp ifNotNil: [ 
+	self signatureHelp ifNotNil: [
 		dic at: #signatureHelpProvider put: self signatureHelp asJRPCJSON ].
-	self codeLens ifNotNil: [ 
+	self codeLens ifNotNil: [
 		dic at: #codeLensProvider put: self codeLens asJRPCJSON ].
-	self typeDefinitionOptions ifNotNil: [ 
+	self typeDefinitionOptions ifNotNil: [
 		dic
 			at: #typeDefinitionProvider
 			put: self typeDefinitionOptions asJRPCJSON ].
-	self documentSymbolProvider ifNotNil: [ 
+	self documentSymbolProvider ifNotNil: [
 		dic
 			at: #documentSymbolProvider
 			put: self documentSymbolProvider asJRPCJSON ].
-	self codeActionProvider ifNotNil: [ 
+	self codeActionProvider ifNotNil: [
 		dic at: #codeActionProvider put: self codeActionProvider asJRPCJSON ].
-	self diagnosticProvider ifNotNil: [ 
+	self diagnosticProvider ifNotNil: [
 		dic at: #diagnosticProvider put: self diagnosticProvider asJRPCJSON ].
+	self inlineCompletionProvider ifNotNil: [
+		dic
+			at: #inlineCompletionProvider
+			put: self inlineCompletionProvider asJRPCJSON ].
 	^ dic
 ]
 
@@ -156,6 +161,18 @@ PLSServerCapabilities >> hoverProvider [
 PLSServerCapabilities >> hoverProvider: anObject [
 
 	hoverProvider := anObject
+]
+
+{ #category : #accessing }
+PLSServerCapabilities >> inlineCompletionProvider [
+
+	^ inlineCompletionProvider
+]
+
+{ #category : #accessing }
+PLSServerCapabilities >> inlineCompletionProvider: anObject [
+
+	inlineCompletionProvider := anObject
 ]
 
 { #category : #'as yet unclassified' }
