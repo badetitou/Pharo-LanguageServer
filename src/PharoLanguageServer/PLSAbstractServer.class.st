@@ -1,8 +1,8 @@
 Class {
 	#name : #PLSAbstractServer,
 	#superclass : #JRPCServer,
-	#traits : 'JRPCParser',
-	#classTraits : 'JRPCParser classTrait',
+	#traits : 'JRPCParser + TPLPCommon',
+	#classTraits : 'JRPCParser classTrait + TPLPCommon classTrait',
 	#instVars : [
 		'port',
 		'serverLoop',
@@ -164,7 +164,7 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 				               ifTrue: [ err pass ]
 				               ifFalse: [ err return: err asJRPCResponse ] ].
 	jrpcMessage id ifNotNil: [
-		lastId := lastId max: jrpcMessage id asInteger ].
+		currentId := currentId max: jrpcMessage id asInteger ].
 	^ self messageProcess: jrpcMessage id put: ([
 		   self
 			   sendData: (self handleJSON: jrpcMessage)
@@ -189,7 +189,7 @@ PLSAbstractServer >> initialize [
 	messagesProcesses := Dictionary new.
 	serverLoop := true.
 	serverLoopPriority := Processor lowIOPriority.
-	lastId := 0
+	currentId := 0
 ]
 
 { #category : #starting }
@@ -236,12 +236,6 @@ PLSAbstractServer >> logMessage: aString ofType: messageType [
 { #category : #context }
 PLSAbstractServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
-]
-
-{ #category : #starting }
-PLSAbstractServer >> nextId [
-	^ lastId := lastId + 1
-	
 ]
 
 { #category : #'lsp - initialization' }
@@ -360,7 +354,7 @@ PLSAbstractServer >> start [
 
 	self debugMode ifFalse: [ PLSUIManager withPLSServer: self ].
 	self initializeStreams.
-	lastId := 0.
+	currentId := 0.
 	process := [ 
 	           [ serverLoop ] whileTrue: [ 
 		           | request |
