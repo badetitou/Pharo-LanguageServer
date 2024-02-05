@@ -320,12 +320,15 @@ PLSServer >> plsExecuteClassTests: className [
 
 { #category : #pls }
 PLSServer >> plsGetClassContent: class [
+
 	<jrpc: #'pls:classContent'>
 	| className |
-	className := ((class substrings: '/' )last  withoutSuffix: '.st') withoutSuffix: '.class'.
-	^ String
-		streamContents:
-			[ :stream | TonelWriter exportClass: (self class environment at: className asSymbol) on: stream ]
+	className := ((class substrings: '/') last withoutSuffix: '.st')
+		             withoutSuffix: '.class'.
+	^ String streamContents: [ :stream |
+		  TonelWriter
+			  exportClass: (self class environment at: className asSymbol)
+			  on: stream ]
 ]
 
 { #category : #pls }
@@ -386,6 +389,63 @@ PLSServer >> plsResetLog [
 	<jrpc: #'pls-developer:clearLog'>
 	(TinyLogger default ensureMoreFileLoggerNamed: 'LSP.log') clearLog.
 	^ 'success'
+]
+
+{ #category : #'pls - tests' }
+PLSServer >> plsTestExecuteTest: aTestURI [
+
+	<jrpc: #'pls:test-execute-test'>
+	| className result |
+	className := ((aTestURI at: #path) substrings: '/') last
+		             withoutSuffix: '.class.st'.
+	result := (self class environment at: className asSymbol) run:
+		          (aTestURI at: #fragment) asSymbol.
+	^ {
+		  (#failures -> (result failures collect: #printString as: Array)).
+		  (#errors -> (result errors collect: #printString as: Array)).
+		  (#skipped -> (result skipped collect: #printString as: Array)).
+		  (#passed -> (result passed collect: #printString as: Array)) }
+		  asDictionary
+]
+
+{ #category : #'pls - tests' }
+PLSServer >> plsTestInClass: aClassURI [
+
+	<jrpc: #'pls:test-in-class'>
+	| className |
+	className := ((aClassURI at: #path) substrings: '/') last
+		             withoutSuffix: '.class.st'.
+		
+	^ (self class environment at: className asSymbol) suite tests
+		  collect: [ :test | (aClassURI at: #external) , '#' , test selector ]
+		  as: Array
+]
+
+{ #category : #'pls - tests' }
+PLSServer >> plsTestInPackage: aPackageURI [
+
+	<jrpc: #'pls:test-in-package'>
+	^ [
+	  ((aPackageURI at: #authority) asPackage classes select: [ :class |
+		   (class name endsWith: 'Tests') or: [ class name endsWith: 'Test' ] ])
+		  collect: [ :class | class plsURIString ]
+		  as: Array ]
+		  on: Error
+		  do: [ {  } asArray ]
+]
+
+{ #category : #'pls - tests' }
+PLSServer >> plsTestPackages [
+
+	<jrpc: #'pls:test-packages'>
+	^ (TestCase allSubclasses
+		   reject: #isAbstract
+		   thenCollect: [ :class | class package ]) asSet
+		  collect: [ :package | 'pharoImage://' , package name ]
+		  as: Array
+
+	"'pharoImage://' , class package name , '/' , class name
+			   , '.class.st'"
 ]
 
 { #category : #'lsp - initialization' }
