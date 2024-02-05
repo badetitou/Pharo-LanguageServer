@@ -6,10 +6,9 @@ Trait {
 		'clientInStream',
 		'clientOutStream',
 		'process',
-		'data',
 		'answerLoopPriority'
 	],
-	#category : 'PharoLanguageProtocol'
+	#category : #PharoLanguageProtocol
 }
 
 { #category : #'plp - answerLoop' }
@@ -48,8 +47,9 @@ TPLPCommon >> extractLengthOf: aData [
 { #category : #'plp - answerLoop' }
 TPLPCommon >> extractRequestFrom: stream [
 
-	| length startingPoint endPoint result |
+	| length startingPoint endPoint result data |
 	"data is the current buffer state"
+	data := ''.
 	length := -1.
 	[ length = -1 and: [ answerLoop ] ] whileTrue: [
 		[ data ifEmpty: [ data := (stream next: 25) asString ] ]

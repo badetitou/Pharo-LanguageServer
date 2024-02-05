@@ -5,7 +5,6 @@ Class {
 	#classTraits : 'JRPCParser classTrait + TPLPCommon classTrait',
 	#instVars : [
 		'port',
-		'serverLoop',
 		'process',
 		'serverContext',
 		'data',
@@ -109,41 +108,6 @@ PLSAbstractServer >> extractLengthOf: data [
 ]
 
 { #category : #starting }
-PLSAbstractServer >> extractRequestFrom: stream [
-
-	| length startingPoint endPoint result |
-	"data is the current buffer state"
-	length := -1.
-	[ length = -1 and: [ serverLoop ] ] whileTrue: [ 
-		[ data ifEmpty: [ data := (stream next: 25) asString ] ]
-			on: ConnectionTimedOut
-			do: [ self log: 'timeout but still work' ].
-		length := self extractLengthOf: data ].
-	startingPoint := data indexOf: ${.
-	endPoint := data findCloseBracesFor: startingPoint.
-	result := String new: length.
-	"three options"
-	"startingPoint and endPoint are found"
-	(startingPoint ~= 0 and: [ endPoint ~= 0 ]) ifTrue: [ 
-		result := data copyFrom: startingPoint to: endPoint.
-		data := data copyFrom: endPoint + 1 to: data size.
-		^ result ].
-	startingPoint = 0
-		ifTrue: [ "none were found" 
-			self getDatafromPosition: 1 fromSocket: stream in: result ]
-		ifFalse: [ "only startingPoint is found"
-			(data copyFrom: startingPoint to: data size) withIndexDo: [ 
-				:each 
-				:index | result at: index put: each ].
-			self
-				getDatafromPosition: data size - startingPoint + 2
-				fromSocket: stream
-				in: result ].
-	data := ''.
-	^ result
-]
-
-{ #category : #starting }
 PLSAbstractServer >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
 	clientSocket nextInto: existingData startingAt: startingPoint
 ]
@@ -186,9 +150,8 @@ PLSAbstractServer >> initialize [
 	self debugMode: false.
 	serverContext := PLSContext new.
 	withStdIO := false.
-	data := ''.
 	messagesProcesses := Dictionary new.
-	serverLoop := true.
+	answerLoop := true.
 	answerLoopPriority := Processor lowIOPriority.
 	currentId := 0
 ]
@@ -206,7 +169,7 @@ PLSAbstractServer >> initializeStreams [
 	self port: tcpServer port.
 	Stdio stdout nextPutAll: tcpServer port asString asByteArray.
 	Stdio stdout flush.
-	serverLoop := true.
+	answerLoop := true.
 	(tcpServer waitForAcceptFor: 60) ifNotNil: [ :clientSocket | 
 		clientInStream := SocketStream on: clientSocket.
 		clientOutStream := clientInStream.
@@ -339,7 +302,7 @@ PLSAbstractServer >> start [
 	self initializeStreams.
 	currentId := 0.
 	process := [ 
-	           [ serverLoop ] whileTrue: [ 
+	           [ answerLoop ] whileTrue: [ 
 		           | request |
 		           request := self extractRequestFrom: clientInStream.
 		           ('Request: ' , request) recordDebug.
@@ -351,7 +314,7 @@ PLSAbstractServer >> start [
 { #category : #stopping }
 PLSAbstractServer >> stop [
 
-	serverLoop := false.
+	answerLoop := false.
 	clientInStream close.
 	clientOutStream close.
 
