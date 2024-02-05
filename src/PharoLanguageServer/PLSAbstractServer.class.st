@@ -13,9 +13,7 @@ Class {
 		'clientInStream',
 		'clientOutStream',
 		'lastId',
-		'withStdIO',
-		'serverLoopPriority',
-		'answerLoopPriority'
+		'withStdIO'
 	],
 	#category : #PharoLanguageServer
 }
@@ -175,7 +173,7 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 		   [ self removeMessageProcess: jrpcMessage id ]
 			   on: KeyNotFound
 			   do: [  ] ]
-			   forkAt: self serverLoopPriority
+			   forkAt: self answerLoopPriority
 			   named: jrpcMessage id printString)
 ]
 
@@ -215,11 +213,6 @@ PLSAbstractServer >> initializeStreams [
 		self
 			logMessage: 'Client connected to Server using socket'
 			ofType: PLSMessageType info ]
-]
-
-{ #category : #accessing }
-PLSAbstractServer >> log: everything [
-	everything printString record
 ]
 
 { #category : #'lsp - message' }
@@ -290,19 +283,6 @@ PLSAbstractServer >> serverInitialized [
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
-PLSAbstractServer >> serverLoopPriority [
-	
-	"You can change my priority with you need even more performance for the server loop (note that it might be a bad idea to change me)"
-	^ serverLoopPriority
-]
-
-{ #category : #accessing }
-PLSAbstractServer >> serverLoopPriority: anObject [
-
-	serverLoopPriority := anObject
-]
-
 { #category : #'lsp - initialization' }
 PLSAbstractServer >> serverShutdown [
 	<jrpc: #shutdown>
@@ -364,7 +344,7 @@ PLSAbstractServer >> start [
 		           request := self extractRequestFrom: clientInStream.
 		           ('Request: ' , request) recordDebug.
 		           self handleRequest: request toClient: clientOutStream ] ]
-		           forkAt: self serverLoopPriority
+		           forkAt: self answerLoopPriority
 		           named: 'JRPC TCP connection'
 ]
 

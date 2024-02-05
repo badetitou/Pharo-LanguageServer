@@ -259,7 +259,7 @@ TPLCClient >> startWithLocalServer [
 	self clientInit.
 	server := PLSServer new.
 	server debugMode: true.
-	server serverLoopPriority: Processor lowIOPriority.
+	server answerLoopPriority: Processor lowIOPriority.
 	self answerLoopPriority: Processor lowIOPriority.
 	serverProcess := [ server start ]
 		                 forkAt: Processor activeProcess priority

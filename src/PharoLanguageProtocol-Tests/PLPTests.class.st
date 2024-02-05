@@ -24,7 +24,7 @@ PLPTests >> setUp [
 	client := PLPDummyClient new.
 	server := PLPDummyServer new.
 	server debugMode: true.
-	server serverLoopPriority: Processor activeProcess priority.
+	server answerLoopPriority: Processor activeProcess priority.
 	client answerLoopPriority: Processor activeProcess priority.
 	serverProcess := [ server start ]
 		forkAt: Processor activeProcess priority
