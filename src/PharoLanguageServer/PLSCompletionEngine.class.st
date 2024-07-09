@@ -1,10 +1,11 @@
 Class {
-	#name : #PLSCompletionEngine,
-	#superclass : #CompletionEngine,
-	#category : #PharoLanguageServer
+	#name : 'PLSCompletionEngine',
+	#superclass : 'CompletionEngine',
+	#category : 'PharoLanguageServer',
+	#package : 'PharoLanguageServer'
 }
 
-{ #category : #testing }
+{ #category : 'testing' }
 PLSCompletionEngine >> isScripting [
 	^ true
 ]

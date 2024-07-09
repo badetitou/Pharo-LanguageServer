@@ -1,14 +1,16 @@
 Class {
-	#name : #PLSCodeActionOptions,
-	#superclass : #Object,
+	#name : 'PLSCodeActionOptions',
+	#superclass : 'Object',
 	#instVars : [
 		'codeActionKinds',
 		'resolveProvider'
 	],
-	#category : #'PharoLanguageServer-Structure-CodeAction'
+	#category : 'PharoLanguageServer-Structure-CodeAction',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-CodeAction'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeActionOptions >> asJRPCJSON [
 
 	| dic |
@@ -20,25 +22,25 @@ PLSCodeActionOptions >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeActionOptions >> codeActionKinds [
 
 	^ codeActionKinds
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeActionOptions >> codeActionKinds: anObject [
 
 	codeActionKinds := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeActionOptions >> resolveProvider [
 
 	^ resolveProvider
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeActionOptions >> resolveProvider: anObject [
 
 	resolveProvider := anObject

@@ -1,6 +1,6 @@
-Extension { #name : #NECInstVarEntry }
+Extension { #name : 'NECInstVarEntry' }
 
-{ #category : #'*PharoLanguageServer' }
+{ #category : '*PharoLanguageServer' }
 NECInstVarEntry >> asPLSCompletionItemKind [
 	^ PLSCompletionItemKind field
 ]

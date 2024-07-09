@@ -1,6 +1,6 @@
-Extension { #name : #NECEntry }
+Extension { #name : 'NECEntry' }
 
-{ #category : #'*PharoLanguageServer' }
+{ #category : '*PharoLanguageServer' }
 NECEntry >> asPLSCompletionItemKind [
 	^ PLSCompletionItemKind text
 ]

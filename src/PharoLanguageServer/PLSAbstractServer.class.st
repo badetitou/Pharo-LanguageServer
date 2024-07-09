@@ -1,6 +1,6 @@
 Class {
-	#name : #PLSAbstractServer,
-	#superclass : #JRPCServer,
+	#name : 'PLSAbstractServer',
+	#superclass : 'JRPCServer',
 	#traits : 'JRPCParser + TPLPCommon',
 	#classTraits : 'JRPCParser classTrait + TPLPCommon classTrait',
 	#instVars : [
@@ -12,15 +12,16 @@ Class {
 		'clientOutStream',
 		'withStdIO'
 	],
-	#category : #PharoLanguageServer
+	#category : 'PharoLanguageServer',
+	#package : 'PharoLanguageServer'
 }
 
-{ #category : #defaults }
+{ #category : 'defaults' }
 PLSAbstractServer class >> defaultPort [
 	^ 0
 ]
 
-{ #category : #defaults }
+{ #category : 'defaults' }
 PLSAbstractServer class >> reset [
 	<script>
 	PLSServer
@@ -30,7 +31,7 @@ PLSAbstractServer class >> reset [
 				do: [ Transcript crShow: 'one server not stopped' ] ]
 ]
 
-{ #category : #'lsp - workspace' }
+{ #category : 'lsp - workspace' }
 PLSAbstractServer >> applyWorkspaceEdit: workspaceEdit withLabel: aLabel [
 
 	self
@@ -43,7 +44,7 @@ PLSAbstractServer >> applyWorkspaceEdit: workspaceEdit withLabel: aLabel [
 		toClient: clientOutStream
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 PLSAbstractServer >> cancelRequest: id [
 
 	<jrpc: #'$/cancelRequest' >
@@ -55,26 +56,26 @@ PLSAbstractServer >> cancelRequest: id [
 		ifAbsent: [  ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSAbstractServer >> clientOutStream [
 
 	^ clientOutStream
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSAbstractServer >> clientOutStream: anObject [
 
 	clientOutStream := anObject
 ]
 
-{ #category : #'lsp - code action' }
+{ #category : 'lsp - code action' }
 PLSAbstractServer >> codeActionForDocument: textDocument atRange: range withContext: context [
 
 	<jrpc: #'textDocument/codeAction'>
 
 ]
 
-{ #category : #'pls - config' }
+{ #category : 'pls - config' }
 PLSAbstractServer >> configDebugMode: debugMode [
 
 	<jrpc: #'pls:updateDebugMode'>
@@ -82,28 +83,28 @@ PLSAbstractServer >> configDebugMode: debugMode [
 	^ debugMode
 ]
 
-{ #category : #context }
+{ #category : 'context' }
 PLSAbstractServer >> context [
 	^ serverContext
 ]
 
-{ #category : #stopping }
+{ #category : 'stopping' }
 PLSAbstractServer >> defaultPort [
 	^ self class defaultPort
 ]
 
-{ #category : #'lsp - diagnostics' }
+{ #category : 'lsp - diagnostics' }
 PLSAbstractServer >> documentDiagnosticFor: textDocument withIdentifier: identifier andPreviousResult: previousResultId [
 	<jrpc: #'textDocument/diagnostic'>
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 PLSAbstractServer >> getHeaderFor: answer into: aStream [
 	aStream << 'Content-Length: ' << answer utf8Encoded size asString << String crlf << 'Content-Type: application/vscode-jsonrpc; charset=utf-8'
 		<< String crlf << String crlf
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 
 	| jrpcMessage |
@@ -126,7 +127,7 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 			   named: jrpcMessage id printString)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 PLSAbstractServer >> initialize [
 
 	super initialize.
@@ -141,7 +142,7 @@ PLSAbstractServer >> initialize [
 	currentId := 0
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 PLSAbstractServer >> initializeStreams [
 
 	| tcpServer |
@@ -163,7 +164,7 @@ PLSAbstractServer >> initializeStreams [
 			ofType: PLSMessageType info ]
 ]
 
-{ #category : #'lsp - message' }
+{ #category : 'lsp - message' }
 PLSAbstractServer >> logMessage: aString ofType: messageType [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
 
@@ -177,45 +178,45 @@ PLSAbstractServer >> logMessage: aString ofType: messageType [
 		toClient: clientOutStream
 ]
 
-{ #category : #context }
+{ #category : 'context' }
 PLSAbstractServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 PLSAbstractServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 	<jrpc: #initialize>
 	self subclassResponsibility.
 	
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 PLSAbstractServer >> parseJSON: aJSONString [
 	^ self messageProcessor parseSupposedJRPCMessageObjectFromString: aJSONString.
 	
 ]
 
-{ #category : #stopping }
+{ #category : 'stopping' }
 PLSAbstractServer >> port [
 	^ port ifNil: [ port := self defaultPort ]
 ]
 
-{ #category : #stopping }
+{ #category : 'stopping' }
 PLSAbstractServer >> port: anObject [
 	port := anObject
 ]
 
-{ #category : #context }
+{ #category : 'context' }
 PLSAbstractServer >> removeMessageProcess: anId [
 	self context removeMessageProcess: anId
 ]
 
-{ #category : #context }
+{ #category : 'context' }
 PLSAbstractServer >> resetContext [
 	serverContext := PLSContext new
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 PLSAbstractServer >> sendData: answer2 toClient: stream [
 
 	answer2 ifEmpty: [ 'No Answser' recordInfo ] ifNotEmpty: [ 
@@ -225,29 +226,29 @@ PLSAbstractServer >> sendData: answer2 toClient: stream [
 		stream flush ]
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 PLSAbstractServer >> serverInitialized [
 	<jrpc: #initialized>
 	self subclassResponsibility
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 PLSAbstractServer >> serverShutdown [
 	<jrpc: #shutdown>
 	self subclassResponsibility
 ]
 
-{ #category : #'lsp - trace' }
+{ #category : 'lsp - trace' }
 PLSAbstractServer >> setTrace: setTraceParam [
 	<jrpc: #'$/setTrace'>
 ]
 
-{ #category : #'lsp - trace' }
+{ #category : 'lsp - trace' }
 PLSAbstractServer >> setTraceNotification: value [
 	<jrpc: #'$/setTraceNotification'>
 ]
 
-{ #category : #'lsp - show document' }
+{ #category : 'lsp - show document' }
 PLSAbstractServer >> showDocument: documentURI external: aBooleanOrNil withFocus: focusBooleanOrNil atRange: aPLSRangeOrNil [
 	
 	self
@@ -266,7 +267,7 @@ PLSAbstractServer >> showDocument: documentURI external: aBooleanOrNil withFocus
 		toClient: clientOutStream
 ]
 
-{ #category : #'lsp - message' }
+{ #category : 'lsp - message' }
 PLSAbstractServer >> showMessage: aString ofType: messageType [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
 
@@ -280,7 +281,7 @@ PLSAbstractServer >> showMessage: aString ofType: messageType [
 		toClient: clientOutStream
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 PLSAbstractServer >> start [
 
 	self debugMode ifFalse: [ PLSUIManager withPLSServer: self ].
@@ -296,7 +297,7 @@ PLSAbstractServer >> start [
 		           named: 'JRPC TCP connection'
 ]
 
-{ #category : #stopping }
+{ #category : 'stopping' }
 PLSAbstractServer >> stop [
 
 	answerLoop := false.
@@ -309,39 +310,39 @@ PLSAbstractServer >> stop [
 		process terminate ]
 ]
 
-{ #category : #'lsp - successResponse' }
+{ #category : 'lsp - successResponse' }
 PLSAbstractServer >> successJRPCResponse: aJRPCResponse [
 	"I handle generic SuccessJRPCResponse after I send message"
 
 	
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLSAbstractServer >> textDocumentCompletionWithContext: context position: position textDocument: textDocument [
 	<jrpc: #'textDocument/completion'>
 	self subclassResponsibility 
 ]
 
-{ #category : #'lsp - hover' }
+{ #category : 'lsp - hover' }
 PLSAbstractServer >> textDocumentHoverWithPosition: position textDocument: textDocument [
 	<jrpc: #'textDocument/hover'>
 	self subclassResponsibility
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLSAbstractServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
 
 	<jrpc: #'textDocument/inlineCompletion'>
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSAbstractServer >> withStdIO [
 
 	^ withStdIO
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSAbstractServer >> withStdIO: anObject [
 
 	withStdIO := anObject

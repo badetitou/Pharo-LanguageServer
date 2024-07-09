@@ -1,10 +1,12 @@
 Class {
-	#name : #PLSTonelParser,
-	#superclass : #TonelParser,
-	#category : #'PharoLanguageServer-TonelUtils'
+	#name : 'PLSTonelParser',
+	#superclass : 'TonelParser',
+	#category : 'PharoLanguageServer-TonelUtils',
+	#package : 'PharoLanguageServer',
+	#tag : 'TonelUtils'
 }
 
-{ #category : #'private factory' }
+{ #category : 'private factory' }
 PLSTonelParser >> methodDef [
 	^ [ self
 		newMethodDefinitionFrom:
@@ -23,7 +25,7 @@ PLSTonelParser >> methodDef [
 				yourself ]
 ]
 
-{ #category : #'private factory' }
+{ #category : 'private factory' }
 PLSTonelParser >> methodDefList [
 	| result |
 	self separator.	"to arrive to the end of the file in case there are no methods"
@@ -39,7 +41,7 @@ PLSTonelParser >> methodDefList [
 	^ result contents
 ]
 
-{ #category : #'private factory' }
+{ #category : 'private factory' }
 PLSTonelParser >> newClassDefinitionFrom: anArray [
 	| metadata |
 
@@ -59,7 +61,7 @@ PLSTonelParser >> newClassDefinitionFrom: anArray [
 		commentStamp: nil
 ]
 
-{ #category : #'private factory' }
+{ #category : 'private factory' }
 PLSTonelParser >> newMethodDefinitionFrom: anArray [
 	| metadata className meta selector source startPos endPos |
 	startPos := anArray first.

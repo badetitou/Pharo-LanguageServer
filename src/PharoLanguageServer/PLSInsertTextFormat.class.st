@@ -2,18 +2,20 @@
 Defines whether the insert text in a completion item should be interpreted as plain text or a snippet.
 "
 Class {
-	#name : #PLSInsertTextFormat,
-	#superclass : #Object,
-	#category : #'PharoLanguageServer-Structure-Completion'
+	#name : 'PLSInsertTextFormat',
+	#superclass : 'Object',
+	#category : 'PharoLanguageServer-Structure-Completion',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-Completion'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 PLSInsertTextFormat class >> plainText [
 	"The primary text to be inserted is treated as a plain string."
 	^ 1
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 PLSInsertTextFormat class >> snippet [
 	"The primary text to be inserted is treated as a snippet.
 	 

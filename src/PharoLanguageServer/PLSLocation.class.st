@@ -1,35 +1,37 @@
 Class {
-	#name : #PLSLocation,
-	#superclass : #Object,
+	#name : 'PLSLocation',
+	#superclass : 'Object',
 	#instVars : [
 		'uri',
 		'range'
 	],
-	#category : #'PharoLanguageServer-Structure'
+	#category : 'PharoLanguageServer-Structure',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSLocation >> asJRPCJSON [
 	^ {(#uri -> self uri asJRPCJSON).
 	(#range -> self range asJRPCJSON)} asDictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSLocation >> range [
 	^ range
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSLocation >> range: anObject [
 	range := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSLocation >> uri [
 	^ uri
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSLocation >> uri: anObject [
 	uri := anObject
 ]

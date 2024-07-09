@@ -1,6 +1,6 @@
-Extension { #name : #Form }
+Extension { #name : 'Form' }
 
-{ #category : #'*PharoLanguageServer' }
+{ #category : '*PharoLanguageServer' }
 Form >> asPLSCellOutput [
 
 	^ { 
@@ -12,7 +12,7 @@ Form >> asPLSCellOutput [
 			   mimetype: PLSCellMimetype html) }
 ]
 
-{ #category : #'*PharoLanguageServer' }
+{ #category : '*PharoLanguageServer' }
 Form >> plsPrintString [
 
 	^ '![png tester2](data:image/png;base64,'

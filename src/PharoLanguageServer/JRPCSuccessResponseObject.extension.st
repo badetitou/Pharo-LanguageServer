@@ -1,6 +1,6 @@
-Extension { #name : #JRPCSuccessResponseObject }
+Extension { #name : 'JRPCSuccessResponseObject' }
 
-{ #category : #'*PharoLanguageServer' }
+{ #category : '*PharoLanguageServer' }
 JRPCSuccessResponseObject >> beHandledBy: aPLSMessageProcessor [ 
 	^ aPLSMessageProcessor handleJRPCSuccessResponseObject: self
 ]

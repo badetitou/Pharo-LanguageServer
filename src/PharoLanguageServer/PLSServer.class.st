@@ -7,12 +7,13 @@ Methods in `lsp` protocol are standard language server protocol feature.
 Methods in `pls` protocol are pharo language server feature.
 "
 Class {
-	#name : #PLSServer,
-	#superclass : #PLSAbstractServer,
-	#category : #PharoLanguageServer
+	#name : 'PLSServer',
+	#superclass : 'PLSAbstractServer',
+	#category : 'PharoLanguageServer',
+	#package : 'PharoLanguageServer'
 }
 
-{ #category : #'pls - variables' }
+{ #category : 'pls - variables' }
 PLSServer >> childrenVariables: variableReference in: textDocument [
 	<jrpc: #'pls:childrenVariables'>
 	| document references currentVariable |
@@ -35,19 +36,19 @@ PLSServer >> childrenVariables: variableReference in: textDocument [
 				yourself ]) asArray
 ]
 
-{ #category : #'lsp - code lens' }
+{ #category : 'lsp - code lens' }
 PLSServer >> codeLenResolves: range command: command data: aData [
 	<jrpc: #'codeLens/resolve'>
 	self flag: 'Not use in this version. All is done by codeLensTextDocument:'
 ]
 
-{ #category : #'lsp - code lens' }
+{ #category : 'lsp - code lens' }
 PLSServer >> codeLensTextDocument: textDocument [
 	<jrpc: #'textDocument/codeLens'>
 	^ (self context textItem: (textDocument at: #uri)) codeLens
 ]
 
-{ #category : #commands }
+{ #category : 'commands' }
 PLSServer >> commandNotebookPrintIt: line textDocument: textDocumentURI [
 
 	<jrpc: #'command:notebookPrintIt'>
@@ -62,13 +63,13 @@ PLSServer >> commandNotebookPrintIt: line textDocument: textDocumentURI [
 	^ answer2 asPLSCellOutput asJRPCJSON
 ]
 
-{ #category : #commands }
+{ #category : 'commands' }
 PLSServer >> commandPharoLanguageServerVersion [
 	<jrpc: #'command:version'>
 	^ '1.0.0'
 ]
 
-{ #category : #commands }
+{ #category : 'commands' }
 PLSServer >> commandPharoPrintIt: line textDocument: textDocumentURI [
 	<jrpc: #'command:printIt'>
 	"This textDocumentURI from VSCode is strange"
@@ -78,14 +79,14 @@ PLSServer >> commandPharoPrintIt: line textDocument: textDocumentURI [
 	^ answer2 plsPrintString
 ]
 
-{ #category : #commands }
+{ #category : 'commands' }
 PLSServer >> commandPharoSave [
 	<jrpc: #'command:save'>
 	SmalltalkImage current snapshot: true andQuit: false.
 	^ 'Image saved'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSServer >> compilerFor: fileURI [
 
 	| compiler |
@@ -97,7 +98,7 @@ PLSServer >> compilerFor: fileURI [
 	^ compiler
 ]
 
-{ #category : #'lsp - text synchronisation' }
+{ #category : 'lsp - text synchronisation' }
 PLSServer >> didChange: textDocument contentChanges: contentChanges [
 
 	<jrpc: #'textDocument/didChange'>
@@ -117,7 +118,7 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 		toClient: clientOutStream
 ]
 
-{ #category : #'lsp - text synchronisation' }
+{ #category : 'lsp - text synchronisation' }
 PLSServer >> didClose: textDocument [
 	<jrpc: #'textDocument/didClose'>
 	| document |
@@ -137,7 +138,7 @@ PLSServer >> didClose: textDocument [
 				toClient: clientOutStream ]
 ]
 
-{ #category : #'lsp - text synchronisation' }
+{ #category : 'lsp - text synchronisation' }
 PLSServer >> didOpen: textDocument [
 	<jrpc: #'textDocument/didOpen'>
 	| document |
@@ -157,7 +158,7 @@ PLSServer >> didOpen: textDocument [
 				toClient: clientOutStream ]
 ]
 
-{ #category : #'lsp - text synchronisation' }
+{ #category : 'lsp - text synchronisation' }
 PLSServer >> didSave: textDocument text: text [
 	<jrpc: #'textDocument/didSave'>
 	"Install the code in the image if the code is part of a tonel file"
@@ -165,7 +166,7 @@ PLSServer >> didSave: textDocument text: text [
 		ifTrue: [ (PLSTonelParser parseString: text asByteArray utf8Decoded) do: #load ]
 ]
 
-{ #category : #'lsp - document symbol' }
+{ #category : 'lsp - document symbol' }
 PLSServer >> documentSymbol: textDocument [
 	<jrpc: #'textDocument/documentSymbol'>
 	| document |
@@ -173,7 +174,7 @@ PLSServer >> documentSymbol: textDocument [
 	^ document symbols
 ]
 
-{ #category : #'pls - variables' }
+{ #category : 'pls - variables' }
 PLSServer >> documentVariables: textDocument [
 	<jrpc: #'pls:documentVariables'>
 	| document |
@@ -190,7 +191,7 @@ PLSServer >> documentVariables: textDocument [
 		as: Array) asJRPCJSON
 ]
 
-{ #category : #'lsp - formatting' }
+{ #category : 'lsp - formatting' }
 PLSServer >> formatTextDocument: textDocument withOptions: options [
 	<jrpc: #'textDocument/formatting'>
 	| codeSource formatter lines endPosition |
@@ -216,7 +217,7 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 				yourself))}
 ]
 
-{ #category : #'pls - ice' }
+{ #category : 'pls - ice' }
 PLSServer >> iceRepositories [
 
 	<jrpc: #'pls-ice:repositories'>
@@ -226,7 +227,7 @@ PLSServer >> iceRepositories [
 			   (#valid -> repository isValid) } asDictionary ]) asArray
 ]
 
-{ #category : #'pls - ice' }
+{ #category : 'pls - ice' }
 PLSServer >> iceRepository: aRepositoryName [
 
 	<jrpc: #'pls-ice:repository'>
@@ -240,12 +241,12 @@ PLSServer >> iceRepository: aRepositoryName [
 	^ (set collect: #plsURIString) asArray
 ]
 
-{ #category : #'lsp - formatting' }
+{ #category : 'lsp - formatting' }
 PLSServer >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLSServer >> oldTextDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
 
 	"<jrpc: #'textDocument/inlineCompletion'>"
@@ -274,7 +275,7 @@ Be creative! Only give me the code without any explanation. Do not add comment i
 		   yourself) asJRPCJSON
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 
 	<jrpc: #initialize>
@@ -291,7 +292,7 @@ PLSServer >> onInitializeTrace: trace processId: processId locale: locale client
 	^ PLSInitializeResult new
 ]
 
-{ #category : #pls }
+{ #category : 'pls' }
 PLSServer >> plsExecuteClass: class test: testMethod [
 	<jrpc: #'pls:executeClassTest'>
 	| result |
@@ -305,7 +306,7 @@ PLSServer >> plsExecuteClass: class test: testMethod [
 		asDictionary"
 ]
 
-{ #category : #pls }
+{ #category : 'pls' }
 PLSServer >> plsExecuteClassTests: className [
 	<jrpc: #'pls:executeClassTests'>
 	| result |
@@ -318,7 +319,7 @@ PLSServer >> plsExecuteClassTests: className [
 		asDictionary"
 ]
 
-{ #category : #pls }
+{ #category : 'pls' }
 PLSServer >> plsGetClassContent: class [
 
 	<jrpc: #'pls:classContent'>
@@ -331,7 +332,7 @@ PLSServer >> plsGetClassContent: class [
 			  on: stream ]
 ]
 
-{ #category : #pls }
+{ #category : 'pls' }
 PLSServer >> plsGetClasses: package [
 	<jrpc: #'pls:classes'>
 	^ [ package asPackage classes
@@ -341,14 +342,14 @@ PLSServer >> plsGetClasses: package [
 		do: [ {} asArray ]
 ]
 
-{ #category : #pls }
+{ #category : 'pls' }
 PLSServer >> plsGetPackages [
 	<jrpc: #'pls:packages'>
 	^ (RPackageOrganizer default packages collect: #name)
 		asArray
 ]
 
-{ #category : #'pls - gtk' }
+{ #category : 'pls - gtk' }
 PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
 
 	"| compiler inspector |
@@ -375,7 +376,7 @@ PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
 	^ 'ok'
 ]
 
-{ #category : #'pls - developer' }
+{ #category : 'pls - developer' }
 PLSServer >> plsOpenLog [
 
 	<jrpc: #'pls-developer:openLog'>
@@ -383,7 +384,7 @@ PLSServer >> plsOpenLog [
 	^ 'success'
 ]
 
-{ #category : #'pls - developer' }
+{ #category : 'pls - developer' }
 PLSServer >> plsResetLog [
 
 	<jrpc: #'pls-developer:clearLog'>
@@ -391,7 +392,7 @@ PLSServer >> plsResetLog [
 	^ 'success'
 ]
 
-{ #category : #'pls - tests' }
+{ #category : 'pls - tests' }
 PLSServer >> plsTestExecuteTest: aTestURI [
 
 	<jrpc: #'pls:test-execute-test'>
@@ -408,7 +409,7 @@ PLSServer >> plsTestExecuteTest: aTestURI [
 		  asDictionary
 ]
 
-{ #category : #'pls - tests' }
+{ #category : 'pls - tests' }
 PLSServer >> plsTestInClass: aClassURI [
 
 	<jrpc: #'pls:test-in-class'>
@@ -421,7 +422,7 @@ PLSServer >> plsTestInClass: aClassURI [
 		  as: Array
 ]
 
-{ #category : #'pls - tests' }
+{ #category : 'pls - tests' }
 PLSServer >> plsTestInPackage: aPackageURI [
 
 	<jrpc: #'pls:test-in-package'>
@@ -434,7 +435,7 @@ PLSServer >> plsTestInPackage: aPackageURI [
 		  do: [ {  } asArray ]
 ]
 
-{ #category : #'pls - tests' }
+{ #category : 'pls - tests' }
 PLSServer >> plsTestPackages [
 
 	<jrpc: #'pls:test-packages'>
@@ -448,21 +449,21 @@ PLSServer >> plsTestPackages [
 			   , '.class.st'"
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 PLSServer >> serverInitialized [
 
 	<jrpc: #initialized>
 	Transcript crShow: 'Initialized'
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 PLSServer >> serverShutdown [
 
 	<jrpc: #shutdown>
 	SmalltalkImage current snapshot: false andQuit: true
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 PLSServer >> startDapServer [
 	<jrpc: #'dap:startServer'>
 	'Start DAP Server.' record.
@@ -470,7 +471,7 @@ PLSServer >> startDapServer [
 		start.
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLSServer >> textDocumentCompletionWithContext: context position: position textDocument: textDocument [
 
 	<jrpc: #'textDocument/completion'>
@@ -492,7 +493,7 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 	^ completionList
 ]
 
-{ #category : #'lsp - hover' }
+{ #category : 'lsp - hover' }
 PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument [
 	<jrpc: #'textDocument/hover'>
 	| hover document |
@@ -505,7 +506,7 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 	^ { #contents -> hover contents } asDictionary
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLSServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
 
 	<jrpc: #'textDocument/inlineCompletion'>
@@ -531,7 +532,7 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 		   yourself) asJRPCJSON
 ]
 
-{ #category : #'lsp - signature help' }
+{ #category : 'lsp - signature help' }
 PLSServer >> textDocumentSignatureHelpWithPosition: position textDocument: textDocument anContext: context [
 	<jrpc: #'textDocument/signatureHelp'>
 	| text positionChar selector node |
@@ -562,7 +563,7 @@ PLSServer >> textDocumentSignatureHelpWithPosition: position textDocument: textD
 		yourself
 ]
 
-{ #category : #'lsp - type definition' }
+{ #category : 'lsp - type definition' }
 PLSServer >> typeDefinitionAt: position in: textDocument [
 
 	<jrpc: #'textDocument/typeDefinition'>
@@ -584,13 +585,13 @@ PLSServer >> typeDefinitionAt: position in: textDocument [
 		  yourself
 ]
 
-{ #category : #'lsp - text synchronisation' }
+{ #category : 'lsp - text synchronisation' }
 PLSServer >> willSave: textDocument reason: reason [
 	<jrpc: #'textDocument/willSave'>
 	1h
 ]
 
-{ #category : #'lsp - text synchronisation' }
+{ #category : 'lsp - text synchronisation' }
 PLSServer >> willSaveUntil: textDocument reason: reason [
 	<jrpc: #'textDocument/willSaveWaitUntil'>
 	1h

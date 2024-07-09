@@ -1,6 +1,6 @@
 Class {
-	#name : #PLSCodeAction,
-	#superclass : #Object,
+	#name : 'PLSCodeAction',
+	#superclass : 'Object',
 	#instVars : [
 		'title',
 		'kind',
@@ -11,10 +11,12 @@ Class {
 		'command',
 		'data'
 	],
-	#category : #'PharoLanguageServer-Structure-CodeAction'
+	#category : 'PharoLanguageServer-Structure-CodeAction',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-CodeAction'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> asJRPCJSON [
 
 	| dictionary |
@@ -33,97 +35,97 @@ PLSCodeAction >> asJRPCJSON [
 	^ dictionary
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> command [
 
 	^ command
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> command: anObject [
 
 	command := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> data [
 
 	^ data
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> data: anObject [
 
 	data := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> diagnostics [
 
 	^ diagnostics
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> diagnostics: anObject [
 
 	diagnostics := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> disabled [
 
 	^ disabled
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> disabled: anObject [
 
 	disabled := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> edit [
 
 	^ edit
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> edit: anObject [
 
 	edit := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> isPreferred [
 
 	^ isPreferred
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> isPreferred: anObject [
 
 	isPreferred := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> kind [
 
 	^ kind
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> kind: anObject [
 
 	kind := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> title [
 
 	^ title
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLSCodeAction >> title: anObject [
 
 	title := anObject

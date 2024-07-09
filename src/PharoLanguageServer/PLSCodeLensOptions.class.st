@@ -21,12 +21,14 @@ Internal Representation and Key Implementation Points.
     Implementation Points
 "
 Class {
-	#name : #PLSCodeLensOptions,
-	#superclass : #Object,
-	#category : #'PharoLanguageServer-Structure-Capabilities'
+	#name : 'PLSCodeLensOptions',
+	#superclass : 'Object',
+	#category : 'PharoLanguageServer-Structure-Capabilities',
+	#package : 'PharoLanguageServer',
+	#tag : 'Structure-Capabilities'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 PLSCodeLensOptions >> asJRPCJSON [
 	^ {(#workDoneProgress -> false asJRPCJSON)} asDictionary
 ]
