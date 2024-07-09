@@ -33,6 +33,6 @@ jobs:
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
-        if: ${{ matrix.smalltalk == 'Moose64-11' }}
+        if: ${{ matrix.smalltalk == 'Moose64-12' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
