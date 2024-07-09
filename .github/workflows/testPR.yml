@@ -18,7 +18,7 @@ jobs:
       PROJECT_NAME: ${{ matrix.smalltalk }}-FAST-Java
     strategy:
       matrix:
-        smalltalk: [ Pharo64-11, Moose64-11  ]
+        smalltalk: [ Pharo64-12, Moose64-12  ]
     name: ${{ matrix.smalltalk }}
     steps:
       - uses: actions/checkout@v2
