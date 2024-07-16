@@ -21,7 +21,7 @@ StPLCPPlaygroundPagePresenter >> clientInlineCompletionFrom: items [
 StPLCPPlaygroundPagePresenter >> initialize [
 
 	version := 0.
-	PLCClient default sendDidOpenTextDocument: (PLPTextDocumentItem new
+	PLCLocalClient default sendDidOpenTextDocument: (PLPTextDocumentItem new
 			 uri: self plpURI;
 			 languageId: 'smalltalk';
 			 version: version;
@@ -57,13 +57,13 @@ StPLCPPlaygroundPagePresenter >> initializePresenters [
 	text whenTextChangedDo: [ :aString |
 		self resetInlineCompletion.
 		version := version + 1.
-		PLCClient default
+		PLCLocalClient default
 			sendDidChangeTextDocument: self versionedTextDocumentIdentifier
 			withChanges: { (PLPTextDocumentContentChangeEvent new
 					 text: self text text asString;
 					 yourself) }.
 		self text cursorPosition ifNotNil: [ :cursorPosition |
-			PLCClient default
+			PLCLocalClient default
 				sendTextDocument: self versionedTextDocumentIdentifier
 				inlineCompletionAt: {
 						(#line -> cursorPosition y).
