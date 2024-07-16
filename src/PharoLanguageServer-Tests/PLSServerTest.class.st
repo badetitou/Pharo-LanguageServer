@@ -2,15 +2,16 @@
 A PLSServerTest is a test class for testing the behavior of PLSServer
 "
 Class {
-	#name : #PLSServerTest,
-	#superclass : #TestCase,
+	#name : 'PLSServerTest',
+	#superclass : 'TestCase',
 	#instVars : [
 		'server'
 	],
-	#category : #'PharoLanguageServer-Tests'
+	#category : 'PharoLanguageServer-Tests',
+	#package : 'PharoLanguageServer-Tests'
 }
 
-{ #category : #'running - additional setup' }
+{ #category : 'running - additional setup' }
 PLSServerTest >> addMyScriptDocument [
 
 	| textDocument |
@@ -24,22 +25,23 @@ object := Object new'.
 	server didOpen: textDocument
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 PLSServerTest >> setUp [
 
 	super setUp.
 	server := PLSServer new.
+	server debugMode: true.
 	server clientOutStream: NullStream new
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 PLSServerTest >> tearDown [
 
 	server clientOutStream close.
 	super tearDown
 ]
 
-{ #category : #test }
+{ #category : 'test' }
 PLSServerTest >> testCodeLensTextDocument [
 
 	| result |
@@ -49,7 +51,7 @@ PLSServerTest >> testCodeLensTextDocument [
 	self assert: result size equals: 0
 ]
 
-{ #category : #test }
+{ #category : 'test' }
 PLSServerTest >> testCommandPharoPrintItTextDocument [
 
 	| result |
@@ -66,7 +68,7 @@ PLSServerTest >> testCommandPharoPrintItTextDocument [
 	self assert: '2' equals: result
 ]
 
-{ #category : #test }
+{ #category : 'test' }
 PLSServerTest >> testCommandPharoPrintItTextDocumentWithVariableCreated [
 
 	| result |
@@ -83,7 +85,7 @@ PLSServerTest >> testCommandPharoPrintItTextDocumentWithVariableCreated [
 	self assert: '12' equals: result
 ]
 
-{ #category : #test }
+{ #category : 'test' }
 PLSServerTest >> testDidClose [
 
 	| textDocument |
@@ -96,7 +98,7 @@ PLSServerTest >> testDidClose [
 	self assert: server context textItems isEmpty
 ]
 
-{ #category : #test }
+{ #category : 'test' }
 PLSServerTest >> testDidOpen [
 
 	self addMyScriptDocument.
@@ -105,7 +107,7 @@ PLSServerTest >> testDidOpen [
 		equals: PLSScriptDocument
 ]
 
-{ #category : #test }
+{ #category : 'test' }
 PLSServerTest >> testDocumentVariables [
 
 	| result |
@@ -127,7 +129,7 @@ PLSServerTest >> testDocumentVariables [
 		equals: 'nil'
 ]
 
-{ #category : #test }
+{ #category : 'test' }
 PLSServerTest >> testTextDocumentHoverWithPositionTextDocument [
 
 	| result |
@@ -147,7 +149,7 @@ PLSServerTest >> testTextDocumentHoverWithPositionTextDocument [
 	self assert: (result at: #contents) equals: ''
 ]
 
-{ #category : #test }
+{ #category : 'test' }
 PLSServerTest >> testTypeDefinitionAtIn [
 
 	| result |

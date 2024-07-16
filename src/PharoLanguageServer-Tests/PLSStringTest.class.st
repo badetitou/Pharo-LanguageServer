@@ -1,10 +1,11 @@
 Class {
-	#name : #PLSStringTest,
-	#superclass : #TestCase,
-	#category : #'PharoLanguageServer-Tests'
+	#name : 'PLSStringTest',
+	#superclass : 'TestCase',
+	#category : 'PharoLanguageServer-Tests',
+	#package : 'PharoLanguageServer-Tests'
 }
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testPlsLines [
 
 	| strings |
@@ -13,7 +14,7 @@ PLSStringTest >> testPlsLines [
 	self assert: strings size equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testPlsLinesEmpty [
 
 	| strings |
@@ -22,7 +23,7 @@ PLSStringTest >> testPlsLinesEmpty [
 	self assert: strings size equals: 1
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testPlsLinesTwoEmpty [
 
 	| strings |
@@ -34,7 +35,7 @@ PLSStringTest >> testPlsLinesTwoEmpty [
 	self assert: strings size equals: 2
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testPlsToPositionNoLine [
 	self
 		assert:
@@ -45,7 +46,7 @@ PLSStringTest >> testPlsToPositionNoLine [
 		equals: 0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testPlsToPositionOneEmptyLine [
 	self
 		assert:
@@ -56,7 +57,7 @@ PLSStringTest >> testPlsToPositionOneEmptyLine [
 		equals: 0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testPlsToPositionSeveralLines [
 	self
 		assert:
@@ -69,7 +70,7 @@ PLSStringTest >> testPlsToPositionSeveralLines [
 		equals: 0
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testPlsToPositionSomeChar [
 	self
 		assert:
@@ -82,7 +83,7 @@ hello := true.'
 		equals: 23
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testToLineCharacter0 [
 	| string |
 	string := 'hello
@@ -95,7 +96,7 @@ PLSStringTest >> testToLineCharacter0 [
 			#character -> 0} asDictionary 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testToLineCharacterEndBeginSecondLine [
 	| string |
 	string := 'hello
@@ -108,7 +109,7 @@ PLSStringTest >> testToLineCharacterEndBeginSecondLine [
 			#character -> 1} asDictionary 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testToLineCharacterEndFirstLine [
 	| string |
 	string := 'hello
@@ -121,7 +122,7 @@ PLSStringTest >> testToLineCharacterEndFirstLine [
 			#character -> 5} asDictionary 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testToLineCharacterEndSecondLine [
 	| string |
 	string := 'hello
@@ -133,7 +134,7 @@ PLSStringTest >> testToLineCharacterEndSecondLine [
 			#character -> 6} asDictionary 
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testToPLSSnippet [
 	| string |
 	string := 'hello'.
@@ -142,7 +143,7 @@ PLSStringTest >> testToPLSSnippet [
 		equals: 'hello$0'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testToPLSSnippetMultipleKeyword [
 	| string |
 	string := 'hello:world:'.
@@ -151,7 +152,7 @@ PLSStringTest >> testToPLSSnippetMultipleKeyword [
 		equals: 'hello: $1 world: $2$0'
 ]
 
-{ #category : #tests }
+{ #category : 'tests' }
 PLSStringTest >> testToPLSSnippetOneKeyword [
 	| string |
 	string := 'hello:'.

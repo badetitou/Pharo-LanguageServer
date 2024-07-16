@@ -1,14 +1,15 @@
 Class {
-	#name : #PLCAnswerProcessor,
-	#superclass : #Object,
+	#name : 'PLCAnswerProcessor',
+	#superclass : 'Object',
 	#instVars : [
 		'answerHandlers',
 		'client'
 	],
-	#category : #PharoLanguageClient
+	#category : 'PharoLanguageClient',
+	#package : 'PharoLanguageClient'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PLCAnswerProcessor class >> for: aTPLCClient [
 
 	^ self new
@@ -16,7 +17,7 @@ PLCAnswerProcessor class >> for: aTPLCClient [
 		  yourself
 ]
 
-{ #category : #adding }
+{ #category : 'adding' }
 PLCAnswerProcessor >> addHandlerFor: aRequest [
 
 	(Pragma allNamed: #jrpc: in: client class)
@@ -33,19 +34,19 @@ PLCAnswerProcessor >> addHandlerFor: aRequest [
 						 yourself) ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCAnswerProcessor >> answerHandlers [
 
 	^ answerHandlers
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCAnswerProcessor >> answerHandlers: anObject [
 
 	answerHandlers := anObject
 ]
 
-{ #category : #adding }
+{ #category : 'adding' }
 PLCAnswerProcessor >> cancelRequestBefore: textDocumentIdentifier [
 
 	self answerHandlers
@@ -60,19 +61,19 @@ PLCAnswerProcessor >> cancelRequestBefore: textDocumentIdentifier [
 			self removeHandlerWithId: handler originRequest id ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCAnswerProcessor >> client [
 
 	^ client
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCAnswerProcessor >> client: anObject [
 
 	client := anObject
 ]
 
-{ #category : #adding }
+{ #category : 'adding' }
 PLCAnswerProcessor >> handle: aRequest [
 
 	| serializedRequest |
@@ -96,14 +97,14 @@ PLCAnswerProcessor >> handle: aRequest [
 				ifNone: [  ] ]
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 PLCAnswerProcessor >> initialize [
 
 	super initialize.
 	self answerHandlers: Dictionary new
 ]
 
-{ #category : #adding }
+{ #category : 'adding' }
 PLCAnswerProcessor >> removeHandlerWithId: anID [
 
 	self answerHandlers removeKey: anID ifAbsent: [  ]

@@ -2,31 +2,33 @@
 To use my traits, the easiest way is to use the trait **and** then to perform the `clientInit` method in the initialization method of your class
 "
 Trait {
-	#name : #TPLCClient,
+	#name : 'TPLCClient',
 	#instVars : [
 		'port',
 		'serverContext',
 		'answerProcessor',
-		'context'
+		'context',
+		'data'
 	],
 	#traits : 'JRPCParser + TPLPCommon',
 	#classTraits : 'JRPCParser classTrait + TPLPCommon classTrait',
-	#category : #PharoLanguageClient
+	#category : 'PharoLanguageClient',
+	#package : 'PharoLanguageClient'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> answerProcessor [
 
 	^ answerProcessor
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> answerProcessor: anObject [
 
 	answerProcessor := anObject
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TPLCClient >> callMethod: aString arguments: anObject withId: anInteger [
 
 	"Call a method which takes arguments."
@@ -38,26 +40,26 @@ TPLCClient >> callMethod: aString arguments: anObject withId: anInteger [
 			   yourself)
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TPLCClient >> callMethod: aString withId: anInteger [
 	"Call a method which takes no arguments."
 
 	^ self callMethod: aString arguments: nil withId: anInteger
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> clientInStream [
 
 	^ clientInStream
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> clientInStream: anObject [
 
 	clientInStream := anObject
 ]
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLCClient >> clientInit [
 
 	currentId := 0.
@@ -66,33 +68,33 @@ TPLCClient >> clientInit [
 	context := PLCContext new
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 TPLCClient >> clientInitializeWith: capabilities fromServerInfo: serverInfo [
 
 	<jrpc: #initialize>
 	self serverContext: serverInfo
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 TPLCClient >> clientInlineCompletionFrom: items fromRequest: originRequest [
 
 	<jrpc: #'textDocument/inlineCompletion'>
 	self subclassResponsibility
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> clientOutStream [
 
 	^ clientOutStream
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> clientOutStream: anObject [
 
 	clientOutStream := anObject
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TPLCClient >> connect [
 
 	| tcpSocket |
@@ -102,31 +104,31 @@ TPLCClient >> connect [
 	clientOutStream := clientInStream
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> context [
 
 	^ context
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> context: anObject [
 
 	context := anObject
 ]
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLCClient >> handleRequest: request toClient: outputStream [
 
 	self answerProcessor handle: request
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 TPLCClient >> isClient [
 	"Returns true if the trait is used in the context of a client, false in the context of a server."
 	^ true
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TPLCClient >> notifyMethod: aString arguments: anArrayOrString [
 
 	self sendNotification: (JRPCNotificationObject new
@@ -135,19 +137,19 @@ TPLCClient >> notifyMethod: aString arguments: anArrayOrString [
 			 yourself)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> port [
 
 	^ port
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> port: anObject [
 
 	port := anObject
 ]
 
-{ #category : #'plp - base protocol' }
+{ #category : 'plp - base protocol' }
 TPLCClient >> sendCancelRequest: id [
 
 	self notifyMethod: '$/cancelRequest' arguments: (PLPCancelParams new
@@ -156,7 +158,7 @@ TPLCClient >> sendCancelRequest: id [
 	self answerProcessor removeHandlerWithId: id
 ]
 
-{ #category : #'lsp - text synchronisation' }
+{ #category : 'lsp - text synchronisation' }
 TPLCClient >> sendDidChangeTextDocument: textDocumentIdentifier withChanges: contentChanges [
 
 	self answerProcessor cancelRequestBefore: textDocumentIdentifier.
@@ -166,7 +168,7 @@ TPLCClient >> sendDidChangeTextDocument: textDocumentIdentifier withChanges: con
 			(#contentChanges -> contentChanges) } asDictionary asJRPCJSON
 ]
 
-{ #category : #'lsp - text synchronisation' }
+{ #category : 'lsp - text synchronisation' }
 TPLCClient >> sendDidOpenTextDocument: textDocumentItem for: aConcreteTextDocument [
 
 	self context
@@ -178,7 +180,7 @@ TPLCClient >> sendDidOpenTextDocument: textDocumentItem for: aConcreteTextDocume
 		{ (#textDocument -> textDocumentItem) } asDictionary asJRPCJSON
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 TPLCClient >> sendInitialize [
 
 	self
@@ -193,7 +195,7 @@ TPLCClient >> sendInitialize [
 		withId: self nextId
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TPLCClient >> sendNotification: aJRPCNotificationObject [
 	"When a notification is sent to the server, we do not expect an answer."
 	[ 
@@ -201,7 +203,7 @@ TPLCClient >> sendNotification: aJRPCNotificationObject [
 	] on: JRPCIncorrectJSON, STONReaderError do: [ "Does nothing on purpose." ]
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TPLCClient >> sendRequest: aJRPCRequestObject [
 
 	| answer |
@@ -214,7 +216,7 @@ TPLCClient >> sendRequest: aJRPCRequestObject [
 		flush
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 TPLCClient >> sendTextDocument: textDocumentIdentifier inlineCompletionAt: aPosition [
 
 	self
@@ -229,19 +231,19 @@ TPLCClient >> sendTextDocument: textDocumentIdentifier inlineCompletionAt: aPosi
 		withId: self nextId "to fill" "to fill"
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> serverContext [
 
 	^ serverContext
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLCClient >> serverContext: anObject [
 
 	serverContext := anObject
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TPLCClient >> start [
 
 	self connect.
@@ -250,7 +252,7 @@ TPLCClient >> start [
 	self sendInitialize
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TPLCClient >> startWithLocalServer [
 
 	"This method is to use with a Local PLSServer"
@@ -271,7 +273,7 @@ TPLCClient >> startWithLocalServer [
 	self start
 ]
 
-{ #category : #api }
+{ #category : 'api' }
 TPLCClient >> stop [
 
 	self stopAnswerLoop

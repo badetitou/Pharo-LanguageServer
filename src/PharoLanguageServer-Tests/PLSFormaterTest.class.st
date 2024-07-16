@@ -2,12 +2,13 @@
 A PLSFormaterTest is a test class for testing the behavior of PLSFormater
 "
 Class {
-	#name : #PLSFormaterTest,
-	#superclass : #TestCase,
-	#category : #'PharoLanguageServer-Tests'
+	#name : 'PLSFormaterTest',
+	#superclass : 'TestCase',
+	#category : 'PharoLanguageServer-Tests',
+	#package : 'PharoLanguageServer-Tests'
 }
 
-{ #category : #test }
+{ #category : 'test' }
 PLSFormaterTest >> testFormated [
 	| source formatter |
 	source := '| i j |

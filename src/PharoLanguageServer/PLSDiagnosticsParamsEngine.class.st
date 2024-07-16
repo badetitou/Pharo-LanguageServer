@@ -33,19 +33,22 @@ PLSDiagnosticsParamsEngine >> computeDiagnostics [
 	| ast compiler diagnostics |
 	compiler := self class compiler
 		            source: source;
-		            noPattern: true;
+		            isScripting: true;
 		            failBlock: [ nil ];
 		            requestor: self requestor;
-		            options: #( + optionParseErrors );
+		            options: #( #+ optionParseErrors );
 		            yourself.
 	ast := self sourceIsMethod
 		       ifTrue: [ compiler parseMethod ]
 		       ifFalse: [ compiler parse ].
 	diagnostics := OrderedCollection new.
-	ast acceptVisitor: (RBParseErrorNodeVisitor new visitBlock: [ :aErrorBlock | 
+	ast acceptVisitor:
+		(RBParseErrorNodeVisitor new visitBlock: [ :aErrorBlock |
 			 diagnostics add: (PLSDiagnostic new
 					  message: aErrorBlock errorMessage;
-					  range: (PLSRange start: (source toLineCharacter: aErrorBlock start) end: (source toLineCharacter: aErrorBlock stop))) ]).
+					  range: (PLSRange
+							   start: (source toLineCharacter: aErrorBlock start)
+							   end: (source toLineCharacter: aErrorBlock stop))) ]).
 	^ PLSPublishDiagnosticsParams new
 		  diagnostics: diagnostics;
 		  uri: document uri;

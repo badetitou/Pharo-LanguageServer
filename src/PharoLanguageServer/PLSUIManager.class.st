@@ -18,7 +18,14 @@ PLSUIManager class >> withPLSServer: aPLSServer [
 
 { #category : 'accessing' }
 PLSUIManager >> debugProcess: process context: context label: title fullView: bool notification: notificationString [
-	
+
+	(plsServer isNil or: [ plsServer debugMode ]) ifTrue: [
+		super
+			debugProcess: process
+			context: context
+			label: title
+			fullView: bool
+			notification: notificationString ].
 	(OupsDebugRequest newForContext: context)
 		process: process;
 		label: title;
@@ -41,8 +48,9 @@ PLSUIManager >> handleDebugRequest: aDebugRequest [
 { #category : 'accessing' }
 PLSUIManager >> handleError: anError log: shouldLog [
 
+	(plsServer isNil or: [ plsServer debugMode ]) ifTrue: [
+		^ super handleError: anError log: shouldLog ].
 	self handleDebugRequest: (OupsDebugRequest newForException: anError)
-
 ]
 
 { #category : 'accessing' }
@@ -53,10 +61,12 @@ PLSUIManager >> handleWarningDebugRequest: aWarningDebugRequest [
 
 { #category : 'default actions' }
 PLSUIManager >> inform: aStringOrText [
+
+	(plsServer isNil or: [ plsServer debugMode ]) ifTrue: [
+		^ super inform: aStringOrText ].
 	plsServer
-		ifNotNil: [ plsServer
-				showMessage: aStringOrText printString
-				ofType: PLSMessageType info ]
+		showMessage: aStringOrText printString
+		ofType: PLSMessageType info
 ]
 
 { #category : 'accessing' }
@@ -72,7 +82,7 @@ PLSUIManager >> plsServer: anObject [
 { #category : 'default actions' }
 PLSUIManager >> unhandledErrorDefaultAction: anException [
 
+	(plsServer isNil or: [ plsServer debugMode ]) ifTrue: [
+		^ super unhandledErrorDefaultAction: anException ].
 	anException debug
-
-	
 ]
