@@ -93,7 +93,7 @@ PLSServer >> compilerFor: fileURI [
 	compiler := SmalltalkImage current compiler
 		            failBlock: [ nil ];
 		            yourself.
-	fileURI ifNotNil: [ 
+	fileURI ifNotNil: [
 		compiler requestor: (self context textItem: fileURI) binder ].
 	^ compiler
 ]
@@ -180,7 +180,7 @@ PLSServer >> documentVariables: textDocument [
 	| document |
 	document := self context
 		textItem: (textDocument at: #uri at: #path).
-	^ (document binder compilationBindings associations
+	^ (document binder bindings associations
 		collect: [ :assoc |
 			  PLSVariable new
 				name: assoc key printString;

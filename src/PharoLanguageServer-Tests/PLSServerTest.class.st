@@ -118,15 +118,11 @@ PLSServerTest >> testDocumentVariables [
 	result := server documentVariables:
 		          { (#uri -> { (#path -> 'src/myScript.st') } asDictionary) }
 			          asDictionary.
-	self assert: result size equals: 2.
+	self assert: result size equals: 1.
 	self
 		assert:
 		((result detect: [ :r | (r at: #name) = '#hello' ]) at: #value)
-		equals: '12'.
-		self
-		assert:
-		((result detect: [ :r | (r at: #name) = '#object' ]) at: #value)
-		equals: 'nil'
+		equals: '12'
 ]
 
 { #category : 'test' }
