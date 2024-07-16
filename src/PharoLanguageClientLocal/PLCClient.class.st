@@ -7,6 +7,13 @@ Class {
 	#package : 'PharoLanguageClientLocal'
 }
 
+{ #category : 'plp - answerLoop' }
+PLCClient >> answerLoopPriority [
+
+	^ answerLoopPriority ifNil: [
+		  answerLoopPriority := Processor userBackgroundPriority ]
+]
+
 { #category : 'api' }
 PLCClient >> initialize [
 

@@ -3,27 +3,34 @@ Class {
 	#superclass : 'SpTextPresenter',
 	#instVars : [
 		'language',
-		'plcClient'
+		'plcClient',
+		'version'
 	],
 	#category : 'PharoLanguageClientLocal-CodePresenter',
 	#package : 'PharoLanguageClientLocal',
 	#tag : 'CodePresenter'
 }
 
-{ #category : 'initialization' }
-PLCCodePresenter >> initialize [
+{ #category : 'initialization - deprecated' }
+PLCCodePresenter >> initializePresenter [
 
-	| version  |
-	super initialize.
 	version := 0.
-	plcClient := PLCClient new.
+	language := 'css'.
+	self startClient.
 	plcClient
 		sendDidOpenTextDocument: (PLPTextDocumentItem new
 				 uri: self plpURI;
 				 languageId: self language;
 				 version: version;
-				 text: '')
-		for: self
+				 text: self text)
+		for: self.
+	"self whenTextChangedDo: [ :text2 |
+		version := version + 1.
+		plcClient
+			sendDidChangeTextDocument: self versionedTextDocumentIdentifier
+			withChanges: { (PLPTextDocumentContentChangeEvent new
+					 text: self text text asString;
+					 yourself) } ]"
 ]
 
 { #category : 'accessing' }
@@ -42,4 +49,28 @@ PLCCodePresenter >> language: anObject [
 PLCCodePresenter >> plpURI [
 
 	^ 'plcCodePresenter/' , self identityHash printString
+]
+
+{ #category : 'initialization' }
+PLCCodePresenter >> startClient [
+
+	plcClient := PLCClient new.
+	plcClient port: 6000.
+	plcClient clientInit.
+	plcClient start
+]
+
+{ #category : 'initialization - deprecated' }
+PLCCodePresenter >> versionedTextDocumentIdentifier [
+
+	^ PLSVersionedTextDocumentIdentifier new
+		  uri: self plpURI;
+		  version: version;
+		  yourself
+]
+
+{ #category : 'initialization' }
+PLCCodePresenter >> windowIsClosing [
+
+	plcClient stop
 ]
