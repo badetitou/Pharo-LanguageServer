@@ -231,6 +231,17 @@ TPLCClient >> sendTextDocument: textDocumentIdentifier inlineCompletionAt: aPosi
 		withId: self nextId "to fill" "to fill"
 ]
 
+{ #category : 'lsp - symbol' }
+TPLCClient >> sendTextDocumentSymbol: textDocumentIdentifier [
+
+	self
+		callMethod: #'textDocument/documentSymbol'
+		arguments:
+		{ (#textDocument -> textDocumentIdentifier) } asDictionary
+			asJRPCJSON
+		withId: self nextId
+]
+
 { #category : 'accessing' }
 TPLCClient >> serverContext [
 

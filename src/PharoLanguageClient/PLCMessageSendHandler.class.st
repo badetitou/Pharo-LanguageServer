@@ -38,6 +38,15 @@ PLCMessageSendHandler >> executeWithArguments: anArrayOrDictionary [
 			arguments add: (anArrayOrDictionary at: name ifAbsent: [ nil ]) ].
 		arguments := arguments asArray ].
 
+	anArrayOrDictionary isArray ifTrue: [
+		arguments := self originRequest
+			             ifNotNil: [ :ori |
+				             {
+					             anArrayOrDictionary.
+					             ori } ]
+			             ifNil: [ { anArrayOrDictionary } ] ].
+
+
 	^ self send: self messageSelector to: self receiver with: arguments
 ]
 

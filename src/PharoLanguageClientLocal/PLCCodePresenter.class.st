@@ -11,6 +11,18 @@ Class {
 	#tag : 'CodePresenter'
 }
 
+{ #category : 'accessing' }
+PLCCodePresenter >> applySymbols: listOfSymbols [
+
+	| skinnableText |
+	skinnableText := self text asText.
+	listOfSymbols do: [ :symbol |
+		skinnableText
+			addAttribute: (TextColor new color: Color blue)
+			from: (self text plsToPosition: symbol range start) +1
+			to: (self text plsToPosition: symbol range end) ].
+]
+
 { #category : 'initialization - deprecated' }
 PLCCodePresenter >> initializePresenter [
 
@@ -22,15 +34,17 @@ PLCCodePresenter >> initializePresenter [
 				 uri: self plpURI;
 				 languageId: self language;
 				 version: version;
-				 text: self text)
+				 text: '')
 		for: self.
-	"self whenTextChangedDo: [ :text2 |
+	self whenTextChangedDo: [ :text2 |
 		version := version + 1.
 		plcClient
 			sendDidChangeTextDocument: self versionedTextDocumentIdentifier
 			withChanges: { (PLPTextDocumentContentChangeEvent new
-					 text: self text text asString;
-					 yourself) } ]"
+					 text: self text asString;
+					 yourself) }.
+		plcClient sendTextDocumentSymbol:
+			self versionedTextDocumentIdentifier ]
 ]
 
 { #category : 'accessing' }
