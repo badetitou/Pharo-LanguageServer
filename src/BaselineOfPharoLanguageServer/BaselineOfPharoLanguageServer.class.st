@@ -1,10 +1,11 @@
 Class {
-	#name : #BaselineOfPharoLanguageServer,
-	#superclass : #BaselineOf,
-	#category : #BaselineOfPharoLanguageServer
+	#name : 'BaselineOfPharoLanguageServer',
+	#superclass : 'BaselineOf',
+	#category : 'BaselineOfPharoLanguageServer',
+	#package : 'BaselineOfPharoLanguageServer'
 }
 
-{ #category : #baselines }
+{ #category : 'baselines' }
 BaselineOfPharoLanguageServer >> baseline: spec [
 	<baseline>
 	self defineDependencies: spec.
@@ -12,14 +13,14 @@ BaselineOfPharoLanguageServer >> baseline: spec [
 	self defineGroups: spec
 ]
 
-{ #category : #baselines }
+{ #category : 'baselines' }
 BaselineOfPharoLanguageServer >> customProjectAttributes [
     self class environment at: #RTView ifPresent: [ ^ #(#WithRoassal2) ].
 	self class environment at: #RSCanvas ifPresent: [ ^ #(#WithRoassal3) ].
     ^ #()
 ]
 
-{ #category : #baselines }
+{ #category : 'baselines' }
 BaselineOfPharoLanguageServer >> defineDependencies: spec [
 
 	spec
@@ -41,7 +42,7 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 		spec repository: 'github://Evref-BL/Pharo-HuggingFace:main/src' ]
 ]
 
-{ #category : #baselines }
+{ #category : 'baselines' }
 BaselineOfPharoLanguageServer >> defineGroups: spec [
 
 	spec group: 'default' with: #( 'LSP' 'DAP' 'LSC' 'Tests' ).
@@ -56,10 +57,10 @@ BaselineOfPharoLanguageServer >> defineGroups: spec [
 	spec group: 'Tests' with: #( 'PharoLanguageProtocol-Tests' ).
 	spec
 		group: 'localClient'
-		with: #( 'default' 'PharoLanguageClienLocal' )
+		with: #( 'default' 'PharoLanguageClientLocal' )
 ]
 
-{ #category : #baselines }
+{ #category : 'baselines' }
 BaselineOfPharoLanguageServer >> definePackages: spec [
 	"common"
 

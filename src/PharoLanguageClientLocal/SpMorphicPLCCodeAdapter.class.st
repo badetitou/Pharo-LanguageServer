@@ -1,13 +1,15 @@
 Class {
-	#name : #SpMorphicPLCCodeAdapter,
-	#superclass : #SpMorphicCodeAdapter,
+	#name : 'SpMorphicPLCCodeAdapter',
+	#superclass : 'SpMorphicCodeAdapter',
 	#instVars : [
 		'version'
 	],
-	#category : #'PharoLanguageClientLocal-GraphicalStack'
+	#category : 'PharoLanguageClientLocal-GraphicalStack',
+	#package : 'PharoLanguageClientLocal',
+	#tag : 'GraphicalStack'
 }
 
-{ #category : #factory }
+{ #category : 'factory' }
 SpMorphicPLCCodeAdapter >> buildWidget [
 	| newWidget |
 	
@@ -70,13 +72,13 @@ SpMorphicPLCCodeAdapter >> buildWidget [
 	^ newWidget
 ]
 
-{ #category : #'*PharoLanguageClientLocal' }
+{ #category : 'as yet unclassified' }
 SpMorphicPLCCodeAdapter >> resetInlineCompletion [
 
 	self widget resetInlineCompletion
 ]
 
-{ #category : #'*PharoLanguageClientLocal' }
+{ #category : 'as yet unclassified' }
 SpMorphicPLCCodeAdapter >> setInlineCompletionWith: aText [
 
 	self widget setInlineCompletionWith: aText

@@ -1,25 +1,27 @@
 Class {
-	#name : #TextGhost,
-	#superclass : #TextAttribute,
+	#name : 'TextGhost',
+	#superclass : 'TextAttribute',
 	#instVars : [
 		'color'
 	],
-	#category : #'PharoLanguageClientLocal-GraphicalStack'
+	#category : 'PharoLanguageClientLocal-GraphicalStack',
+	#package : 'PharoLanguageClientLocal',
+	#tag : 'GraphicalStack'
 }
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TextGhost >> = other [
 
 	^ other class == self class
 ]
 
-{ #category : #scanning }
+{ #category : 'scanning' }
 TextGhost >> dominates: other [
 "Only one color attribute on a same portion of text."
 	^ true
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TextGhost >> emphasizeScanner: scanner [
 	"Set the emphasis for text scanning"
 
@@ -27,18 +29,18 @@ TextGhost >> emphasizeScanner: scanner [
 	scanner textColor: color
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TextGhost >> hash [
 	^ color hash
 ]
 
-{ #category : #comparing }
+{ #category : 'comparing' }
 TextGhost >> initialize [
 	super initialize.
 	color := Color lightGray
 ]
 
-{ #category : #printing }
+{ #category : 'printing' }
 TextGhost >> printOn: aStream [
 
 	super printOn: aStream

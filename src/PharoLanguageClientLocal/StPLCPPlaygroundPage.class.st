@@ -1,10 +1,12 @@
 Class {
-	#name : #StPLCPPlaygroundPage,
-	#superclass : #StPlaygroundPage,
-	#category : #'PharoLanguageClientLocal-GraphicalStack'
+	#name : 'StPLCPPlaygroundPage',
+	#superclass : 'StPlaygroundPage',
+	#category : 'PharoLanguageClientLocal-GraphicalStack',
+	#package : 'PharoLanguageClientLocal',
+	#tag : 'GraphicalStack'
 }
 
-{ #category : #'inspector compatibility' }
+{ #category : 'inspector compatibility' }
 StPLCPPlaygroundPage >> defaultObjectInspectorClass [
 	"Since the playground can be the starting point of an inspection (using <meta+g>), the 
 	 playground page (which is the model of a playground) needs to behave as a valid starting point. 

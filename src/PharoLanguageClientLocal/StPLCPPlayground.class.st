@@ -1,16 +1,18 @@
 Class {
-	#name : #StPLCPPlayground,
-	#superclass : #StPlayground,
-	#category : #'PharoLanguageClientLocal-GraphicalStack'
+	#name : 'StPLCPPlayground',
+	#superclass : 'StPlayground',
+	#category : 'PharoLanguageClientLocal-GraphicalStack',
+	#package : 'PharoLanguageClientLocal',
+	#tag : 'GraphicalStack'
 }
 
-{ #category : #'world menu' }
+{ #category : 'world menu' }
 StPLCPPlayground class >> defaultTitle [ 
 
 	^ 'AI.Playground'
 ]
 
-{ #category : #'world menu' }
+{ #category : 'world menu' }
 StPLCPPlayground class >> menuCommandOn: aBuilder [
 
 	<worldMenu>
@@ -24,14 +26,14 @@ StPLCPPlayground class >> menuCommandOn: aBuilder [
 		icon: (self iconNamed: #workspace)
 ]
 
-{ #category : #'world menu' }
+{ #category : 'world menu' }
 StPLCPPlayground class >> open [
 
 	<script>
 	^ self new open
 ]
 
-{ #category : #'private - factory' }
+{ #category : 'private - factory' }
 StPLCPPlayground >> newDefaultPlaygroundPage [
 
 	^ StPLCPPlaygroundPage new

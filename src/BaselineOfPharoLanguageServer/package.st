@@ -1,1 +1,1 @@
-Package { #name : #BaselineOfPharoLanguageServer }
+Package { #name : 'BaselineOfPharoLanguageServer' }

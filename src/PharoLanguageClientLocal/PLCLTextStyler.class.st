@@ -1,25 +1,27 @@
 Class {
-	#name : #PLCLTextStyler,
-	#superclass : #SHRBTextStyler,
-	#category : #'PharoLanguageClientLocal-GraphicalStack'
+	#name : 'PLCLTextStyler',
+	#superclass : 'SHRBTextStyler',
+	#category : 'PharoLanguageClientLocal-GraphicalStack',
+	#package : 'PharoLanguageClientLocal',
+	#tag : 'GraphicalStack'
 }
 
-{ #category : #attributes }
+{ #category : 'attributes' }
 PLCLTextStyler class >> formatIncompleteIdentifiers [
 	^ SHRBTextStyler formatIncompleteIdentifiers
 ]
 
-{ #category : #attributes }
+{ #category : 'attributes' }
 PLCLTextStyler class >> styleTable [
 	^ SHRBTextStyler styleTable
 ]
 
-{ #category : #attributes }
+{ #category : 'attributes' }
 PLCLTextStyler class >> textAttributesByPixelHeight [
 	^ SHRBTextStyler textAttributesByPixelHeight
 ]
 
-{ #category : #styling }
+{ #category : 'styling' }
 PLCLTextStyler >> style: aText [
 
 	aText ifEmpty: [ ^ self ].

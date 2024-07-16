@@ -1,13 +1,15 @@
 Class {
-	#name : #StPLCPPlaygroundPagePresenter,
-	#superclass : #StPlaygroundPagePresenter,
+	#name : 'StPLCPPlaygroundPagePresenter',
+	#superclass : 'StPlaygroundPagePresenter',
 	#instVars : [
 		'version'
 	],
-	#category : #'PharoLanguageClientLocal-GraphicalStack'
+	#category : 'PharoLanguageClientLocal-GraphicalStack',
+	#package : 'PharoLanguageClientLocal',
+	#tag : 'GraphicalStack'
 }
 
-{ #category : #'event handling' }
+{ #category : 'event handling' }
 StPLCPPlaygroundPagePresenter >> clientInlineCompletionFrom: items [
 
 	text setInlineCompletionWith: ((items anyOne at: #insertText) asText
@@ -15,7 +17,7 @@ StPLCPPlaygroundPagePresenter >> clientInlineCompletionFrom: items [
 			 yourself)
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StPLCPPlaygroundPagePresenter >> initialize [
 
 	version := 0.
@@ -27,13 +29,13 @@ StPLCPPlaygroundPagePresenter >> initialize [
 	super initialize
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 StPLCPPlaygroundPagePresenter >> initializePresenters [
 
 	self initializeToolbar.
 	self initializeStatusbar.
 
-	(text := self instantiate: SpPLCCodePresenter)
+	(text := self instantiate: SpPLCPharoCodePresenter)
 		interactionModel: StPlaygroundInteractionModel new;
 		lineNumbers: self showLineNumbers;
 		overridingContextMenu;
@@ -68,19 +70,19 @@ StPLCPPlaygroundPagePresenter >> initializePresenters [
 						(#character -> cursorPosition x) } asDictionary ] ]
 ]
 
-{ #category : #'event handling' }
+{ #category : 'event handling' }
 StPLCPPlaygroundPagePresenter >> plpURI [
 
 	^ 'playground/' , self identityHash printString
 ]
 
-{ #category : #'event handling' }
+{ #category : 'event handling' }
 StPLCPPlaygroundPagePresenter >> resetInlineCompletion [
 
 	text resetInlineCompletion
 ]
 
-{ #category : #'event handling' }
+{ #category : 'event handling' }
 StPLCPPlaygroundPagePresenter >> versionedTextDocumentIdentifier [
 
 	^ PLSVersionedTextDocumentIdentifier new

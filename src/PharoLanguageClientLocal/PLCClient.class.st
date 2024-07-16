@@ -1,41 +1,42 @@
 Class {
-	#name : #PLCClient,
-	#superclass : #Object,
+	#name : 'PLCClient',
+	#superclass : 'Object',
 	#traits : 'TPLCClient',
 	#classTraits : 'TPLCClient classTrait',
 	#classInstVars : [
 		'default'
 	],
-	#category : #PharoLanguageClientLocal
+	#category : 'PharoLanguageClientLocal',
+	#package : 'PharoLanguageClientLocal'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCClient class >> default [
 
 	^ default ifNil: [ default := self new ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCClient class >> default: aPLCClient [
 
 	default := aPLCClient
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCClient class >> initialize [
 
 	Smalltalk addToStartUpList: self.
 	self reset
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCClient class >> inspect [
 
 	<script>
 	self default inspect
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCClient class >> menuCommandOn: aBuilder [
 	<worldMenu>
 	
@@ -43,7 +44,7 @@ PLCClient class >> menuCommandOn: aBuilder [
 		order: 410
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCClient class >> reset [
 
 	<script>
@@ -51,13 +52,13 @@ PLCClient class >> reset [
 	self default: nil
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCClient class >> startUp: isImageStarting [
 
 	isImageStarting ifTrue: [ self reset ]
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLCClient >> clientInlineCompletionFrom: items fromRequest: originRequest [
 
 	<jrpc: #'textDocument/inlineCompletion'>
@@ -66,14 +67,14 @@ PLCClient >> clientInlineCompletionFrom: items fromRequest: originRequest [
 	(context textItem: originUri) clientInlineCompletionFrom: items
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 PLCClient >> initialize [
 
 	self startWithLocalServer.
 	super initialize
 ]
 
-{ #category : #'lsp - initialization' }
+{ #category : 'lsp - initialization' }
 PLCClient >> sendInitialize [
 
 	self

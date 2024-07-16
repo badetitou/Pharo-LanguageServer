@@ -1,14 +1,16 @@
 Class {
-	#name : #PLCLRubScrolledTextMorph,
-	#superclass : #SpRubScrolledTextMorph,
+	#name : 'PLCLRubScrolledTextMorph',
+	#superclass : 'SpRubScrolledTextMorph',
 	#classTraits : 'TPLCClient classTrait',
 	#instVars : [
 		'version'
 	],
-	#category : #'PharoLanguageClientLocal-GraphicalStack'
+	#category : 'PharoLanguageClientLocal-GraphicalStack',
+	#package : 'PharoLanguageClientLocal',
+	#tag : 'GraphicalStack'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLCLRubScrolledTextMorph >> beForSmalltalkScripting [
 
 	self textArea beForSmalltalkScripting.
@@ -16,13 +18,13 @@ PLCLRubScrolledTextMorph >> beForSmalltalkScripting [
 	self textArea font: StandardFonts codeFont
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLCLRubScrolledTextMorph >> resetInlineCompletion [
 
 	self textArea setTextWith: self textWithoutGhost
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLCLRubScrolledTextMorph >> setInlineCompletionWith: aText [
 
 	self setTextWith: (self textWithoutGhost append: (aText asText
@@ -30,7 +32,7 @@ PLCLRubScrolledTextMorph >> setInlineCompletionWith: aText [
 				  yourself))
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLCLRubScrolledTextMorph >> textWithoutGhost [
 
 	^ self getText withIndexSelect: [ :val :idx |
