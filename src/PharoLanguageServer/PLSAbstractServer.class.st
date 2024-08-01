@@ -9,8 +9,7 @@ Class {
 		'serverContext',
 		'messagesProcesses',
 		'clientInStream',
-		'clientOutStream',
-		'withStdIO'
+		'clientOutStream'
 	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
@@ -334,16 +333,4 @@ PLSAbstractServer >> textDocumentInlineCompletionWithContext: context position: 
 
 	<jrpc: #'textDocument/inlineCompletion'>
 	self subclassResponsibility
-]
-
-{ #category : 'accessing' }
-PLSAbstractServer >> withStdIO [
-
-	^ withStdIO
-]
-
-{ #category : 'accessing' }
-PLSAbstractServer >> withStdIO: anObject [
-
-	withStdIO := anObject
 ]

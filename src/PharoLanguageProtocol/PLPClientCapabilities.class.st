@@ -1,6 +1,6 @@
 Class {
-	#name : #PLPClientCapabilities,
-	#superclass : #Object,
+	#name : 'PLPClientCapabilities',
+	#superclass : 'Object',
 	#instVars : [
 		'workspace',
 		'textDocument',
@@ -9,10 +9,12 @@ Class {
 		'general',
 		'experimental'
 	],
-	#category : #'PharoLanguageProtocol-Initialize'
+	#category : 'PharoLanguageProtocol-Initialize',
+	#package : 'PharoLanguageProtocol',
+	#tag : 'Initialize'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 PLPClientCapabilities class >> from: aDictionary [
 
 	| instance |
@@ -36,7 +38,7 @@ PLPClientCapabilities class >> from: aDictionary [
 	^ instance
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> asJRPCJSON [
 
 	| dic |
@@ -54,73 +56,73 @@ PLPClientCapabilities >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> experimental [
 
 	^ experimental
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> experimental: anObject [
 
 	experimental := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> general [
 
 	^ general
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> general: anObject [
 
 	general := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> notebookDocument [
 
 	^ notebookDocument
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> notebookDocument: anObject [
 
 	notebookDocument := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> textDocument [
 
 	^ textDocument
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> textDocument: anObject [
 
 	textDocument := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> window [
 
 	^ window
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> window: anObject [
 
 	window := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> workspace [
 
 	^ workspace
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPClientCapabilities >> workspace: anObject [
 
 	workspace := anObject

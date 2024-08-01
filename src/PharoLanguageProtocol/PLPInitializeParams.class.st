@@ -1,6 +1,6 @@
 Class {
-	#name : #PLPInitializeParams,
-	#superclass : #Object,
+	#name : 'PLPInitializeParams',
+	#superclass : 'Object',
 	#instVars : [
 		'trace',
 		'processId',
@@ -11,10 +11,12 @@ Class {
 		'capabilities',
 		'rootUri'
 	],
-	#category : #'PharoLanguageProtocol-Initialize'
+	#category : 'PharoLanguageProtocol-Initialize',
+	#package : 'PharoLanguageProtocol',
+	#tag : 'Initialize'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> asJRPCJSON [
 
 	| dic |
@@ -33,97 +35,97 @@ PLPInitializeParams >> asJRPCJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> capabilities [
 
 	^ capabilities
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> capabilities: anObject [
 
 	capabilities := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> clientInfo [
 
 	^ clientInfo
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> clientInfo: anObject [
 
 	clientInfo := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> locale [
 
 	^ locale
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> locale: anObject [
 
 	locale := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> processId [
 
 	^ processId
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> processId: anObject [
 
 	processId := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> rootPath [
 
 	^ rootPath
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> rootPath: anObject [
 
 	rootPath := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> rootUri [
 
 	^ rootUri
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> rootUri: anObject [
 
 	rootUri := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> trace1 [
 
 	^ trace
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> trace1: anObject [
 
 	trace := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> workspaceFolders [
 
 	^ workspaceFolders
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 PLPInitializeParams >> workspaceFolders: anObject [
 
 	workspaceFolders := anObject

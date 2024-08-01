@@ -1,42 +1,44 @@
 Trait {
-	#name : #TPLPCommon,
+	#name : 'TPLPCommon',
 	#instVars : [
 		'currentId',
 		'answerLoop',
 		'clientInStream',
 		'clientOutStream',
 		'process',
-		'answerLoopPriority'
+		'answerLoopPriority',
+		'withStdIO'
 	],
-	#category : #PharoLanguageProtocol
+	#category : 'PharoLanguageProtocol',
+	#package : 'PharoLanguageProtocol'
 }
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLPCommon >> answerLoopPriority [
 
 	^ answerLoopPriority ifNil: [
 		  answerLoopPriority := Processor lowIOPriority ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 TPLPCommon >> answerLoopPriority: anObject [
 
 	answerLoopPriority := anObject
 ]
 
-{ #category : #id }
+{ #category : 'id' }
 TPLPCommon >> currentId [
 
 	^ currentId
 ]
 
-{ #category : #id }
+{ #category : 'id' }
 TPLPCommon >> currentId: anObject [
 
 	currentId := anObject
 ]
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLPCommon >> extractLengthOf: aData [
 	(aData beginsWith: 'Content-Length: ')
 		ifTrue:
@@ -44,7 +46,7 @@ TPLPCommon >> extractLengthOf: aData [
 		ifFalse: [ ^ -1 ]
 ]
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLPCommon >> extractRequestFrom: stream [
 
 	| length startingPoint endPoint result data |
@@ -82,38 +84,38 @@ TPLPCommon >> extractRequestFrom: stream [
 	^ result
 ]
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLPCommon >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
 
 	clientSocket nextInto: existingData startingAt: startingPoint
 ]
 
-{ #category : #'plp - send message' }
+{ #category : 'plp - send message' }
 TPLPCommon >> getHeaderFor: answer into: aStream [
 
 	aStream << 'Content-Length: ' << answer size asString << String crlf
 	<< String crlf
 ]
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLPCommon >> handleRequest: request toClient: outputStream [
 
 	self explicitRequirement
 ]
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLPCommon >> log: aString [
 
 	aString record
 ]
 
-{ #category : #id }
+{ #category : 'id' }
 TPLPCommon >> nextId [
 
 	^ currentId := currentId + 1
 ]
 
-{ #category : #'plp - base protocol' }
+{ #category : 'plp - base protocol' }
 TPLPCommon >> sendCancelRequest: id [
 
 	self notifyMethod: '$/cancelRequest' arguments: (PLPCancelParams new
@@ -121,7 +123,7 @@ TPLPCommon >> sendCancelRequest: id [
 			 yourself) asJRPCJSON
 ]
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLPCommon >> startAnswerLoop [
 
 	process := [
@@ -134,8 +136,20 @@ TPLPCommon >> startAnswerLoop [
 		           named: 'JRPC TCP connection'
 ]
 
-{ #category : #'plp - answerLoop' }
+{ #category : 'plp - answerLoop' }
 TPLPCommon >> stopAnswerLoop [
 
 	answerLoop := false
+]
+
+{ #category : 'accessing' }
+TPLPCommon >> withStdIO [
+
+	^ withStdIO
+]
+
+{ #category : 'accessing' }
+TPLPCommon >> withStdIO: anObject [
+
+	withStdIO := anObject
 ]
