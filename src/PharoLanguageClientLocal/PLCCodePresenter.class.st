@@ -27,7 +27,7 @@ PLCCodePresenter >> applySymbols: listOfSymbols [
 PLCCodePresenter >> initializePresenter [
 
 	version := 0.
-	language := 'css'.
+	language := 'python'.
 	self startClient.
 	plcClient
 		sendDidOpenTextDocument: (PLPTextDocumentItem new
@@ -69,7 +69,7 @@ PLCCodePresenter >> plpURI [
 PLCCodePresenter >> startClient [
 
 	plcClient := PLCClient new.
-	plcClient port: 6000.
+	plcClient language: #python.
 	plcClient clientInit.
 	plcClient start
 ]

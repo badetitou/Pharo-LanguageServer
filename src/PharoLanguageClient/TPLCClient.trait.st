@@ -8,7 +8,8 @@ Trait {
 		'serverContext',
 		'answerProcessor',
 		'context',
-		'data'
+		'data',
+		'language'
 	],
 	#traits : 'JRPCParser + TPLPCommon',
 	#classTraits : 'JRPCParser classTrait + TPLPCommon classTrait',
@@ -99,7 +100,17 @@ TPLCClient >> connect [
 
 	| tcpSocket |
 	tcpSocket := Socket newTCP.
-	tcpSocket connectTo: NetNameResolver loopBackAddress port: self port.
+	self hasTCPServer
+		ifTrue: [
+			tcpSocket listenOn: self port backlogSize: 10.
+			(PLCServerConfigurationRunner newFor: self language)
+				tcpPort: tcpSocket port;
+				visit.
+			self port: tcpSocket port ]
+		ifFalse: [
+			tcpSocket
+				connectTo: NetNameResolver loopBackAddress
+				port: self port ].
 	clientInStream := SocketStream on: tcpSocket.
 	clientOutStream := clientInStream
 ]
@@ -128,6 +139,18 @@ TPLCClient >> isClient [
 	^ true
 ]
 
+{ #category : 'accessing' }
+TPLCClient >> language [
+
+	^ language
+]
+
+{ #category : 'accessing' }
+TPLCClient >> language: anObject [
+
+	language := anObject
+]
+
 { #category : 'api' }
 TPLCClient >> notifyMethod: aString arguments: anArrayOrString [
 
@@ -140,7 +163,7 @@ TPLCClient >> notifyMethod: aString arguments: anArrayOrString [
 { #category : 'accessing' }
 TPLCClient >> port [
 
-	^ port
+	^ port ifNil: [ port := 0 ]
 ]
 
 { #category : 'accessing' }

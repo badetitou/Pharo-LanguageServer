@@ -7,7 +7,8 @@ Trait {
 		'clientOutStream',
 		'process',
 		'answerLoopPriority',
-		'withStdIO'
+		'withStdIO',
+		'hasTCPServer'
 	],
 	#category : 'PharoLanguageProtocol',
 	#package : 'PharoLanguageProtocol'
@@ -101,6 +102,18 @@ TPLPCommon >> getHeaderFor: answer into: aStream [
 TPLPCommon >> handleRequest: request toClient: outputStream [
 
 	self explicitRequirement
+]
+
+{ #category : 'accessing' }
+TPLPCommon >> hasTCPServer [
+
+	^ hasTCPServer := true
+]
+
+{ #category : 'accessing' }
+TPLPCommon >> hasTCPServer: anObject [
+
+	hasTCPServer := anObject
 ]
 
 { #category : 'plp - answerLoop' }
