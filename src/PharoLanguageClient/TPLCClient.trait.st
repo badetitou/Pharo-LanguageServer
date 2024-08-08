@@ -98,19 +98,21 @@ TPLCClient >> clientOutStream: anObject [
 { #category : 'api' }
 TPLCClient >> connect [
 
-	| tcpSocket |
+	| tcpSocket runner |
 	tcpSocket := Socket newTCP.
-	self hasTCPServer
-		ifTrue: [
-			tcpSocket listenOn: self port backlogSize: 10.
-			(PLCServerConfigurationRunner newFor: self language)
-				tcpPort: tcpSocket port;
-				visit.
-			self port: tcpSocket port ]
-		ifFalse: [
-			tcpSocket
-				connectTo: NetNameResolver loopBackAddress
-				port: self port ].
+	runner := PLCServerConfigurationRunner newFor: self language.
+
+	tcpSocket listenOn: self port.
+	self port: tcpSocket port.
+	tcpSocket closeAndDestroy.
+	tcpSocket := Socket newTCP.
+	runner
+		tcpPort: self port;
+		visit.
+
+	tcpSocket connectTo: NetNameResolver loopBackAddress port: self port.
+
+	tcpSocket waitForConnectionFor: 3.
 	clientInStream := SocketStream on: tcpSocket.
 	clientOutStream := clientInStream
 ]

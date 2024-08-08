@@ -6,7 +6,8 @@
 First install the python server locally with 
 
 ```sh
-npm install -g pyright
+pip install python-lsp-server
+pip install 'python-lsp-server[websockets]'
 ```
 "
 Class {
@@ -23,11 +24,17 @@ PLCPythonServerConfigurationRunner class >> supportedLanguages [
 ]
 
 { #category : 'visiting' }
+PLCPythonServerConfigurationRunner >> isTCPHost [
+
+	^ false
+]
+
+{ #category : 'visiting' }
 PLCPythonServerConfigurationRunner >> visitWindows: aPlatform [
 
 	^ LibC runCommand: (String streamContents: [ :stream |
 			   stream << 'start powershell -noexit -noprofil -command "& { '.
-			   stream << 'pyright-langserver.cmd --socket='.
+			   stream << 'pylsp --tcp -vv --port '.
 			   self tcpPort printOn: stream.
 			   stream << ' }"' ])
 ]

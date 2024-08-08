@@ -25,6 +25,11 @@ PLCServerConfigurationRunner class >> supportedLanguages [
 	^ self subclassResponsibility
 ]
 
+{ #category : 'testing' }
+PLCServerConfigurationRunner >> isTCPHost [
+	^ self subclassResponsibility
+]
+
 { #category : 'accessing' }
 PLCServerConfigurationRunner >> tcpPort [
 
