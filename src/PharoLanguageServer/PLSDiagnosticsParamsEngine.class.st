@@ -30,17 +30,18 @@ PLSDiagnosticsParamsEngine class >> document: aDocument [
 { #category : 'accessing' }
 PLSDiagnosticsParamsEngine >> computeDiagnostics [
 
-	| ast compiler diagnostics |
-	compiler := self class compiler
-		            source: source;
-		            isScripting: true;
-		            failBlock: [ nil ];
-		            requestor: self requestor;
-		            options: #( #+ optionParseErrors );
-		            yourself.
+	| ast diagnostics |
 	ast := self sourceIsMethod
-		       ifTrue: [ compiler parseMethod ]
-		       ifFalse: [ compiler parse ].
+		       ifTrue: [ "use RB parser for method"
+		       RBParser parseFaultyMethod: source ]
+		       ifFalse: [ "use Opal default Compiler for scripting "
+			       self class compiler
+				       source: source;
+				       isScripting: true;
+				       failBlock: [ nil ];
+				       requestor: self requestor;
+				       permitFaulty: true;
+				       parse ].
 	diagnostics := OrderedCollection new.
 	ast acceptVisitor:
 		(RBParseErrorNodeVisitor new visitBlock: [ :aErrorBlock |
