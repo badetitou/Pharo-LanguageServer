@@ -427,13 +427,6 @@ PLSServer >> postDealAnswer: answer [
 ]
 
 { #category : 'lsp - initialization' }
-PLSServer >> serverInitialized [
-
-	<jrpc: #initialized>
-	Transcript crShow: 'Initialized'
-]
-
-{ #category : 'lsp - initialization' }
 PLSServer >> serverShutdown [
 
 	<jrpc: #shutdown>

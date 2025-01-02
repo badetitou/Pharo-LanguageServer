@@ -227,8 +227,10 @@ PLSAbstractServer >> sendData: answer2 toClient: stream [
 
 { #category : 'lsp - initialization' }
 PLSAbstractServer >> serverInitialized [
+
 	<jrpc: #initialized>
-	self subclassResponsibility
+	'Initialized' recordInfo.
+	self logMessage: 'Initialized' ofType: PLSMessageType info
 ]
 
 { #category : 'lsp - initialization' }
