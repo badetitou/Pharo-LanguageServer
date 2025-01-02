@@ -345,7 +345,7 @@ PLSServer >> plsGetClasses: package [
 { #category : 'pls' }
 PLSServer >> plsGetPackages [
 	<jrpc: #'pls:packages'>
-	^ (RPackageOrganizer default packages collect: #name)
+	^ (self packageOrganizer packages collect: #name)
 		asArray
 ]
 
@@ -367,9 +367,9 @@ PLSServer >> plsGtkInspectIt: line textDocument: textDocumentURI [
 		       useBackend: #Gtk;
 		       yourself.
 
-	(StInspector onObject: answer2)
+	(StInspectorPresenter onObject: answer2)
 		application: app;
-		openWithSpec ]
+		open ]
 		on: Error
 		do: [ :err | ^ err message printString ].
 	'opened with spec' record.
