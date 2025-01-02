@@ -37,9 +37,8 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 		with: [ spec repository: 'github://pharo-spec/Spec-Gtk:/src' ].
 
 	spec
-		baseline: 'PharoHuggingFace'
-		with: [ 
-		spec repository: 'github://Evref-BL/Pharo-HuggingFace:main/src' ]
+		baseline: 'LLMAPI'
+		with: [ spec repository: 'github://Evref-BL/Pharo-LLMAPI:main/src' ].
 ]
 
 { #category : 'baselines' }
@@ -75,7 +74,7 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 		package: 'PharoLanguageServer' with: [
 			spec requires:
 					#( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' 'PharoLanguageProtocol'
-					   'PharoHuggingFace' ) ];
+					   'LLMAPI' ) ];
 		package: 'PharoLanguageServer-Tests'
 		with: [ spec requires: #( 'PharoLanguageServer' ) ];
 		package: 'PharoDAP'

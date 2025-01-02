@@ -246,35 +246,6 @@ PLSServer >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
 ]
 
-{ #category : 'lsp - completion' }
-PLSServer >> oldTextDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
-
-	"<jrpc: #'textDocument/inlineCompletion'>"
-	| internalTextDocument api answer |
-	(HFAPI apiKey isNil or: [ HFAPI apiKey isEmpty ])
-		ifTrue: [ answer := 'Set a HuggingFace API KEY in the settings' ]
-		ifFalse: [
-			[
-			internalTextDocument := self context textItem:
-				                        (textDocument at: #uri).
-			api := HFAPI new.
-			api model: HFCodeLlama13bModel new.
-			api return_full_text: false.
-			api max_new_tokens: 50.
-			api max_time: 2.
-			answer := api query:
-				          'Complete the following code.
-Be creative! Only give me the code without any explanation. Do not add comment in the code.
-```st
-' , internalTextDocument text , '
-```' ]
-				on: HFAPIError
-				do: [ answer := 'HuggingFace rate limit' ] ].
-	^ (PLSInlineCompletionList new
-		   items: { (PLSInlineCompletionItem new insertText: answer) };
-		   yourself) asJRPCJSON
-]
-
 { #category : 'lsp - initialization' }
 PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 
@@ -449,6 +420,12 @@ PLSServer >> plsTestPackages [
 			   , '.class.st'"
 ]
 
+{ #category : 'lsp - completion' }
+PLSServer >> postDealAnswer: answer [
+
+	^ (answer trimBoth withoutPrefix: '```') withoutSuffix: '```'
+]
+
 { #category : 'lsp - initialization' }
 PLSServer >> serverInitialized [
 
@@ -510,25 +487,30 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 PLSServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
 
 	<jrpc: #'textDocument/inlineCompletion'>
-	| internalTextDocument api answer |
-	(HFAPI apiKey isNil or: [ HFAPI apiKey isEmpty ])
-		ifTrue: [ answer := 'Set a HuggingFace API KEY in the settings' ]
-		ifFalse: [
-			[
-			internalTextDocument := self context textItem:
-				                        (textDocument at: #uri).
-			api := HFAPI new.
-			api model: HFCodeLlama13bModel new.
-			api return_full_text: false.
-			api max_new_tokens: 50.
-			api max_time: 2.
-			answer := internalTextDocument text
-				          ifEmpty: [ '' ]
-				          ifNotEmpty: [ api query: internalTextDocument text ] ]
-				on: HFAPIError
-				do: [ answer := 'HuggingFace rate limit' ] ].
+	| internalTextDocument api answer userPosition result |
+	internalTextDocument := self context textItem:
+		                        (textDocument at: #uri).
+	userPosition := internalTextDocument text plsToPosition: position.
+	api := LLMAPI fim.
+	api host: 'api.mistral.ai'.
+
+	api payload
+		temperature: 0.2;
+		model: 'codestral-2405';
+		top_p: 1;
+		max_tokens: 250;
+		prompt: (internalTextDocument text copyFrom: 1 to: userPosition).
+	userPosition = internalTextDocument text size ifFalse: [
+		api payload suffix: (internalTextDocument text
+				 copyFrom: userPosition
+				 to: internalTextDocument text size) ].
+
+	result := api performRequest.
+	answer := result choices anyOne message content.
+
 	^ (PLSInlineCompletionList new
-		   items: { (PLSInlineCompletionItem new insertText: answer) };
+		   items: { (PLSInlineCompletionItem new insertText:
+					    (self postDealAnswer: answer)) };
 		   yourself) asJRPCJSON
 ]
 
