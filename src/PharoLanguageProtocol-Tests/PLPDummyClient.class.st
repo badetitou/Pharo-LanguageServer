@@ -1,19 +1,21 @@
 Class {
-	#name : #PLPDummyClient,
-	#superclass : #Object,
+	#name : 'PLPDummyClient',
+	#superclass : 'Object',
 	#traits : 'TPLCClient',
 	#classTraits : 'TPLCClient classTrait',
-	#category : #'PharoLanguageProtocol-Tests'
+	#category : 'PharoLanguageProtocol-Tests',
+	#package : 'PharoLanguageProtocol-Tests'
 }
 
-{ #category : #converting }
+{ #category : 'initialization' }
 PLPDummyClient >> initialize [
 
 	super initialize.
+	self language: #dummy.
 	self clientInit
 ]
 
-{ #category : #'plp - tests' }
+{ #category : 'plp - tests' }
 PLPDummyClient >> longServerMethod: answer [
 	"Should never go here"
 
@@ -21,7 +23,7 @@ PLPDummyClient >> longServerMethod: answer [
 	
 ]
 
-{ #category : #'plp - tests' }
+{ #category : 'plp - tests' }
 PLPDummyClient >> sendLongServerMethod [
 
 	self
@@ -30,7 +32,7 @@ PLPDummyClient >> sendLongServerMethod [
 		withId: self nextId
 ]
 
-{ #category : #'lsp - window' }
+{ #category : 'lsp - window' }
 PLPDummyClient >> windowLogMessage: message withType: type [
 
 	<jrpc: #'window/logMessage'>

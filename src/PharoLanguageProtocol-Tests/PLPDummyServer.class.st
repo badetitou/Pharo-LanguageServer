@@ -1,10 +1,11 @@
 Class {
-	#name : #PLPDummyServer,
-	#superclass : #PLSServer,
-	#category : #'PharoLanguageProtocol-Tests'
+	#name : 'PLPDummyServer',
+	#superclass : 'PLSServer',
+	#category : 'PharoLanguageProtocol-Tests',
+	#package : 'PharoLanguageProtocol-Tests'
 }
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLPDummyServer >> longServerMethod [
 
 	<jrpc: #'plptest/longServerMethod'>
@@ -13,7 +14,7 @@ PLPDummyServer >> longServerMethod [
 	^ { (#answer -> 'until the end') } asDictionary asJRPCJSON
 ]
 
-{ #category : #'lsp - completion' }
+{ #category : 'lsp - completion' }
 PLPDummyServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
 
 	<jrpc: #'textDocument/inlineCompletion'>

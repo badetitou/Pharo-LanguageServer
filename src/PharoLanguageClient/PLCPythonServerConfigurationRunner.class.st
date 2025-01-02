@@ -23,13 +23,13 @@ PLCPythonServerConfigurationRunner class >> supportedLanguages [
 	^ { #python }
 ]
 
-{ #category : 'visiting' }
+{ #category : 'testing' }
 PLCPythonServerConfigurationRunner >> isTCPHost [
 
 	^ false
 ]
 
-{ #category : 'visiting' }
+{ #category : 'as yet unclassified' }
 PLCPythonServerConfigurationRunner >> visitWindows: aPlatform [
 
 	^ LibC runCommand: (String streamContents: [ :stream |

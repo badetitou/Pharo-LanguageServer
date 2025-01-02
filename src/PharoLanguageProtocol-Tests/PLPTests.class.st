@@ -1,21 +1,22 @@
 Class {
-	#name : #PLPTests,
-	#superclass : #TestCase,
+	#name : 'PLPTests',
+	#superclass : 'TestCase',
 	#instVars : [
 		'client',
 		'server',
 		'serverProcess'
 	],
-	#category : #'PharoLanguageProtocol-Tests'
+	#category : 'PharoLanguageProtocol-Tests',
+	#package : 'PharoLanguageProtocol-Tests'
 }
 
-{ #category : #running }
+{ #category : 'running' }
 PLPTests >> plpURI [
 
 	^ '#test/plp'
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 PLPTests >> setUp [
 
 	| openPort |
@@ -35,7 +36,7 @@ PLPTests >> setUp [
 	client port: openPort
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 PLPTests >> tearDown [
 
 	serverProcess terminate.
@@ -43,7 +44,7 @@ PLPTests >> tearDown [
 	super tearDown
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 PLPTests >> testCancelRequest [
 	"I test that the client can cancel a long processing request of the server"
 
@@ -54,7 +55,7 @@ PLPTests >> testCancelRequest [
 	[ server context messageProcesses isEmpty ] whileFalse
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 PLPTests >> testDidChangeTextDocument [
 	"I test that the client can cancel a long processing request of the server"
 
@@ -77,7 +78,7 @@ PLPTests >> testDidChangeTextDocument [
 		equals: 'Hello world 43'
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 PLPTests >> testDidChangeTextDocumentCancelLongInlineCompletion [
 	"I test that the client can cancel a long processing request of the server"
 
@@ -106,7 +107,7 @@ PLPTests >> testDidChangeTextDocumentCancelLongInlineCompletion [
 	[ (server context textItem: self plpURI) version = 43 ] whileFalse
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 PLPTests >> testDidOpenTextDocument [
 	"I test that the client can cancel a long processing request of the server"
 
@@ -132,7 +133,7 @@ PLPTests >> testDidOpenTextDocument [
 		equals: '#test/plp'
 ]
 
-{ #category : #running }
+{ #category : 'running' }
 PLPTests >> testInitialize [
 
 	client start.
