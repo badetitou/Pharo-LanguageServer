@@ -25,13 +25,13 @@ WORKDIR /root/pharo
 ######################################
 # Download Pharo using Zeroconf & start script
 ######################################
-RUN mkdir /root/pharo/Moose64-10-PLS
-WORKDIR /root/pharo/Moose64-10-PLS
-RUN wget https://github.com/badetitou/Pharo-LanguageServer/releases/download/v3.1.1/Moose64-10-PLS.zip
-RUN unzip Moose64-10-PLS.zip
+RUN mkdir /root/pharo/Moose64-12-PLS
+WORKDIR /root/pharo/Moose64-12-PLS
+RUN wget https://github.com/badetitou/Pharo-LanguageServer/releases/download/v5.0.0/Moose64-12-PLS.zip
+RUN unzip Moose64-12-PLS.zip
 
 WORKDIR /root/pharo/
 RUN mkdir /root/pharo/pharo-vm
 WORKDIR /root/pharo/pharo-vm
-RUN wget https://files.pharo.org/get-files/90/pharo64-linux-headless-latest.zip
-RUN unzip pharo64-linux-headless-latest.zip 
+RUN wget https://files.pharo.org/get-files/120/pharo-vm-Linux-aarch64-latest.zip
+RUN unzip pharo-vm-Linux-aarch64-latest.zip
