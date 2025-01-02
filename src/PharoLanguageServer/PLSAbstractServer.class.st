@@ -334,3 +334,15 @@ PLSAbstractServer >> textDocumentInlineCompletionWithContext: context position: 
 	<jrpc: #'textDocument/inlineCompletion'>
 	self subclassResponsibility
 ]
+
+{ #category : 'lsp - text synchronisation' }
+PLSAbstractServer >> willSave: textDocument reason: reason [
+	<jrpc: #'textDocument/willSave'>
+	1h
+]
+
+{ #category : 'lsp - text synchronisation' }
+PLSAbstractServer >> willSaveUntil: textDocument reason: reason [
+	<jrpc: #'textDocument/willSaveWaitUntil'>
+	1h
+]

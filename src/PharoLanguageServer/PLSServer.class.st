@@ -566,15 +566,3 @@ PLSServer >> typeDefinitionAt: position in: textDocument [
 				   end: (PLSPosition line: 0 character: 0));
 		  yourself
 ]
-
-{ #category : 'lsp - text synchronisation' }
-PLSServer >> willSave: textDocument reason: reason [
-	<jrpc: #'textDocument/willSave'>
-	1h
-]
-
-{ #category : 'lsp - text synchronisation' }
-PLSServer >> willSaveUntil: textDocument reason: reason [
-	<jrpc: #'textDocument/willSaveWaitUntil'>
-	1h
-]
