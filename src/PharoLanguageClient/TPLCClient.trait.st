@@ -99,16 +99,18 @@ TPLCClient >> clientOutStream: anObject [
 TPLCClient >> connect [
 
 	| tcpSocket runner |
-	tcpSocket := Socket newTCP.
-	runner := PLCServerConfigurationRunner newFor: self language.
+	self port ifNil: [
+		"If no existing port (i.e., no port assigned). Find an available port, start the server with it, connect to this port"
+		tcpSocket := Socket newTCP.
+		runner := PLCServerConfigurationRunner newFor: self language.
 
-	tcpSocket listenOn: self port.
-	self port: tcpSocket port.
-	tcpSocket closeAndDestroy.
+		tcpSocket listenOn: self port.
+		self port: tcpSocket port.
+		tcpSocket closeAndDestroy.
+		runner
+			tcpPort: self port;
+			visit ].
 	tcpSocket := Socket newTCP.
-	runner
-		tcpPort: self port;
-		visit.
 
 	tcpSocket connectTo: NetNameResolver loopBackAddress port: self port.
 
