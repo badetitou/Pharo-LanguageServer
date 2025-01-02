@@ -15,25 +15,25 @@ Class {
 
 { #category : 'pls - variables' }
 PLSServer >> childrenVariables: variableReference in: textDocument [
+
 	<jrpc: #'pls:childrenVariables'>
 	| document references currentVariable |
-	document := self context
-		textItem: (textDocument at: #uri at: #path).
+	document := self context textItem: (textDocument at: #uri at: #path).
 	references := Stack newFrom: (variableReference substrings: '/').
-	currentVariable := document binder compilationBindings
-		at: references pop.
-	[ references isEmpty ]
-		whileFalse: [ | goTo |
-			goTo := references pop.
-			currentVariable := currentVariable instVarNamed: goTo asSymbol ].
-	^ (currentVariable class allInstVarNames
-		collectWithIndex: [ :name :idx | 
-			PLSVariable new
-				name: name;
-				value: (currentVariable instVarAt: idx) printString;
-				variableReference: variableReference , '/' , name;
-				isDirectory: (currentVariable instVarAt: idx) class allInstVarNames isNotEmpty;
-				yourself ]) asArray
+	currentVariable := document binder bindings at: references pop.
+	[ references isEmpty ] whileFalse: [
+		| goTo |
+		goTo := references pop.
+		currentVariable := currentVariable instVarNamed: goTo asSymbol ].
+	^ (currentVariable class allInstVarNames collectWithIndex: [ :name :idx |
+		   PLSVariable new
+			   name: name;
+			   value: (currentVariable instVarAt: idx) printString;
+			   variableReference: variableReference , '/' , name;
+			   isDirectory:
+				   (currentVariable instVarAt: idx) class allInstVarNames
+					   isNotEmpty;
+			   yourself ]) asArray
 ]
 
 { #category : 'lsp - code lens' }
