@@ -300,11 +300,11 @@ PLSAbstractServer >> start [
 PLSAbstractServer >> stop [
 
 	answerLoop := false.
-	clientInStream close.
-	clientOutStream close.
+	clientInStream ifNotNil: [ clientInStream close ].
+	clientOutStream ifNotNil: [ clientOutStream close ].
 
 	"Ensure process finishes."
-	process ifNotNil: [ 
+	process ifNotNil: [
 		process isTerminated ifTrue: [ ^ self ].
 		process terminate ]
 ]
