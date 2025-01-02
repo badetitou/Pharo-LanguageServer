@@ -27,7 +27,7 @@ WORKDIR /root/pharo
 ######################################
 RUN mkdir /root/pharo/Moose64-12-PLS
 WORKDIR /root/pharo/Moose64-12-PLS
-RUN wget https://github.com/badetitou/Pharo-LanguageServer/releases/download/v5.0.0/Moose64-12-PLS.zip
+RUN wget https://github.com/badetitou/Pharo-LanguageServer/releases/download/v5.0.1/Moose64-12-PLS.zip
 RUN unzip Moose64-12-PLS.zip
 
 WORKDIR /root/pharo/
