@@ -72,23 +72,14 @@ TPLPCommon >> extractRequestFrom: stream [
 		ifTrue: [ "none were found"
 			stream upTo: ${.
 			result at: 1 put: ${.
-			self getDatafromPosition: 2 fromSocket: stream in: result ]
+			stream nextInto: result startingAt: 2 ]
 		ifFalse: [ "only startingPoint is found"
 			(data copyFrom: startingPoint to: data size) withIndexDo: [
 				:each
 				:index | result at: index put: each ].
-			self
-				getDatafromPosition: data size - startingPoint + 2
-				fromSocket: stream
-				in: result ].
+			stream nextInto: result startingAt: data size - startingPoint + 2 ].
 	data := ''.
 	^ result
-]
-
-{ #category : 'plp - answerLoop' }
-TPLPCommon >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
-
-	clientSocket nextInto: existingData startingAt: startingPoint
 ]
 
 { #category : 'plp - send message' }
@@ -143,7 +134,7 @@ TPLPCommon >> startAnswerLoop [
 	           [ answerLoop ] whileTrue: [
 		           | request |
 		           request := self extractRequestFrom: clientInStream.
-		           ('Request: ' , request) recordDebug.
+		           self log: 'Request: ' , request.
 		           self handleRequest: request toClient: clientOutStream ] ]
 		           forkAt: self answerLoopPriority
 		           named: 'JRPC TCP connection'
