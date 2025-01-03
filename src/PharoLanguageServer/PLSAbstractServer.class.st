@@ -218,8 +218,8 @@ PLSAbstractServer >> resetContext [
 { #category : 'starting' }
 PLSAbstractServer >> sendData: answer2 toClient: stream [
 
-	answer2 ifEmpty: [ 'No Answser' recordInfo ] ifNotEmpty: [ 
-		('Answer sent: ' , answer2) recordInfo.
+	answer2 ifEmpty: [ self log: 'No Answser' ] ifNotEmpty: [
+		self log: 'Answer sent: ' , answer2.
 		self getHeaderFor: answer2 into: stream.
 		stream << answer2 utf8Encoded.
 		stream flush ]
