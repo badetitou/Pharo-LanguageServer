@@ -79,7 +79,7 @@ PLSDocument >> codeLens [
 	^ {}
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : 'diagnostics' }
 PLSDocument >> diagnostics [
 	self subclassResponsibility
 ]

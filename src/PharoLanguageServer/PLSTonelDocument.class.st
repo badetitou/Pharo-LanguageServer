@@ -60,30 +60,43 @@ PLSTonelDocument >> codeLens [
 				     arguments: { className })) }) asArray
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : 'diagnostics' }
 PLSTonelDocument >> diagnostics [
 
 	| diagnostics parsed |
 	parsed := self parsed.
 	diagnostics := (parsed
-		                select: [ :el | el isMethodDefinition and: [ el isErrorDefinition ] ]
-		                thenCollect: [ :errorDef | 
+		                select: [ :el |
+		                el isMethodDefinition and: [ el isErrorDefinition ] ]
+		                thenCollect: [ :errorDef |
 			                PLSDiagnostic new
 				                message: #'error in method definition';
-				                range: (PLSRange start: (self text toLineCharacter: errorDef startPos) end: (self text toLineCharacter: errorDef endPos)) ])
+				                range: (PLSRange
+						                 start:
+							                 (self text toLineCharacter: errorDef startPos)
+						                 end:
+							                 (self text toLineCharacter: errorDef endPos)) ])
 		               asOrderedCollection.
 	diagnostics addAll: (parsed
-			 select: [ :el | el isMethodDefinition and: [ el isErrorDefinition not ] ]
-			 thenCollect: [ :el | 
+			 select: [ :el |
+			 el isMethodDefinition and: [ el isErrorDefinition not ] ]
+			 thenCollect: [ :el |
 				 ((PLSDiagnosticsParamsEngine new
 					   document: self;
 					   source: el source;
 					   sourceIsMethod: true;
-					   yourself) requestor: self binder) computeDiagnostics diagnostics collect: [ :diag | 
+					   yourself) requestor: self binder) computeDiagnostics
+					 diagnostics collect: [ :diag |
 					 | lineCharMethod |
 					 lineCharMethod := self text toLineCharacter: el startPos.
-					 diag range start at: #line put: (diag range start at: #line) + (lineCharMethod at: #line) + 2.
-					 diag range end at: #line put: (diag range end at: #line) + (lineCharMethod at: #line) + 2.
+					 diag range start
+						 at: #line
+						 put:
+						 (diag range start at: #line) + (lineCharMethod at: #line) + 2.
+					 diag range end
+						 at: #line
+						 put:
+						 (diag range end at: #line) + (lineCharMethod at: #line) + 2.
 					 diag ] ]).
 	^ (PLSPublishDiagnosticsParams new
 		   diagnostics: diagnostics flattened asArray asJRPCJSON;

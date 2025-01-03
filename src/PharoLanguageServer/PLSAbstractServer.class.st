@@ -94,7 +94,14 @@ PLSAbstractServer >> defaultPort [
 
 { #category : 'lsp - diagnostics' }
 PLSAbstractServer >> documentDiagnosticFor: textDocument withIdentifier: identifier andPreviousResult: previousResultId [
+
 	<jrpc: #'textDocument/diagnostic'>
+	| diagnosticsReport document |
+	diagnosticsReport := PLSFullDocumentDiagnosticsReport new.
+	document := self context textItem: (textDocument at: #uri).
+	^ diagnosticsReport
+		  items: document diagnostics;
+		  yourself
 ]
 
 { #category : 'starting' }

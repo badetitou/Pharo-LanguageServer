@@ -20,10 +20,11 @@ PLSScriptDocument class >> supportDocumentUri: aTextDocumentUri [
 	^ false
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : 'diagnostics' }
 PLSScriptDocument >> diagnostics [
+
 	^ ((PLSDiagnosticsParamsEngine document: self) requestor: self binder)
-		computeDiagnostics asJRPCJSON
+		  computeDiagnostics asJRPCJSON
 ]
 
 { #category : 'testing' }
