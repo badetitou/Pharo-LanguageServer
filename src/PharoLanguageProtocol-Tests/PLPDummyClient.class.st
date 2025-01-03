@@ -7,6 +7,18 @@ Class {
 	#package : 'PharoLanguageProtocol-Tests'
 }
 
+{ #category : 'accessing' }
+PLPDummyClient >> answerLoop [
+
+	^ answerLoop
+]
+
+{ #category : 'accessing' }
+PLPDummyClient >> answerLoop: aBoolean [
+
+	answerLoop := aBoolean
+]
+
 { #category : 'initialization' }
 PLPDummyClient >> initialize [
 
