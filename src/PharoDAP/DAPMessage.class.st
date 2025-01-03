@@ -1,14 +1,16 @@
 Class {
-	#name : #DAPMessage,
-	#superclass : #DAPJsonableObject,
+	#name : 'DAPMessage',
+	#superclass : 'DAPJsonableObject',
 	#instVars : [
 		'seq',
 		'type'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 DAPMessage >> asDAPJSON [
 	| dic |
 	dic := super asDAPJSON.
@@ -17,27 +19,27 @@ DAPMessage >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPMessage >> beConvertedBy: aDAPMessageProcessor [
 	^ aDAPMessageProcessor convertDAPJsonableObjectToJSON: self
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPMessage >> seq [
 	^ seq
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPMessage >> seq: anObject [
 	seq := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPMessage >> type [
 	^ type
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPMessage >> type: anObject [
 	type := anObject
 ]

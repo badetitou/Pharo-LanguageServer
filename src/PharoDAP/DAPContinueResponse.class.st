@@ -1,13 +1,15 @@
 Class {
-	#name : #DAPContinueResponse,
-	#superclass : #DAPResponse,
+	#name : 'DAPContinueResponse',
+	#superclass : 'DAPResponse',
 	#instVars : [
 		'allThreadsContinued'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPContinueResponse >> allThreadsContinued [
 	"If true, the 'continue' request has ignored the specified thread and continued all threads instead.
      If this attribute is missing a value of 'true' is assumed for backward compatibility."
@@ -15,12 +17,12 @@ DAPContinueResponse >> allThreadsContinued [
 	^ allThreadsContinued
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPContinueResponse >> allThreadsContinued: anObject [
 	allThreadsContinued := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPContinueResponse >> asDAPJSON [
 	| dic |
 	self body at: #allThreadsContinued put: self allThreadsContinued.
@@ -28,7 +30,7 @@ DAPContinueResponse >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPContinueResponse >> initialize [
 	super initialize.
 	body := Dictionary new.

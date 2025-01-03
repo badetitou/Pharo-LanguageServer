@@ -1,1 +1,1 @@
-Package { #name : #PharoDAP }
+Package { #name : 'PharoDAP' }

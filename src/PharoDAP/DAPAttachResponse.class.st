@@ -1,5 +1,7 @@
 Class {
-	#name : #DAPAttachResponse,
-	#superclass : #DAPResponse,
-	#category : #'PharoDAP-Structure'
+	#name : 'DAPAttachResponse',
+	#superclass : 'DAPResponse',
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }

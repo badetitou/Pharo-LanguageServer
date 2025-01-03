@@ -1,14 +1,16 @@
 Class {
-	#name : #DAPThread,
-	#superclass : #DAPJsonableObject,
+	#name : 'DAPThread',
+	#superclass : 'DAPJsonableObject',
 	#instVars : [
 		'id',
 		'name'
 	],
-	#category : #'PharoDAP-Types'
+	#category : 'PharoDAP-Types',
+	#package : 'PharoDAP',
+	#tag : 'Types'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 DAPThread >> asDAPJSON [
 	^ super asDAPJSON
 		at: #id put: self id;
@@ -16,22 +18,22 @@ DAPThread >> asDAPJSON [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPThread >> id [
 	^ id
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPThread >> id: anObject [
 	id := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPThread >> name [
 	^ name
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPThread >> name: anObject [
 	name := anObject
 ]

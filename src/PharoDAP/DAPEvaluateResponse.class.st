@@ -1,14 +1,16 @@
 Class {
-	#name : #DAPEvaluateResponse,
-	#superclass : #DAPResponse,
+	#name : 'DAPEvaluateResponse',
+	#superclass : 'DAPResponse',
 	#instVars : [
 		'result',
 		'variablesReference'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvaluateResponse >> asDAPJSON [
 	| dic |
 	self body at: #result put: self result.
@@ -17,28 +19,28 @@ DAPEvaluateResponse >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvaluateResponse >> initialize [
 	super initialize.
 	body := Dictionary new
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvaluateResponse >> result [
 	^ result
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvaluateResponse >> result: anObject [
 	result := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvaluateResponse >> variablesReference [
 	^ variablesReference
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvaluateResponse >> variablesReference: anObject [
 	variablesReference := anObject
 ]

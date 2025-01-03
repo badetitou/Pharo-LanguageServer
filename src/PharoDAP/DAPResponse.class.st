@@ -1,6 +1,6 @@
 Class {
-	#name : #DAPResponse,
-	#superclass : #DAPMessage,
+	#name : 'DAPResponse',
+	#superclass : 'DAPMessage',
 	#instVars : [
 		'request_seq',
 		'success',
@@ -8,10 +8,12 @@ Class {
 		'message',
 		'body'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> asDAPJSON [
 	| dic |
 	dic := super asDAPJSON.
@@ -23,59 +25,59 @@ DAPResponse >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> body [
 	^ body
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> body: anObject [
 	body := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> command [
 	^ command
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> command: anObject [
 	command := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPResponse >> initialize [
 	super initialize.
 	type := 'response'.
 	success := true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> message [
 	^ message
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> message: anObject [
 	message := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> request_seq [
 	^ request_seq
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> request_seq: anObject [
 	request_seq := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> success [
 	^ success
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPResponse >> success: anObject [
 	success := anObject
 ]

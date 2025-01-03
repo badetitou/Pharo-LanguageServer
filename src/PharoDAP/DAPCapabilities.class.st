@@ -1,6 +1,6 @@
 Class {
-	#name : #DAPCapabilities,
-	#superclass : #DAPJsonableObject,
+	#name : 'DAPCapabilities',
+	#superclass : 'DAPJsonableObject',
 	#instVars : [
 		'supportsConfigurationDoneRequest',
 		'supportsFunctionBreakpoints',
@@ -39,10 +39,12 @@ Class {
 		'supportsInstructionBreakpoints',
 		'supportsExceptionFilterOptions'
 	],
-	#category : #'PharoDAP-Types'
+	#category : 'PharoDAP-Types',
+	#package : 'PharoDAP',
+	#tag : 'Types'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 DAPCapabilities >> asDAPJSON [
 
 	| dic |
@@ -55,7 +57,7 @@ DAPCapabilities >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPCapabilities >> initialize [
 	super initialize.
 	supportsDelayedStackTraceLoading := true.
@@ -64,12 +66,12 @@ DAPCapabilities >> initialize [
 	supportsConditionalBreakpoints := true.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPCapabilities >> supportsDelayedStackTraceLoading [
 	^ supportsDelayedStackTraceLoading
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPCapabilities >> supportsDelayedStackTraceLoading: anObject [
 	supportsDelayedStackTraceLoading := anObject
 ]

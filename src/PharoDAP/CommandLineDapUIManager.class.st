@@ -1,10 +1,12 @@
 Class {
-	#name : #CommandLineDapUIManager,
-	#superclass : #NonInteractiveUIManager,
-	#category : #'PharoDAP-UIManager'
+	#name : 'CommandLineDapUIManager',
+	#superclass : 'NonInteractiveUIManager',
+	#category : 'PharoDAP-UIManager',
+	#package : 'PharoDAP',
+	#tag : 'UIManager'
 }
 
-{ #category : #debug }
+{ #category : 'debug' }
 CommandLineDapUIManager >> debugProcess: process context: context label: title fullView: bool notification: notificationString [
 	
 	(OupsDebugRequest newForContext: context)
@@ -13,7 +15,7 @@ CommandLineDapUIManager >> debugProcess: process context: context label: title f
 		submit
 ]
 
-{ #category : #'handle debug requests' }
+{ #category : 'handle debug requests' }
 CommandLineDapUIManager >> handleDebugRequest: aDebugRequest [
 	| debuggerOpeningStrategy oupsSystem |
   
@@ -26,20 +28,20 @@ CommandLineDapUIManager >> handleDebugRequest: aDebugRequest [
 	oupsSystem suspendDebuggedProcess: aDebugRequest
 ]
 
-{ #category : #debug }
+{ #category : 'debug' }
 CommandLineDapUIManager >> handleError: anError log: shouldLog [
 
 	self handleDebugRequest: (OupsDebugRequest newForException: anError)
 
 ]
 
-{ #category : #'handle debug requests' }
+{ #category : 'handle debug requests' }
 CommandLineDapUIManager >> handleWarningDebugRequest: aWarningDebugRequest [
 
 	self handleDebugRequest:  aWarningDebugRequest	
 ]
 
-{ #category : #'ui requests' }
+{ #category : 'ui requests' }
 CommandLineDapUIManager >> inform: aString [
 	| ws |
 	ws := (FileLocator home / 'dap_inform') ensureCreateFile writeStream.
@@ -48,7 +50,7 @@ CommandLineDapUIManager >> inform: aString [
 
 ]
 
-{ #category : #'default actions' }
+{ #category : 'default actions' }
 CommandLineDapUIManager >> unhandledErrorDefaultAction: anException [
 
 	anException debug

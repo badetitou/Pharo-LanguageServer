@@ -1,29 +1,31 @@
 Class {
-	#name : #DAPLaunchRequestArguments,
-	#superclass : #DAPJsonableObject,
+	#name : 'DAPLaunchRequestArguments',
+	#superclass : 'DAPJsonableObject',
 	#instVars : [
 		'noDebug',
 		'__restart'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPLaunchRequestArguments >> __restart [
 	^ __restart
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPLaunchRequestArguments >> __restart: anObject [
 	__restart := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPLaunchRequestArguments >> noDebug [
 	^ noDebug
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPLaunchRequestArguments >> noDebug: anObject [
 	noDebug := anObject
 ]

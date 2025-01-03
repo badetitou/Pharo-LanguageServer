@@ -1,6 +1,6 @@
 Class {
-	#name : #DAPInitializeRequestArguments,
-	#superclass : #DAPJsonableObject,
+	#name : 'DAPInitializeRequestArguments',
+	#superclass : 'DAPJsonableObject',
 	#instVars : [
 		'clientID',
 		'clientName',
@@ -16,5 +16,7 @@ Class {
 		'supportsProgressReporting',
 		'supportsInvalidatedEvent'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }

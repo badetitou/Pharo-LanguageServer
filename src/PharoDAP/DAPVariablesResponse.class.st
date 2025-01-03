@@ -1,13 +1,15 @@
 Class {
-	#name : #DAPVariablesResponse,
-	#superclass : #DAPResponse,
+	#name : 'DAPVariablesResponse',
+	#superclass : 'DAPResponse',
 	#instVars : [
 		'variables'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariablesResponse >> asDAPJSON [
 	| dic |
 	self body at: #variables put: variables asArray.
@@ -15,19 +17,19 @@ DAPVariablesResponse >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPVariablesResponse >> initialize [
 	super initialize.
 	body := Dictionary new.
 	variables := OrderedCollection new.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariablesResponse >> variables [
 	^ variables
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariablesResponse >> variables: anObject [
 	variables := anObject
 ]

@@ -1,6 +1,6 @@
-Extension { #name : #OCExtraBindingScope }
+Extension { #name : 'OCExtraBindingScope' }
 
-{ #category : #'*PharoDAP' }
+{ #category : '*PharoDAP' }
 OCExtraBindingScope >> scopeLevel [
 	^ 0
 ]

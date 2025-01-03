@@ -1,14 +1,16 @@
 Class {
-	#name : #DAPStackTraceResponse,
-	#superclass : #DAPResponse,
+	#name : 'DAPStackTraceResponse',
+	#superclass : 'DAPResponse',
 	#instVars : [
 		'stackFrames',
 		'totalFrames'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPStackTraceResponse >> asDAPJSON [
 	| dic |
 	self body at: #stackFrames put: self stackFrames asArray.
@@ -16,19 +18,19 @@ DAPStackTraceResponse >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPStackTraceResponse >> initialize [
 	super initialize.
 	body := Dictionary new.
 	stackFrames := OrderedCollection new.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackTraceResponse >> stackFrames [
 	^ stackFrames
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackTraceResponse >> stackFrames: anObject [
 	stackFrames := anObject
 ]

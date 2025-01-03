@@ -20,6 +20,15 @@ TPLPCommonTest >> setUp [
 ]
 
 { #category : 'tests' }
+TPLPCommonTest >> testExtractLengthOf [
+
+	| request |
+	request := 'Content-Length: 31
+'.
+	self assert: (client extractLengthOf: request) equals: 31
+]
+
+{ #category : 'tests' }
 TPLPCommonTest >> testExtractRequestFrom [
 	"client extractRequestFrom: "
 
@@ -32,7 +41,6 @@ TPLPCommonTest >> testExtractRequestFrom [
 	"jsonrpc": "2.0",
 	"id": 1
 }'.
-
 
 	stream := ReadWriteStream with: request.
 	stream position: 0.
