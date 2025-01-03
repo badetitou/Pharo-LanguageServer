@@ -110,12 +110,15 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 			            self context textItem: (textDocument at: #uri) ].
 	document version: (textDocument at: #version).
 	document text: (contentChanges anyOne at: #text).
-	self
-		sendData: (self convertJRPCJsonableObjectToJSON:
-				 ((JRPCNotificationObject method:
-					   'textDocument/publishDiagnostics') params:
-					  document diagnostics) asJRPCJSON)
-		toClient: clientOutStream
+	"If diagnostic is not nil, we are in a pull diagnostic context. Else, we are in a push diagnostic context"
+	self context clientContext capabilities textDocument ifNotNil: [ :td |
+		td diagnostic ifNil: [
+			self
+				sendData: (self convertJRPCJsonableObjectToJSON:
+						 ((JRPCNotificationObject method:
+							   'textDocument/publishDiagnostics') params:
+							  document diagnostics) asJRPCJSON)
+				toClient: clientOutStream ] ]
 ]
 
 { #category : 'lsp - text synchronisation' }
