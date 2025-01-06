@@ -84,7 +84,7 @@ PLSDocument >> diagnostics [
 	self subclassResponsibility
 ]
 
-{ #category : 'accessing' }
+{ #category : 'initialization' }
 PLSDocument >> initialize [
 	binder := PLSBinder new
 ]
