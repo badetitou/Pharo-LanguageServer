@@ -75,7 +75,7 @@ PLSDocument >> binder [
 	^ binder
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : 'code lens' }
 PLSDocument >> codeLens [
 	^ {}
 ]

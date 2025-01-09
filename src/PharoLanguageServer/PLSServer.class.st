@@ -42,12 +42,6 @@ PLSServer >> codeLenResolves: range command: command data: aData [
 	self flag: 'Not use in this version. All is done by codeLensTextDocument:'
 ]
 
-{ #category : 'lsp - code lens' }
-PLSServer >> codeLensTextDocument: textDocument [
-	<jrpc: #'textDocument/codeLens'>
-	^ (self context textItem: (textDocument at: #uri)) codeLens
-]
-
 { #category : 'commands' }
 PLSServer >> commandNotebookPrintIt: line textDocument: textDocumentURI [
 

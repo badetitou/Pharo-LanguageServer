@@ -74,6 +74,13 @@ PLSAbstractServer >> codeActionForDocument: textDocument atRange: range withCont
 
 ]
 
+{ #category : 'lsp - code lens' }
+PLSAbstractServer >> codeLensTextDocument: textDocument [
+
+	<jrpc: #'textDocument/codeLens'>
+	^ (self context textItem: (textDocument at: #uri)) codeLens
+]
+
 { #category : 'pls - config' }
 PLSAbstractServer >> configDebugMode: debugMode [
 
