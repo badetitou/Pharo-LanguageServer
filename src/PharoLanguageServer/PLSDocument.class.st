@@ -6,7 +6,8 @@ Class {
 		'text',
 		'languageId',
 		'uri',
-		'binder'
+		'binder',
+		'server'
 	],
 	#category : 'PharoLanguageServer-Document',
 	#package : 'PharoLanguageServer',
@@ -112,6 +113,18 @@ PLSDocument >> languageId: anObject [
 { #category : 'lsp - accessing' }
 PLSDocument >> nodeAt: aPosition [
 	self parsed
+]
+
+{ #category : 'accessing' }
+PLSDocument >> server [
+
+	^ server
+]
+
+{ #category : 'accessing' }
+PLSDocument >> server: anObject [
+
+	server := anObject
 ]
 
 { #category : 'lsp - accessing' }

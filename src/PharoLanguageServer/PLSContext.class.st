@@ -7,12 +7,21 @@ Class {
 	#instVars : [
 		'textItems',
 		'messageProcesses',
-		'clientContext'
+		'clientContext',
+		'server'
 	],
 	#category : 'PharoLanguageServer-Context',
 	#package : 'PharoLanguageServer',
 	#tag : 'Context'
 }
+
+{ #category : 'instance creation' }
+PLSContext class >> for: aServer [
+
+	^ self new
+		  server: aServer;
+		  yourself
+]
 
 { #category : 'accessing' }
 PLSContext >> clientContext [
@@ -57,9 +66,25 @@ PLSContext >> removeMessageProcess: anId [
 	anId ifNotNil: [ self messageProcesses removeKey: anId ]
 ]
 
+{ #category : 'accessing' }
+PLSContext >> server [
+
+	^ server
+]
+
+{ #category : 'accessing' }
+PLSContext >> server: anObject [
+
+	server := anObject
+]
+
 { #category : 'text item' }
 PLSContext >> textItem: aURI [
-	^ self textItems at: aURI ifAbsentPut: [ PLSDocument fromURI: aURI ]
+
+	^ self textItems at: aURI ifAbsentPut: [
+		  (PLSDocument fromURI: aURI)
+			  server: self server;
+			  yourself ]
 ]
 
 { #category : 'text item' }

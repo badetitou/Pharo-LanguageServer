@@ -140,7 +140,7 @@ PLSAbstractServer >> initialize [
 	messageProcessor := PLSMessageProcessor new.
 	self addHandlersFromPragmasIn: self.
 	self debugMode: false.
-	serverContext := PLSContext new.
+	serverContext := PLSContext for: self.
 	withStdIO := false.
 	messagesProcesses := Dictionary new.
 	answerLoop := true.
@@ -219,7 +219,7 @@ PLSAbstractServer >> removeMessageProcess: anId [
 
 { #category : 'context' }
 PLSAbstractServer >> resetContext [
-	serverContext := PLSContext new
+	serverContext := PLSContext for: self
 ]
 
 { #category : 'starting' }
