@@ -255,6 +255,21 @@ PLSAbstractServer >> sendData: answer2 toClient: stream [
 		stream flush ]
 ]
 
+{ #category : 'lsp - diagnostics' }
+PLSAbstractServer >> sendDiagnosticsforDocument: document [
+
+	self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method:
+					   'textDocument/publishDiagnostics') params:
+					  (PLSPublishDiagnosticsParams new
+						   diagnostics: document diagnostics;
+						   uri: document uri;
+						   version: document version;
+						   yourself)) asJRPCJSON)
+		toClient: clientOutStream
+]
+
 { #category : 'lsp - initialization' }
 PLSAbstractServer >> serverInitialized [
 
