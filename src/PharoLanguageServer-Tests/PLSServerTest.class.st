@@ -125,6 +125,28 @@ PLSServerTest >> testDocumentVariables [
 		equals: '12'
 ]
 
+{ #category : 'tests' }
+PLSServerTest >> testPostDealAnswer [
+
+	| aiResult |
+	aiResult := '```st
+	hello := 1 + 2
+	```'.
+	self
+		assert: (server postDealAnswer: aiResult)
+		equals: 'hello := 1 + 2'
+]
+
+{ #category : 'tests' }
+PLSServerTest >> testPostDealAnswerNoChange [
+
+	| aiResult |
+	aiResult := 'hello := 1 + 2'.
+	self
+		assert: (server postDealAnswer: aiResult)
+		equals: 'hello := 1 + 2'
+]
+
 { #category : 'test' }
 PLSServerTest >> testTextDocumentHoverWithPositionTextDocument [
 

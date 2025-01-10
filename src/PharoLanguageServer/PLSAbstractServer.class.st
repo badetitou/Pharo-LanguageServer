@@ -219,6 +219,22 @@ PLSAbstractServer >> port: anObject [
 	port := anObject
 ]
 
+{ #category : 'lsp - completion' }
+PLSAbstractServer >> postDealAnswer: answer [
+	"a utility method to remove markdown notation. Helpfull for some server that uses AI behind the scene"
+
+	(answer beginsWith: '```') ifTrue: [
+		| lines realAnswer |
+		lines := answer lines.
+		realAnswer := String streamContents: [ :str |
+			              lines
+				              from: 2
+				              to: lines size - 1
+				              do: [ :line | str << line ] ].
+		^ realAnswer trimBoth ].
+	^ answer trimBoth
+]
+
 { #category : 'context' }
 PLSAbstractServer >> removeMessageProcess: anId [
 	self context removeMessageProcess: anId

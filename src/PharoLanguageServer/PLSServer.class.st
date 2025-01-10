@@ -416,12 +416,6 @@ PLSServer >> plsTestPackages [
 			   , '.class.st'"
 ]
 
-{ #category : 'lsp - completion' }
-PLSServer >> postDealAnswer: answer [
-
-	^ (answer trimBoth withoutPrefix: '```') withoutSuffix: '```'
-]
-
 { #category : 'lsp - initialization' }
 PLSServer >> serverShutdown [
 
