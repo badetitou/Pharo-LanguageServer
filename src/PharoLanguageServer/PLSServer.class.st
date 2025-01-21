@@ -479,7 +479,7 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 
 	api payload
 		temperature: 0.2;
-		model: 'codestral-2405';
+		model: 'codestral-2501';
 		top_p: 1;
 		max_tokens: 250;
 		prompt: (internalTextDocument text copyFrom: 1 to: userPosition).
