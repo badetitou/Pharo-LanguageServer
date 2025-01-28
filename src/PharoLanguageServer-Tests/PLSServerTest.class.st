@@ -12,6 +12,31 @@ Class {
 }
 
 { #category : 'running - additional setup' }
+PLSServerTest >> addMyMalformedTonelDocument [
+	"missing the last ]"
+
+	| textDocument |
+	textDocument := Dictionary new.
+	textDocument at: #uri put: 'src/MyPackage/Benoit.class.st'.
+	textDocument at: #version put: '1'.
+	textDocument at: #languageId put: 'pharo'.
+	textDocument at: #text put: '"I am benoit"
+Class {
+	#name: #Benoit,
+	#superclass: #Object,
+	#instVars: [ ],
+	#category : #''MyPackage''
+}
+
+{ #category : #accessing }
+Benoit >> myMethod [
+	^ ''hello''
+'.
+
+	server didOpen: textDocument
+]
+
+{ #category : 'running - additional setup' }
 PLSServerTest >> addMyScriptDocument [
 
 	| textDocument |
@@ -139,6 +164,32 @@ PLSServerTest >> testDidOpenMyTonelDocument [
 		assert:
 		(server context textItem: 'src/MyPackage/Benoit.class.st') class
 		equals: PLSTonelDocument
+]
+
+{ #category : 'tests' }
+PLSServerTest >> testDocumentDiagnostics [
+
+	| result diagnostic |
+	self addMyMalformedTonelDocument.
+
+	result := server
+		          documentDiagnosticFor:
+		          { (#uri -> 'src/MyPackage/Benoit.class.st') } asDictionary
+		          withIdentifier: nil
+		          andPreviousResult: nil.
+	self assert: (result items at: #diagnostics) size equals: 1.
+	diagnostic := (result items at: #diagnostics) anyOne.
+	self assert: (diagnostic at: #source) equals: 'Pharo Language Server'.
+	self
+		assert: ((diagnostic at: #range) at: #start at: #line)
+		equals: 10.
+	self
+		assert: ((diagnostic at: #range) at: #start at: #character)
+		equals: 10.
+	self assert: ((diagnostic at: #range) at: #end at: #line) equals: 10.
+	self
+		assert: ((diagnostic at: #range) at: #end at: #character)
+		equals: 10
 ]
 
 { #category : 'tests' }
