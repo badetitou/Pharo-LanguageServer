@@ -98,11 +98,7 @@ PLSTonelDocument >> diagnostics [
 						 put:
 						 (diag range end at: #line) + (lineCharMethod at: #line) + 2.
 					 diag ] ]).
-	^ (PLSPublishDiagnosticsParams new
-		   diagnostics: diagnostics flattened asArray asJRPCJSON;
-		   uri: self uri;
-		   version: self version;
-		   yourself) asJRPCJSON
+	^  diagnostics
 ]
 
 { #category : 'testing' }

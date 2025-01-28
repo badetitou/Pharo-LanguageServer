@@ -177,8 +177,8 @@ PLSServerTest >> testDocumentDiagnostics [
 		          { (#uri -> 'src/MyPackage/Benoit.class.st') } asDictionary
 		          withIdentifier: nil
 		          andPreviousResult: nil.
-	self assert: (result items at: #diagnostics) size equals: 1.
-	diagnostic := (result items at: #diagnostics) anyOne.
+	self assert: (result at: #items) size equals: 1.
+	diagnostic := (result at: #items) anyOne.
 	self assert: (diagnostic at: #source) equals: 'Pharo Language Server'.
 	self
 		assert: ((diagnostic at: #range) at: #start at: #line)

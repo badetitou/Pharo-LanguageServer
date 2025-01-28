@@ -145,12 +145,19 @@ PLSServer >> didOpen: textDocument [
 		            put: (PLSDocument from: textDocument).
 	document server: self.
 	(self isTonelDocument: textDocument) ifFalse: [
+		| diagnostics |
+		diagnostics := ((PLSDiagnosticsParamsEngine document: document)
+			                requestor: document binder) computeDiagnostics.
+
 		self
 			sendData: (self convertJRPCJsonableObjectToJSON:
 					 ((JRPCNotificationObject method:
 						   'textDocument/publishDiagnostics') params:
-						  ((PLSDiagnosticsParamsEngine document: document) requestor:
-							   document binder) computeDiagnostics) asJRPCJSON)
+						  (PLSPublishDiagnosticsParams new
+							   diagnostics: diagnostics asArray;
+							   uri: document uri;
+							   version: document version;
+							   yourself) asJRPCJSON) asJRPCJSON)
 			toClient: clientOutStream ]
 ]
 

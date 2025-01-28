@@ -82,6 +82,7 @@ PLSDocument >> codeLens [
 
 { #category : 'diagnostics' }
 PLSDocument >> diagnostics [
+	"return a collection of diagnostic"
 	self subclassResponsibility
 ]
 
