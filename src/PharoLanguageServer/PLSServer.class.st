@@ -164,6 +164,7 @@ PLSServer >> didSave: textDocument text: text [
 
 { #category : 'lsp - document symbol' }
 PLSServer >> documentSymbol: textDocument [
+
 	<jrpc: #'textDocument/documentSymbol'>
 	| document |
 	document := self context textItem: (textDocument at: #uri).

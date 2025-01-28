@@ -25,6 +25,30 @@ object := Object new'.
 	server didOpen: textDocument
 ]
 
+{ #category : 'running - additional setup' }
+PLSServerTest >> addMyTonelDocument [
+
+	| textDocument |
+	textDocument := Dictionary new.
+	textDocument at: #uri put: 'src/MyPackage/Benoit.class.st'.
+	textDocument at: #version put: '1'.
+	textDocument at: #languageId put: 'pharo'.
+	textDocument at: #text put: '"I am benoit"
+Class {
+	#name: #Benoit,
+	#superclass: #Object,
+	#instVars: [ ],
+	#category : #''MyPackage''
+}
+
+{ #category : #accessing }
+Benoit >> myMethod [
+	^ ''hello''
+]'.
+
+	server didOpen: textDocument
+]
+
 { #category : 'running' }
 PLSServerTest >> setUp [
 
@@ -105,6 +129,16 @@ PLSServerTest >> testDidOpen [
 	self
 		assert: (server context textItem: 'src/myScript.st') class
 		equals: PLSScriptDocument
+]
+
+{ #category : 'test' }
+PLSServerTest >> testDidOpenMyTonelDocument [
+
+	self addMyTonelDocument.
+	self
+		assert:
+		(server context textItem: 'src/MyPackage/Benoit.class.st') class
+		equals: PLSTonelDocument
 ]
 
 { #category : 'test' }
