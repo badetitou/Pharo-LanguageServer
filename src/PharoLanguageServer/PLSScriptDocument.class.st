@@ -24,7 +24,7 @@ PLSScriptDocument class >> supportDocumentUri: aTextDocumentUri [
 PLSScriptDocument >> diagnostics [
 
 	^ ((PLSDiagnosticsParamsEngine document: self) requestor: self binder)
-		  computeDiagnostics asJRPCJSON
+		  computeDiagnostics asArray asJRPCJSON
 ]
 
 { #category : 'testing' }
