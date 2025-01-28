@@ -39,6 +39,11 @@ PLSServerCapabilities class >> forPharo [
 				   willSaveWaitUntil: false;
 				   change: PLSTextDocumentSyncKind full;
 				   yourself);
+		  diagnosticProvider: (PLSDiagnosticOptions new
+				   identifier: 'Pharo Language Server';
+				   interFileDependencies: true;
+				   workspaceDiagnostics: false;
+				   yourself) asJRPCJSON;
 		  typeDefinitionOptions: PLSTypeDefinitionOptions new;
 		  yourself
 ]
