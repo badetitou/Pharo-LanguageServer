@@ -77,16 +77,16 @@ PLSTonelDocument >> diagnostics [
 						                 end:
 							                 (self text toLineCharacter: errorDef endPos)) ])
 		               asOrderedCollection.
-	diagnostics addAll: (parsed
+	diagnostics addAll: ((parsed
 			 select: [ :el |
-			 el isMethodDefinition and: [ el isErrorDefinition not ] ]
-			 thenCollect: [ :el |
+			 el isMethodDefinition and: [ el isErrorDefinition not ] ])
+			 flatCollect: [ :el |
 				 ((PLSDiagnosticsParamsEngine new
 					   document: self;
 					   source: el source;
 					   sourceIsMethod: true;
-					   yourself) requestor: self binder) computeDiagnostics
-					 diagnostics collect: [ :diag |
+					   yourself) requestor: self binder) computeDiagnostics collect: [
+					 :diag |
 					 | lineCharMethod |
 					 lineCharMethod := self text toLineCharacter: el startPos.
 					 diag range start
@@ -98,7 +98,7 @@ PLSTonelDocument >> diagnostics [
 						 put:
 						 (diag range end at: #line) + (lineCharMethod at: #line) + 2.
 					 diag ] ]).
-	^  diagnostics
+	^ diagnostics
 ]
 
 { #category : 'testing' }

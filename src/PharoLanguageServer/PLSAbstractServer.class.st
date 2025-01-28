@@ -107,7 +107,7 @@ PLSAbstractServer >> documentDiagnosticFor: textDocument withIdentifier: identif
 	diagnosticsReport := PLSFullDocumentDiagnosticsReport new.
 	document := self context textItem: (textDocument at: #uri).
 	^ (diagnosticsReport
-		   items: document diagnostics;
+		   items: document diagnostics asArray;
 		   yourself) asJRPCJSON
 ]
 
