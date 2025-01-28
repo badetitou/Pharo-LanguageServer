@@ -141,6 +141,22 @@ PLSServerTest >> testDidOpenMyTonelDocument [
 		equals: PLSTonelDocument
 ]
 
+{ #category : 'tests' }
+PLSServerTest >> testDocumentSymbol [
+
+	| result |
+	self addMyTonelDocument.
+
+	result := server documentSymbol:
+		          { (#uri -> 'src/MyPackage/Benoit.class.st') } asDictionary.
+	self assert: result size equals: 1.
+	self assert: result anyOne kind equals: PLSSymbolKind classID.
+	self assert: result anyOne children size equals: 1.
+	self
+		assert: result anyOne children anyOne kind
+		equals: PLSSymbolKind method
+]
+
 { #category : 'test' }
 PLSServerTest >> testDocumentVariables [
 
