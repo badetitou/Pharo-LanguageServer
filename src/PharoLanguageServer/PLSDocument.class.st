@@ -103,16 +103,6 @@ PLSDocument >> initialize [
 	binder := PLSBinder new
 ]
 
-{ #category : 'testing' }
-PLSDocument >> isScriptDocument [
-	^ false
-]
-
-{ #category : 'testing' }
-PLSDocument >> isTonelDocument [
-	^ false
-]
-
 { #category : 'accessing' }
 PLSDocument >> languageId [
 	^ languageId

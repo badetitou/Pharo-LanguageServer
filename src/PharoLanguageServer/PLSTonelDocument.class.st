@@ -101,11 +101,6 @@ PLSTonelDocument >> diagnostics [
 	^ diagnostics
 ]
 
-{ #category : 'testing' }
-PLSTonelDocument >> isTonelDocument [
-	^ true
-]
-
 { #category : 'lsp - accessing' }
 PLSTonelDocument >> nodeAt: aPosition [
 

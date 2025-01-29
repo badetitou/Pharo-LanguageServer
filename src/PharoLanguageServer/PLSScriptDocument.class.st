@@ -28,11 +28,6 @@ PLSScriptDocument >> diagnostics [
 		  computeDiagnostics asArray asJRPCJSON
 ]
 
-{ #category : 'testing' }
-PLSScriptDocument >> isScriptDocument [
-	^ true
-]
-
 { #category : 'lsp - accessing' }
 PLSScriptDocument >> nodeAt: aPosition [
 	| positionChar |
