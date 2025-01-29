@@ -1,3 +1,14 @@
+"
+I represent a document inside the server.
+
+I do have many API endpoint for easy extension such as
+- `diagnostics`
+- `codeLens`
+- `symbols`
+
+You can extend them if you want to create several kind of document and analysis by document.
+But **do not modify** it in this class. It is the default format, so you will modify the analysis for every format possible
+"
 Class {
 	#name : 'PLSDocument',
 	#superclass : 'Object',
@@ -83,7 +94,8 @@ PLSDocument >> codeLens [
 { #category : 'diagnostics' }
 PLSDocument >> diagnostics [
 	"return a collection of diagnostic"
-	self subclassResponsibility
+
+	^ {  }
 ]
 
 { #category : 'initialization' }
@@ -130,7 +142,8 @@ PLSDocument >> server: anObject [
 
 { #category : 'lsp - accessing' }
 PLSDocument >> symbols [
-	^ {}
+
+	^ {  }
 ]
 
 { #category : 'accessing' }
