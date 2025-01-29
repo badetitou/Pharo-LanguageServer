@@ -264,6 +264,7 @@ PLSServer >> onInitializeTrace: trace processId: processId locale: locale client
 			 capabilities: (PLPClientCapabilities from: capabilities);
 			 rootUri: rootUri;
 			 yourself).
+	trace ifNotNil: [ self context traceValue: trace ].
 	^ PLSInitializeResult new
 ]
 

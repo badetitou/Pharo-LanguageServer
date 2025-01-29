@@ -1,5 +1,7 @@
 "
-The server use me to store informations such as the text item 
+The server use me to store informations such as the text item.
+
+- `traceValue` represent the level of trace sent to the client
 "
 Class {
 	#name : 'PLSContext',
@@ -8,7 +10,8 @@ Class {
 		'textItems',
 		'messageProcesses',
 		'clientContext',
-		'server'
+		'server',
+		'traceValue'
 	],
 	#category : 'PharoLanguageServer-Context',
 	#package : 'PharoLanguageServer',
@@ -37,8 +40,10 @@ PLSContext >> clientContext: anObject [
 
 { #category : 'initialization' }
 PLSContext >> initialize [
+
 	textItems := Dictionary new.
-	messageProcesses := Dictionary new
+	messageProcesses := Dictionary new.
+	traceValue := PLSTraceValue messages
 ]
 
 { #category : 'message processing' }
@@ -105,4 +110,16 @@ PLSContext >> textItems [
 { #category : 'text item' }
 PLSContext >> textItems: anObject [
 	textItems := anObject
+]
+
+{ #category : 'accessing' }
+PLSContext >> traceValue [
+
+	^ traceValue
+]
+
+{ #category : 'accessing' }
+PLSContext >> traceValue: anObject [
+
+	traceValue := anObject
 ]

@@ -297,12 +297,9 @@ PLSAbstractServer >> serverShutdown [
 
 { #category : 'lsp - trace' }
 PLSAbstractServer >> setTrace: setTraceParam [
-	<jrpc: #'$/setTrace'>
-]
 
-{ #category : 'lsp - trace' }
-PLSAbstractServer >> setTraceNotification: value [
-	<jrpc: #'$/setTraceNotification'>
+	<jrpc: #'$/setTrace' >
+	self context traceValue: (setTraceParam at: #value)
 ]
 
 { #category : 'lsp - show document' }
