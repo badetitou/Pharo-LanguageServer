@@ -63,13 +63,15 @@ String >> plsLinesDo: aBlock [
 
 { #category : '*PharoLanguageServer' }
 String >> plsToPosition: aLineCharacter [
+
 	| sum currentLine lines |
 	sum := aLineCharacter at: #character.
 	currentLine := 0.
 	lines := self plsLines.
-	[ currentLine < aLineCharacter at: #line ]
-		whileTrue: [ sum := sum + (lines at: currentLine + 1) size.
-			currentLine := currentLine + 1 ].
+	(lines size < aLineCharacter at: #line) ifTrue: [ ^ self size ].
+	[ currentLine < aLineCharacter at: #line ] whileTrue: [
+		sum := sum + (lines at: currentLine + 1) size.
+		currentLine := currentLine + 1 ].
 	^ sum
 ]
 

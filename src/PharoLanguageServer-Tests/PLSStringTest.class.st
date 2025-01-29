@@ -58,6 +58,19 @@ PLSStringTest >> testPlsToPositionOneEmptyLine [
 ]
 
 { #category : 'tests' }
+PLSStringTest >> testPlsToPositionOutOfBox [
+	self
+		assert:
+			('Object.
+
+hello := true.'
+				plsToPosition:
+					{(#line -> 10).
+					(#character -> 14)} asDictionary)
+		equals: 23
+]
+
+{ #category : 'tests' }
 PLSStringTest >> testPlsToPositionSeveralLines [
 	self
 		assert:
