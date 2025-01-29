@@ -362,11 +362,10 @@ PLSAbstractServer >> start [
 	self debugMode ifFalse: [ PLSUIManager withPLSServer: self ].
 	self initializeStreams.
 	currentId := 0.
-	process := [ 
-	           [ answerLoop ] whileTrue: [ 
+	process := [
+	           [ answerLoop ] whileTrue: [
 		           | request |
 		           request := self extractRequestFrom: clientInStream.
-		           ('Request: ' , request) recordDebug.
 		           self handleRequest: request toClient: clientOutStream ] ]
 		           forkAt: self answerLoopPriority
 		           named: 'JRPC TCP connection'
