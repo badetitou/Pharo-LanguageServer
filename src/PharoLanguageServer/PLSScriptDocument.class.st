@@ -10,14 +10,15 @@ Class {
 PLSScriptDocument class >> supportDocument: aTextDocument [
 	"I will be default one"
 
-	^ (aTextDocument at: #uri) endsWith: '.st'
+	^ ((aTextDocument at: #uri) endsWith: '.st') and: [
+		  (PLSTonelDocument supportDocument: aTextDocument) not ]
 ]
 
 { #category : 'as yet unclassified' }
 PLSScriptDocument class >> supportDocumentUri: aTextDocumentUri [
 	"I am the default one"
 
-	^ false
+	^ (aTextDocumentUri endsWith: '.st') and: [ (PLSTonelDocument supportDocumentUri: aTextDocumentUri) not ]
 ]
 
 { #category : 'diagnostics' }
