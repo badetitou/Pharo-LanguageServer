@@ -271,6 +271,16 @@ PLSAbstractServer >> sendDiagnosticsforDocument: document [
 		toClient: clientOutStream
 ]
 
+{ #category : 'lsp - telemetry' }
+PLSAbstractServer >> sendTelemetry: anObject [
+
+	self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method: 'telemetry/event') params:
+					  anObject) asJRPCJSON)
+		toClient: clientOutStream
+]
+
 { #category : 'lsp - initialization' }
 PLSAbstractServer >> serverInitialized [
 
