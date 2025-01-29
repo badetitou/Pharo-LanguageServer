@@ -29,6 +29,23 @@ PLSDocumentTest >> testCodeLens [
 ]
 
 { #category : 'tests' }
+PLSDocumentTest >> testCreateFromAURI [
+	
+	self assert: (PLSDocument fromURI: 'hello.xyz') class equals: PLSDocument
+]
+
+{ #category : 'tests' }
+PLSDocumentTest >> testCreateFromTextDocument [
+
+	self
+		assert: (PLSDocument from: {
+					 (#uri -> 'hello.xyz').
+					 (#languageId -> 'hello.xyz').
+					 (#version -> 1) } asDictionary) class
+		equals: PLSDocument
+]
+
+{ #category : 'tests' }
 PLSDocumentTest >> testDiagnostics [
 	"no diagnostics for generic document"
 

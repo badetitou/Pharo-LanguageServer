@@ -33,7 +33,7 @@ PLSDocument class >> from: aTextDocument [
 	clazz := self allSubclasses
 		         detect: [ :subclass |
 		         subclass supportDocument: aTextDocument ]
-		         ifNone: [ PLSScriptDocument ].
+		         ifNone: [ self ].
 	^ clazz fromDocumentDictionary: aTextDocument
 ]
 
@@ -56,7 +56,7 @@ PLSDocument class >> fromURI: aTextDocumentURI [
 	clazz := self allSubclasses
 		         detect: [ :subclass |
 		         subclass supportDocumentUri: aTextDocumentURI ]
-		         ifNone: [ PLSScriptDocument ].
+		         ifNone: [ self ].
 	^ clazz new
 		  uri: aTextDocumentURI;
 		  yourself

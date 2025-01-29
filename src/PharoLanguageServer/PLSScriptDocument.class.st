@@ -10,7 +10,7 @@ Class {
 PLSScriptDocument class >> supportDocument: aTextDocument [
 	"I will be default one"
 
-	^ false
+	^ (aTextDocument at: #uri) endsWith: '.st'
 ]
 
 { #category : 'as yet unclassified' }
