@@ -295,7 +295,7 @@ PLSAbstractServer >> sendDiagnosticsforDocument: document [
 
 { #category : 'lsp - telemetry' }
 PLSAbstractServer >> sendTelemetry: anObject [
-
+	"anObject must be an array or a dictionary (after asJRPCJSON)"
 	self
 		sendData: (self convertJRPCJsonableObjectToJSON:
 				 ((JRPCNotificationObject method: 'telemetry/event') params:
