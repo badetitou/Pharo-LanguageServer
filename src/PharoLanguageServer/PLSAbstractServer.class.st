@@ -178,6 +178,12 @@ PLSAbstractServer >> initializeStreams [
 			ofType: PLSMessageType info ]
 ]
 
+{ #category : 'lsp - trace' }
+PLSAbstractServer >> log: aString [
+
+	self logTrace: aString withAdditionnalInformation: ''
+]
+
 { #category : 'lsp - message' }
 PLSAbstractServer >> logMessage: aString ofType: messageType [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
@@ -189,6 +195,23 @@ PLSAbstractServer >> logMessage: aString ofType: messageType [
 					((JRPCNotificationObject method: 'window/logMessage')
 						params: (PLSLogMessage message: aString type: messageType))
 						asJRPCJSON)
+		toClient: clientOutStream
+]
+
+{ #category : 'lsp - trace' }
+PLSAbstractServer >> logTrace: aString withAdditionnalInformation: verboseString [
+	"A notification to log the trace of the server’s execution."
+
+	| trace |
+	self context traceValue = PLSTraceValue off ifTrue: [ ^ self ].
+	trace := PLSLogTraceParams new.
+	trace message: aString.
+	self context traceValue = PLSTraceValue verbose ifTrue: [
+		trace verbose: verboseString ].
+	self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method: '$/logTrace') params: trace)
+					 asJRPCJSON)
 		toClient: clientOutStream
 ]
 
@@ -249,8 +272,7 @@ PLSAbstractServer >> resetContext [
 { #category : 'starting' }
 PLSAbstractServer >> sendData: answer2 toClient: stream [
 
-	answer2 ifEmpty: [ self log: 'No Answser' ] ifNotEmpty: [
-		self log: 'Answer sent: ' , answer2.
+	answer2 ifNotEmpty: [
 		self getHeaderFor: answer2 into: stream.
 		stream << answer2 utf8Encoded.
 		stream flush ]
@@ -285,8 +307,7 @@ PLSAbstractServer >> sendTelemetry: anObject [
 PLSAbstractServer >> serverInitialized [
 
 	<jrpc: #initialized>
-	'Initialized' recordInfo.
-	self logMessage: 'Initialized' ofType: PLSMessageType info
+	self logTrace: 'initialized' withAdditionnalInformation: ''
 ]
 
 { #category : 'lsp - initialization' }
@@ -296,10 +317,10 @@ PLSAbstractServer >> serverShutdown [
 ]
 
 { #category : 'lsp - trace' }
-PLSAbstractServer >> setTrace: setTraceParam [
+PLSAbstractServer >> setTrace: value [
 
 	<jrpc: #'$/setTrace' >
-	self context traceValue: (setTraceParam at: #value)
+	self context traceValue: value
 ]
 
 { #category : 'lsp - show document' }
