@@ -62,6 +62,16 @@ String >> plsLinesDo: aBlock [
 ]
 
 { #category : '*PharoLanguageServer' }
+String >> plsSizeOfLine: aLineNumber [
+
+	| lines |
+	lines := self plsLines.
+	aLineNumber < 0 ifTrue: [ ^ lines anyOne size ].
+	lines size < aLineNumber ifTrue: [ ^ lines anyOne size ].
+	^ (lines at: aLineNumber + 1) size
+]
+
+{ #category : '*PharoLanguageServer' }
 String >> plsToPosition: aLineCharacter [
 
 	| sum currentLine lines |
