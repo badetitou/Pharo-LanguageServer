@@ -220,6 +220,16 @@ PLSAbstractServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
 ]
 
+{ #category : 'plp - base protocol' }
+PLSAbstractServer >> notifyMethod: aMethodString arguments: arguments [
+
+	self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method: aMethodString) params: arguments)
+					 asJRPCJSON)
+		toClient: clientOutStream
+]
+
 { #category : 'lsp - initialization' }
 PLSAbstractServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 	<jrpc: #initialize>
