@@ -15,6 +15,13 @@ PLPDummyServer >> longServerMethod [
 ]
 
 { #category : 'lsp - completion' }
+PLPDummyServer >> serverAnwserWithAccent [
+
+	<jrpc: #'plptest/frenchAccent'>
+	^ { (#answer -> 'écrit du çode bizarre') } asDictionary asJRPCJSON
+]
+
+{ #category : 'lsp - completion' }
 PLPDummyServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
 
 	<jrpc: #'textDocument/inlineCompletion'>

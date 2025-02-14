@@ -134,6 +134,19 @@ PLPTests >> testDidOpenTextDocument [
 ]
 
 { #category : 'running' }
+PLPTests >> testFrenchAccentUTF8 [
+	"I test that the client can cancel a long processing request of the server"
+
+	client start.
+	client sendAnwserWithAccent.
+	[ client answerProcessor answerHandlers isEmpty ] whileFalse.
+	[ server context messageProcesses isEmpty ] whileFalse.
+	self
+		assert: client receivedAnswer asByteArray
+		equals: 'écrit du çode bizarre' utf8Encoded
+]
+
+{ #category : 'running' }
 PLPTests >> testInitialize [
 
 	client start.
