@@ -425,13 +425,6 @@ PLSServer >> plsTestPackages [
 			   , '.class.st'"
 ]
 
-{ #category : 'lsp - initialization' }
-PLSServer >> serverShutdown [
-
-	<jrpc: #shutdown>
-	SmalltalkImage current snapshot: false andQuit: true
-]
-
 { #category : 'dap' }
 PLSServer >> startDapServer [
 	<jrpc: #'dap:startServer'>

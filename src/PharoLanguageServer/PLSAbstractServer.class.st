@@ -314,6 +314,13 @@ PLSAbstractServer >> sendTelemetry: anObject [
 ]
 
 { #category : 'lsp - initialization' }
+PLSAbstractServer >> serverExit [
+
+	<jrpc: #exit>
+	SmalltalkImage current snapshot: false andQuit: true
+]
+
+{ #category : 'lsp - initialization' }
 PLSAbstractServer >> serverInitialized [
 
 	<jrpc: #initialized>
@@ -322,8 +329,9 @@ PLSAbstractServer >> serverInitialized [
 
 { #category : 'lsp - initialization' }
 PLSAbstractServer >> serverShutdown [
+
 	<jrpc: #shutdown>
-	self subclassResponsibility
+	^ nil
 ]
 
 { #category : 'lsp - trace' }
