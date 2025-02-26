@@ -1,6 +1,7 @@
 Extension { #name : 'ReadWriteStream' }
 
 { #category : '*PharoLanguageProtocol' }
-ReadWriteStream >> waitForData [
-	[ position < readLimit ] whileFalse
+ReadWriteStream >> plpNext: numberOfData [
+	
+	^ self next: numberOfData
 ]

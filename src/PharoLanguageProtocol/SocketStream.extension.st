@@ -1,7 +1,7 @@
 Extension { #name : 'SocketStream' }
 
 { #category : '*PharoLanguageProtocol' }
-SocketStream >> waitForData [
+SocketStream >> plpNext: number [
 
-	[ self isDataAvailable ] whileFalse
+	^ self next: number
 ]

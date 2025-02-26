@@ -55,10 +55,7 @@ TPLPCommon >> extractRequestFrom: stream [
 	data := ''.
 	length := -1.
 	[ length = -1 and: [ answerLoop ] ] whileTrue: [
-		[
-		data ifEmpty: [
-			stream waitForData.
-			data := (stream next: 25) asString ] ]
+		[ data ifEmpty: [ data := stream plpNext: 25 ] ]
 			on: ConnectionTimedOut
 			do: [ self log: 'timeout but still work' ].
 		length := self extractLengthOf: data ].
