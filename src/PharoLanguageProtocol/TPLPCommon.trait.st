@@ -55,7 +55,10 @@ TPLPCommon >> extractRequestFrom: stream [
 	data := ''.
 	length := -1.
 	[ length = -1 and: [ answerLoop ] ] whileTrue: [
-		[ data ifEmpty: [ data := (stream next: 25) asString ] ]
+		[
+		data ifEmpty: [
+			stream waitForData.
+			data := (stream next: 25) asString ] ]
 			on: ConnectionTimedOut
 			do: [ self log: 'timeout but still work' ].
 		length := self extractLengthOf: data ].
@@ -134,7 +137,6 @@ TPLPCommon >> startAnswerLoop [
 	           [ answerLoop ] whileTrue: [
 		           | request |
 		           request := self extractRequestFrom: clientInStream.
-		           self log: 'Request: ' , request.
 		           self handleRequest: request toClient: clientOutStream ] ]
 		           forkAt: self answerLoopPriority
 		           named: 'JRPC TCP connection'
