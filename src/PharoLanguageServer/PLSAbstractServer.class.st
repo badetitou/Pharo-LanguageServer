@@ -86,6 +86,8 @@ PLSAbstractServer >> configDebugMode: debugMode [
 
 	<jrpc: #'pls:updateDebugMode'>
 	self debugMode: debugMode.
+	self answerLoopPriority: Processor lowestPriority.
+	process priority: self answerLoopPriority.
 	^ debugMode
 ]
 
