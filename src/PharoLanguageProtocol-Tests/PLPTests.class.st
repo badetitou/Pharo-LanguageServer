@@ -24,7 +24,6 @@ PLPTests >> setUp [
 
 	client := PLPDummyClient new.
 	server := PLPDummyServer new.
-	server debugMode: true.
 	server answerLoopPriority: Processor activeProcess priority.
 	client answerLoopPriority: Processor activeProcess priority.
 	serverProcess := [ server start ]
@@ -39,7 +38,7 @@ PLPTests >> setUp [
 { #category : 'running' }
 PLPTests >> tearDown [
 
-	serverProcess terminate.
+	serverProcess ifNotNil: [ :p | p terminate ].
 	server stop.
 	super tearDown
 ]
