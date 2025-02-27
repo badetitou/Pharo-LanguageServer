@@ -81,13 +81,14 @@ PLSAbstractServer >> codeLensTextDocument: textDocument [
 	^ (self context textItem: (textDocument at: #uri)) codeLens
 ]
 
-{ #category : 'pls - config' }
+{ #category : 'plp - debug' }
 PLSAbstractServer >> configDebugMode: debugMode [
 
 	<jrpc: #'pls:updateDebugMode'>
 	self debugMode: debugMode.
 	self answerLoopPriority: Processor lowestPriority.
-	process priority: self answerLoopPriority.
+	process ifNotNil: [ :aProcess |
+		aProcess priority: self answerLoopPriority ].
 	^ debugMode
 ]
 
