@@ -28,3 +28,15 @@ jobs:
       - run: smalltalkci -s ${{ matrix.smalltalk }}
         shell: bash
         timeout-minutes: 15
+
+      # Auto Reneraku
+      - name: Generate a token
+        id: generate-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.AUTO_RENERAKU_APP_ID }}
+          private-key: ${{ secrets.AUTO_RENERAKU_PRIVATE_KEY }}
+      - name: AutoReneraku
+        uses: badetitou/AutoReneraku@main
+        with:
+          pat:  ${{ steps.generate-token.outputs.token }}
