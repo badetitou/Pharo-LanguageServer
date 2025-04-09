@@ -36,6 +36,32 @@ PLSStringTest >> testPlsLinesTwoEmpty [
 ]
 
 { #category : 'tests' }
+PLSStringTest >> testPlsSizeOfLine [
+
+	self assert: ('123456789' plsSizeOfLine: 0) equals: 9
+]
+
+{ #category : 'tests' }
+PLSStringTest >> testPlsSizeOfLineOverflow [
+
+	self assert: ('123456789' plsSizeOfLine: 12) equals: 9
+]
+
+{ #category : 'tests' }
+PLSStringTest >> testPlsSizeOfLineSecondLine [
+
+	self assert: ('123456789
+12345678911' plsSizeOfLine: 1) equals: 11
+]
+
+{ #category : 'tests' }
+PLSStringTest >> testPlsSizeOfLineTooFew [
+
+	self assert: ('123456789
+12345678911' plsSizeOfLine: -12) equals: 10 "10 because includes the \n"
+]
+
+{ #category : 'tests' }
 PLSStringTest >> testPlsToPositionNoLine [
 	self
 		assert:
@@ -55,6 +81,19 @@ PLSStringTest >> testPlsToPositionOneEmptyLine [
 					{(#line -> 0).
 					(#character -> 0)} asDictionary)
 		equals: 0
+]
+
+{ #category : 'tests' }
+PLSStringTest >> testPlsToPositionOutOfBox [
+	self
+		assert:
+			('Object.
+
+hello := true.'
+				plsToPosition:
+					{(#line -> 10).
+					(#character -> 14)} asDictionary)
+		equals: 23
 ]
 
 { #category : 'tests' }

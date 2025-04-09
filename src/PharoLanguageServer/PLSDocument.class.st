@@ -1,3 +1,14 @@
+"
+I represent a document inside the server.
+
+I do have many API endpoint for easy extension such as
+- `diagnostics`
+- `codeLens`
+- `symbols`
+
+You can extend them if you want to create several kind of document and analysis by document.
+But **do not modify** it in this class. It is the default format, so you will modify the analysis for every format possible
+"
 Class {
 	#name : 'PLSDocument',
 	#superclass : 'Object',
@@ -6,7 +17,8 @@ Class {
 		'text',
 		'languageId',
 		'uri',
-		'binder'
+		'binder',
+		'server'
 	],
 	#category : 'PharoLanguageServer-Document',
 	#package : 'PharoLanguageServer',
@@ -17,23 +29,37 @@ Class {
 PLSDocument class >> from: aTextDocument [
 	"return a script document or a tonel document with the built from the textDocument dictionary"
 
-	^ (self isTonelDocument: aTextDocument)
-		ifTrue: [ PLSTonelDocument fromDocumentDictionary: aTextDocument ]
-		ifFalse: [ PLSScriptDocument fromDocumentDictionary: aTextDocument ]
+	| clazz |
+	clazz := self allSubclasses
+		         detect: [ :subclass |
+		         subclass supportDocument: aTextDocument ]
+		         ifNone: [ self ].
+	^ clazz fromDocumentDictionary: aTextDocument
 ]
 
 { #category : 'instance creation' }
 PLSDocument class >> fromDocumentDictionary: aDocumentDictionary [
-	self subclassResponsibility
+
+	^ self new
+		  version: (aDocumentDictionary at: #version);
+		  text: (aDocumentDictionary at: #text ifAbsent: '');
+		  languageId: (aDocumentDictionary at: #languageId ifAbsent: '');
+		  uri: (aDocumentDictionary at: #uri);
+		  yourself
 ]
 
 { #category : 'instance creation' }
 PLSDocument class >> fromURI: aTextDocumentURI [
 	"this is a backup solution"
 
-	^ (self isURIFromTonelDocument: aTextDocumentURI)
-		ifTrue: [ PLSTonelDocument new uri: aTextDocumentURI; yourself ]
-		ifFalse: [ PLSScriptDocument new uri: aTextDocumentURI; yourself ]
+	| clazz |
+	clazz := self allSubclasses
+		         detect: [ :subclass |
+		         subclass supportDocumentUri: aTextDocumentURI ]
+		         ifNone: [ self ].
+	^ clazz new
+		  uri: aTextDocumentURI;
+		  yourself
 ]
 
 { #category : 'instance creation' }
@@ -42,9 +68,17 @@ PLSDocument class >> isTonelDocument: textDocument [
 ]
 
 { #category : 'instance creation' }
-PLSDocument class >> isURIFromTonelDocument: textDocumentURI [
-	^ (textDocumentURI endsWith: 'class.st')
-		or: [ textDocumentURI endsWith: 'extension.st' ]
+PLSDocument class >> supportDocument: aTextDocument [
+	"return true if this class can host this kind of textDocument"
+
+	^ self subclassResponsibility
+]
+
+{ #category : 'instance creation' }
+PLSDocument class >> supportDocumentUri: aTextDocumentUri [
+	"return true if this class can host this kind of textDocument"
+
+	^ self subclassResponsibility
 ]
 
 { #category : 'accessing' }
@@ -52,29 +86,21 @@ PLSDocument >> binder [
 	^ binder
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : 'code lens' }
 PLSDocument >> codeLens [
 	^ {}
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : 'diagnostics' }
 PLSDocument >> diagnostics [
-	self subclassResponsibility
+	"return a collection of diagnostic"
+
+	^ {  }
 ]
 
-{ #category : 'accessing' }
+{ #category : 'initialization' }
 PLSDocument >> initialize [
 	binder := PLSBinder new
-]
-
-{ #category : 'testing' }
-PLSDocument >> isScriptDocument [
-	^ false
-]
-
-{ #category : 'testing' }
-PLSDocument >> isTonelDocument [
-	^ false
 ]
 
 { #category : 'accessing' }
@@ -92,9 +118,22 @@ PLSDocument >> nodeAt: aPosition [
 	self parsed
 ]
 
+{ #category : 'accessing' }
+PLSDocument >> server [
+
+	^ server
+]
+
+{ #category : 'accessing' }
+PLSDocument >> server: anObject [
+
+	server := anObject
+]
+
 { #category : 'lsp - accessing' }
 PLSDocument >> symbols [
-	^ {}
+
+	^ {  }
 ]
 
 { #category : 'accessing' }

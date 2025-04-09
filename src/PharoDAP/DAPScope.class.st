@@ -1,15 +1,17 @@
 Class {
-	#name : #DAPScope,
-	#superclass : #DAPJsonableObject,
+	#name : 'DAPScope',
+	#superclass : 'DAPJsonableObject',
 	#instVars : [
 		'name',
 		'variablesReference',
 		'expensive'
 	],
-	#category : #'PharoDAP-Types'
+	#category : 'PharoDAP-Types',
+	#package : 'PharoDAP',
+	#tag : 'Types'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScope >> asDAPJSON [
 	^ super asDAPJSON
 		at: #expensive put: self expensive;
@@ -18,39 +20,39 @@ DAPScope >> asDAPJSON [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScope >> expensive [
 	^ expensive
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScope >> expensive: anObject [
 	expensive := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScope >> initialize [ 
 	super initialize.
 	expensive := false
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScope >> name [
 	^ name
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScope >> name: anObject [
 	name := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScope >> variablesReference [
 	"the variables of this scope can be retrieved by passing the value of variablesReference to the VariablesRequest."
 	^ variablesReference
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScope >> variablesReference: anObject [
 	variablesReference := anObject
 ]

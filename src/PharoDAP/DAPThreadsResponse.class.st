@@ -1,13 +1,15 @@
 Class {
-	#name : #DAPThreadsResponse,
-	#superclass : #DAPResponse,
+	#name : 'DAPThreadsResponse',
+	#superclass : 'DAPResponse',
 	#instVars : [
 		'threads'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPThreadsResponse >> asDAPJSON [
 	| dic |
 	self body at: #threads put: threads asArray.
@@ -15,19 +17,19 @@ DAPThreadsResponse >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPThreadsResponse >> initialize [
 	super initialize.
 	body := Dictionary new.
 	threads := OrderedCollection new.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPThreadsResponse >> threads [
 	^ threads
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPThreadsResponse >> threads: anObject [
 	threads := anObject
 ]

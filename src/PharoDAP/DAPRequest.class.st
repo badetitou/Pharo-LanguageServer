@@ -1,14 +1,16 @@
 Class {
-	#name : #DAPRequest,
-	#superclass : #DAPMessage,
+	#name : 'DAPRequest',
+	#superclass : 'DAPMessage',
 	#instVars : [
 		'command',
 		'arguments'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 DAPRequest class >> newFromJSON: aJSONObject [
 	| deserializeMe |
 	deserializeMe := self new
@@ -20,32 +22,32 @@ DAPRequest class >> newFromJSON: aJSONObject [
 	^ deserializeMe
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPRequest >> arguments [
 	^ arguments
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPRequest >> arguments: anObject [
 	arguments := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPRequest >> command [
 	^ command
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPRequest >> command: anObject [
 	command := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPRequest >> convertErrorToResponse: anError [
 	^ DAPErrorResponse new 
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPRequest >> initialize [
 	super initialize.
 	type := 'request'

@@ -1,6 +1,6 @@
 Class {
-	#name : #DAPStoppedEvent,
-	#superclass : #DAPEvent,
+	#name : 'DAPStoppedEvent',
+	#superclass : 'DAPEvent',
 	#instVars : [
 		'description',
 		'reason',
@@ -9,20 +9,22 @@ Class {
 		'text',
 		'allThreadsStopped'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> allThreadsStopped [
 	^ allThreadsStopped ifNil:[ allThreadsStopped := true ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> allThreadsStopped: anObject [
 	allThreadsStopped := anObject
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 DAPStoppedEvent >> asDAPJSON [
 	| dic |
 	self body at: #reason put: self reason.
@@ -33,34 +35,34 @@ DAPStoppedEvent >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> description [
 	^ description
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> description: anObject [
 	description := anObject
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 DAPStoppedEvent >> initialize [
 	super initialize.
 	body := Dictionary new.
 	event := 'stopped'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> preserveFocusHint [
 	^ preserveFocusHint
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> preserveFocusHint: anObject [
 	preserveFocusHint := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> reason [
 	"'step' | 'breakpoint' | 'exception' | 'pause' | 'entry' | 'goto'
         | 'function breakpoint' | 'data breakpoint' | 'instruction breakpoint'
@@ -69,27 +71,27 @@ DAPStoppedEvent >> reason [
 	^ reason
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> reason: anObject [
 	reason := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> text [
 	^ text
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> text: anObject [
 	text := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> threadId [
 	^ threadId
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStoppedEvent >> threadId: anObject [
 	threadId := anObject
 ]

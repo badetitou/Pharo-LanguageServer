@@ -1,10 +1,12 @@
 Class {
-	#name : #DAPBreakpointEvent,
-	#superclass : #DAPEvent,
-	#category : #'PharoDAP-Structure'
+	#name : 'DAPBreakpointEvent',
+	#superclass : 'DAPEvent',
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #'instance creation' }
+{ #category : 'instance creation' }
 DAPBreakpointEvent class >> newFromABreakpoint: aBpDictionary [
 	| i |
 	i:= self new.
@@ -13,7 +15,7 @@ DAPBreakpointEvent class >> newFromABreakpoint: aBpDictionary [
 				
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPBreakpointEvent >> initialize [
 	super initialize.
 	self event: 'breakpoint'.

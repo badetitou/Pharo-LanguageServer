@@ -1,14 +1,16 @@
 Class {
-	#name : #DAPEvent,
-	#superclass : #DAPMessage,
+	#name : 'DAPEvent',
+	#superclass : 'DAPMessage',
 	#instVars : [
 		'event',
 		'body'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #converting }
+{ #category : 'converting' }
 DAPEvent >> asDAPJSON [
 	| dic |
 	dic := super asDAPJSON.
@@ -17,27 +19,27 @@ DAPEvent >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvent >> body [
 	^ body
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvent >> body: anObject [
 	body := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvent >> event [
 	^ event
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPEvent >> event: anObject [
 	event := anObject
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 DAPEvent >> initialize [
 	super initialize.
 	type := 'event'

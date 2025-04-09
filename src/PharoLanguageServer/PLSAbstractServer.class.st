@@ -74,11 +74,21 @@ PLSAbstractServer >> codeActionForDocument: textDocument atRange: range withCont
 
 ]
 
-{ #category : 'pls - config' }
+{ #category : 'lsp - code lens' }
+PLSAbstractServer >> codeLensTextDocument: textDocument [
+
+	<jrpc: #'textDocument/codeLens'>
+	^ (self context textItem: (textDocument at: #uri)) codeLens
+]
+
+{ #category : 'plp - debug' }
 PLSAbstractServer >> configDebugMode: debugMode [
 
 	<jrpc: #'pls:updateDebugMode'>
 	self debugMode: debugMode.
+	self answerLoopPriority: Processor lowestPriority.
+	process ifNotNil: [ :aProcess |
+		aProcess priority: self answerLoopPriority ].
 	^ debugMode
 ]
 
@@ -94,7 +104,15 @@ PLSAbstractServer >> defaultPort [
 
 { #category : 'lsp - diagnostics' }
 PLSAbstractServer >> documentDiagnosticFor: textDocument withIdentifier: identifier andPreviousResult: previousResultId [
+
 	<jrpc: #'textDocument/diagnostic'>
+	| diagnosticsReport document |
+	diagnosticsReport := PLSFullDocumentDiagnosticsReport new.
+	document := self context textItem: (textDocument at: #uri).
+
+	^ (diagnosticsReport
+		   items: document diagnostics asArray;
+		   yourself) asJRPCJSON
 ]
 
 { #category : 'starting' }
@@ -133,7 +151,7 @@ PLSAbstractServer >> initialize [
 	messageProcessor := PLSMessageProcessor new.
 	self addHandlersFromPragmasIn: self.
 	self debugMode: false.
-	serverContext := PLSContext new.
+	serverContext := PLSContext for: self.
 	withStdIO := false.
 	messagesProcesses := Dictionary new.
 	answerLoop := true.
@@ -163,6 +181,12 @@ PLSAbstractServer >> initializeStreams [
 			ofType: PLSMessageType info ]
 ]
 
+{ #category : 'lsp - trace' }
+PLSAbstractServer >> log: aString [
+
+	self logTrace: aString withAdditionnalInformation: ''
+]
+
 { #category : 'lsp - message' }
 PLSAbstractServer >> logMessage: aString ofType: messageType [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
@@ -177,9 +201,36 @@ PLSAbstractServer >> logMessage: aString ofType: messageType [
 		toClient: clientOutStream
 ]
 
+{ #category : 'lsp - trace' }
+PLSAbstractServer >> logTrace: aString withAdditionnalInformation: verboseString [
+	"A notification to log the trace of the server’s execution."
+
+	| trace |
+	self context traceValue = PLSTraceValue off ifTrue: [ ^ self ].
+	trace := PLSLogTraceParams new.
+	trace message: aString.
+	self context traceValue = PLSTraceValue verbose ifTrue: [
+		trace verbose: verboseString ].
+	self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method: '$/logTrace') params: trace)
+					 asJRPCJSON)
+		toClient: clientOutStream
+]
+
 { #category : 'context' }
 PLSAbstractServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
+]
+
+{ #category : 'plp - base protocol' }
+PLSAbstractServer >> notifyMethod: aMethodString arguments: arguments [
+
+	self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method: aMethodString) params: arguments)
+					 asJRPCJSON)
+		toClient: clientOutStream
 ]
 
 { #category : 'lsp - initialization' }
@@ -205,6 +256,22 @@ PLSAbstractServer >> port: anObject [
 	port := anObject
 ]
 
+{ #category : 'lsp - completion' }
+PLSAbstractServer >> postDealAnswer: answer [
+	"a utility method to remove markdown notation. Helpfull for some server that uses AI behind the scene"
+
+	(answer beginsWith: '```') ifTrue: [
+		| lines realAnswer |
+		lines := answer lines.
+		realAnswer := String streamContents: [ :str |
+			              lines
+				              from: 2
+				              to: lines size - 1
+				              do: [ :line | str << line ] ].
+		^ realAnswer trimBoth ].
+	^ answer trimBoth
+]
+
 { #category : 'context' }
 PLSAbstractServer >> removeMessageProcess: anId [
 	self context removeMessageProcess: anId
@@ -212,41 +279,69 @@ PLSAbstractServer >> removeMessageProcess: anId [
 
 { #category : 'context' }
 PLSAbstractServer >> resetContext [
-	serverContext := PLSContext new
+	serverContext := PLSContext for: self
 ]
 
 { #category : 'starting' }
 PLSAbstractServer >> sendData: answer2 toClient: stream [
 
-	answer2 ifEmpty: [ 'No Answser' recordInfo ] ifNotEmpty: [ 
-		('Answer sent: ' , answer2) recordInfo.
+	answer2 ifNotEmpty: [
 		self getHeaderFor: answer2 into: stream.
 		stream << answer2 utf8Encoded.
 		stream flush ]
+]
+
+{ #category : 'lsp - diagnostics' }
+PLSAbstractServer >> sendDiagnosticsforDocument: document [
+
+	self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method:
+					   'textDocument/publishDiagnostics') params:
+					  (PLSPublishDiagnosticsParams new
+						   diagnostics: document diagnostics;
+						   uri: document uri;
+						   version: document version;
+						   yourself)) asJRPCJSON)
+		toClient: clientOutStream
+]
+
+{ #category : 'lsp - telemetry' }
+PLSAbstractServer >> sendTelemetry: anObject [
+	"anObject must be an array or a dictionary (after asJRPCJSON)"
+	self
+		sendData: (self convertJRPCJsonableObjectToJSON:
+				 ((JRPCNotificationObject method: 'telemetry/event') params:
+					  anObject) asJRPCJSON)
+		toClient: clientOutStream
+]
+
+{ #category : 'lsp - initialization' }
+PLSAbstractServer >> serverExit [
+
+	<jrpc: #exit>
+	SmalltalkImage current snapshot: false andQuit: true
 ]
 
 { #category : 'lsp - initialization' }
 PLSAbstractServer >> serverInitialized [
 
 	<jrpc: #initialized>
-	'Initialized' recordInfo.
-	self logMessage: 'Initialized' ofType: PLSMessageType info
+	self logTrace: 'initialized' withAdditionnalInformation: ''
 ]
 
 { #category : 'lsp - initialization' }
 PLSAbstractServer >> serverShutdown [
+
 	<jrpc: #shutdown>
-	self subclassResponsibility
+	^ nil
 ]
 
 { #category : 'lsp - trace' }
-PLSAbstractServer >> setTrace: setTraceParam [
-	<jrpc: #'$/setTrace'>
-]
+PLSAbstractServer >> setTrace: value [
 
-{ #category : 'lsp - trace' }
-PLSAbstractServer >> setTraceNotification: value [
-	<jrpc: #'$/setTraceNotification'>
+	<jrpc: #'$/setTrace' >
+	self context traceValue: value
 ]
 
 { #category : 'lsp - show document' }
@@ -288,14 +383,7 @@ PLSAbstractServer >> start [
 	self debugMode ifFalse: [ PLSUIManager withPLSServer: self ].
 	self initializeStreams.
 	currentId := 0.
-	process := [ 
-	           [ answerLoop ] whileTrue: [ 
-		           | request |
-		           request := self extractRequestFrom: clientInStream.
-		           ('Request: ' , request) recordDebug.
-		           self handleRequest: request toClient: clientOutStream ] ]
-		           forkAt: self answerLoopPriority
-		           named: 'JRPC TCP connection'
+	self startAnswerLoop
 ]
 
 { #category : 'stopping' }

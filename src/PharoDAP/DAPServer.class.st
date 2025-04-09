@@ -1,6 +1,6 @@
 Class {
-	#name : #DAPServer,
-	#superclass : #Object,
+	#name : 'DAPServer',
+	#superclass : 'Object',
 	#instVars : [
 		'tcpServer',
 		'serverLoop',
@@ -29,15 +29,16 @@ Class {
 		'justMyCode',
 		'shouldStop'
 	],
-	#category : #PharoDAP
+	#category : 'PharoDAP',
+	#package : 'PharoDAP'
 }
 
-{ #category : #'handlers management' }
+{ #category : 'handlers management' }
 DAPServer >> addHandler: aDAPHandler [
 	handlers add: aDAPHandler
 ]
 
-{ #category : #'handlers management' }
+{ #category : 'handlers management' }
 DAPServer >> addHandlersFromPragmasIn: handlerInstance [
 	(Pragma allNamed: #dap: in: handlerInstance class)
 		do: [ :pragma | 
@@ -50,13 +51,13 @@ DAPServer >> addHandlersFromPragmasIn: handlerInstance [
 						yourself) ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> breakpoints [ 
 	"breakpoint is a source->breakpoints array dictionary"
 	^ breakpoints ifNil:[ breakpoints := Dictionary new ]
 ]
 
-{ #category : #'debugger support' }
+{ #category : 'debugger support' }
 DAPServer >> compilerFor: fileURI [
 
 	| compi |
@@ -66,23 +67,23 @@ DAPServer >> compilerFor: fileURI [
 	^ compi
 ]
 
-{ #category : #context }
+{ #category : 'context' }
 DAPServer >> context [
 	^ serverContext
 ]
 
-{ #category : #'handlers management' }
+{ #category : 'handlers management' }
 DAPServer >> convertDAPJsonableObjectToJSON: aDAPJsonableObject [
 	^ String streamContents: [ :stream |
 		self convertDAPJsonableObjectToJSON: aDAPJsonableObject asDAPJSON on: stream ]
 ]
 
-{ #category : #'handlers management' }
+{ #category : 'handlers management' }
 DAPServer >> convertDAPJsonableObjectToJSON: aDAPJsonableObject on: stream [
 	STONJSON put: aDAPJsonableObject onStream: stream
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapAttach: aDAPRequest [
 
 	"Send that I receive  the initialize"
@@ -96,7 +97,7 @@ DAPServer >> dapAttach: aDAPRequest [
 	self sendMessage: DAPAttachEvent new
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapConfigurationDone: aDAPConfigurationDoneRequest [
 
 	<dap: #configurationDone>
@@ -106,7 +107,7 @@ DAPServer >> dapConfigurationDone: aDAPConfigurationDoneRequest [
 			 command: aDAPConfigurationDoneRequest command)
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapContinue: aDAPContinueRequest [
 
 	<dap: #continue>
@@ -124,7 +125,7 @@ DAPServer >> dapContinue: aDAPContinueRequest [
 	debugSession resume
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapDisconnect: aDAPDisconnectRequest [
 
 	<dap: #disconnect>
@@ -147,7 +148,7 @@ DAPServer >> dapDisconnect: aDAPDisconnectRequest [
 		self stop ]
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapEvaluate: aDAPEvaluateRequest [
 	<dap: #evaluate>
 	| localContext expression localCompiler |
@@ -169,7 +170,7 @@ DAPServer >> dapEvaluate: aDAPEvaluateRequest [
 				variablesReference: 0)
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapInitialize: aDAPRequest [
 	"Send that I receive  the initialize"
 
@@ -184,7 +185,7 @@ DAPServer >> dapInitialize: aDAPRequest [
 	self sendMessage: DAPInitializedEvent new
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapLaunch: aDAPLaunchRequest [
 
 	<dap: #launch>
@@ -222,7 +223,7 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 	self sendMessage: DAPTerminatedEvent new
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapNext: aDAPNextRequest [
 	"Send that I receive  the initialize"
 
@@ -253,7 +254,7 @@ DAPServer >> dapNext: aDAPNextRequest [
 				yourself).
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapScopes: aDAPScopesRequest [
 
 	<dap: #scopes>
@@ -284,7 +285,7 @@ DAPServer >> dapScopes: aDAPScopesRequest [
 	self sendMessage: response
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapSetBreakpoints: aDAPSetBreakpointsRequest [
 
 	<dap: #setBreakpoints>
@@ -323,7 +324,7 @@ DAPServer >> dapSetBreakpoints: aDAPSetBreakpointsRequest [
 		named: #transaction
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [ 
 	<dap: #setExceptionBreakpoints>
 	self
@@ -335,7 +336,7 @@ DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [
 				body: DAPSetExceptionBreakpointsResponse new).
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapSource: aDAPSourceRequest [
 
 	<dap: #source>
@@ -355,7 +356,7 @@ DAPServer >> dapSource: aDAPSourceRequest [
 			 yourself)
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 
 	<dap: #stackTrace>
@@ -401,7 +402,7 @@ DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 	self sendMessage: response
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapStepIn: aDAPStepInRequest [
 	"Send that I receive  the initialize"
 
@@ -431,7 +432,7 @@ DAPServer >> dapStepIn: aDAPStepInRequest [
 				yourself).
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapStepOut: aDAPStepOutRequest [
 	"Send that I receive  the initialize"
 
@@ -460,7 +461,7 @@ DAPServer >> dapStepOut: aDAPStepOutRequest [
 				yourself).
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapThreads: aDAPThreadsRequest [
 
 	<dap: #threads>
@@ -479,7 +480,7 @@ DAPServer >> dapThreads: aDAPThreadsRequest [
 	self sendMessage: response
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> dapVariables: aDAPVariablesRequest [
 
 	<dap: #variables>
@@ -497,17 +498,17 @@ DAPServer >> dapVariables: aDAPVariablesRequest [
 			 yourself)
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> debugMode [
 	^ debugMode
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> debugMode: anObject [
 	debugMode := anObject
 ]
 
-{ #category : #'debugger support' }
+{ #category : 'debugger support' }
 DAPServer >> debugSession: aDebugSession [
 
 	'Start debug session' record.
@@ -521,15 +522,15 @@ DAPServer >> debugSession: aDebugSession [
 			 yourself)
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> extractLengthOf: aData [
 	(aData beginsWith: 'Content-Length: ')
 		ifTrue:
-			[ ^ (aData copyFrom: 16 to: (aData indexOf: Character cr)) asInteger ]
+			[ ^ aData asInteger ]
 		ifFalse: [ ^ -1 ]
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> extractRequestFrom: clientSocket [
 	| length startingPoint endPoint result |
 	"data is the current buffer state"
@@ -559,12 +560,12 @@ DAPServer >> extractRequestFrom: clientSocket [
 	^ result
 ]
 
-{ #category : #dap }
+{ #category : 'dap' }
 DAPServer >> fileNameForCode: aName [
 	^ ''
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> getAllBreakpoints [ 
 	"breakpoint is a source->breakpoints array dictionary"
 	| oc |
@@ -576,25 +577,25 @@ DAPServer >> getAllBreakpoints [
 	
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> getDatafromPosition: startingPoint fromSocket: clientSocket in: existingData [
 	clientSocket receiveDataInto: existingData startingAt: startingPoint
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> getHeaderFor: answer into: aStream [
 	aStream << 'Content-Length: ' << answer size asString << String crlf
 		<< String crlf
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> getStacks [ 
 
 	^ debugSession stackOfSize: self numberOfStacks.
 
 ]
 
-{ #category : #'debugger support' }
+{ #category : 'debugger support' }
 DAPServer >> handleException: exception ofProcess: aProcess [
 	'DAP handleException:ofProcess:' record.
 	debugSession := DebugSession new
@@ -611,7 +612,7 @@ DAPServer >> handleException: exception ofProcess: aProcess [
 				yourself)
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> handleRequest: aDAPRequest [
 	[ | handler |
 	handler := self handlerFor: aDAPRequest.
@@ -623,7 +624,7 @@ DAPServer >> handleRequest: aDAPRequest [
 				ifFalse: [ self sendMessage: (aDAPRequest convertErrorToResponse: dapError) ] ]
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> handleRequest: request toClient: clientSocket [
 	| dapMessage |
 	dapMessage := [ self parseJSON: request ]
@@ -638,7 +639,7 @@ DAPServer >> handleRequest: request toClient: clientSocket [
 				named: dapMessage command)
 ]
 
-{ #category : #'handlers management' }
+{ #category : 'handlers management' }
 DAPServer >> handlerFor: aDAPRequest [
 	aDAPRequest command isString
 		ifFalse: [ DAPIncorrectJSON signal ].
@@ -647,7 +648,7 @@ DAPServer >> handlerFor: aDAPRequest [
 		ifNone: [ DAPNonExistentHandler signal: aDAPRequest command ]
 ]
 
-{ #category : #initialize }
+{ #category : 'initialize' }
 DAPServer >> initialize [
 	serverContext := DAPContext new.
 	data := ''.
@@ -665,7 +666,7 @@ DAPServer >> initialize [
 	
 ]
 
-{ #category : #'debugger support' }
+{ #category : 'debugger support' }
 DAPServer >> insertBestHaltOn: sourceLines at: line [ 
 
 		| sourceLineBefore |
@@ -682,7 +683,7 @@ DAPServer >> insertBestHaltOn: sourceLines at: line [
 			ifFalse:[ 	self insertBestHaltOn: sourceLines at: (line -1) ] ] ]
 ]
 
-{ #category : #'debugger support' }
+{ #category : 'debugger support' }
 DAPServer >> insertHaltsIn: source using:breakpointList [
 	| sourceLines stream |
 	sourceLines := source deepCopy findTokens: String lf.
@@ -694,64 +695,64 @@ DAPServer >> insertHaltsIn: source using:breakpointList [
 	^ stream contents
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> isJustMyCode [
 	^ justMyCode ifNil:[ justMyCode:= false ]
 ]
 
-{ #category : #'debugger support' }
+{ #category : 'debugger support' }
 DAPServer >> isObsolete [
 	^ true
 ]
 
-{ #category : #testing }
+{ #category : 'testing' }
 DAPServer >> isRunning [
 	^ serverLoop
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> justMyCode [
 	justMyCode := true
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> lineOffset [
 
 	^ lineOffset ifNil:[ lineOffset := 0 ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> lineOffset: anObject [
 
 	lineOffset := anObject
 ]
 
-{ #category : #context }
+{ #category : 'context' }
 DAPServer >> messageProcess: anId [	
 	^ self context messageProcessesAt: anId 
 ]
 
-{ #category : #context }
+{ #category : 'context' }
 DAPServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> nextSeq [
 	^ current_seq := current_seq + 1
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> numberOfStacks [
 	^ numberOfStacks ifNil:[ numberOfStacks := 10 ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> numberOfStacks: anInteger [
 	numberOfStacks := anInteger
 ]
 
-{ #category : #'debugger support' }
+{ #category : 'debugger support' }
 DAPServer >> openOn: aDebugSession withFullView: bool andNotification: notification [
 	debugSession := aDebugSession.
 	'Open debug' record.
@@ -764,14 +765,14 @@ DAPServer >> openOn: aDebugSession withFullView: bool andNotification: notificat
 				yourself)
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> parseJSON: aJSONString [
 	| jsonObject |
 	jsonObject := STONJSON fromString: aJSONString.
 	^ DAPRequest newFromJSON: jsonObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> pluggableCompilationBlock [
 
 	^ pluggableEvaluationBlock ifNil: [ 
@@ -781,29 +782,29 @@ DAPServer >> pluggableCompilationBlock [
 			                              compile ] ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> pluggableCompilationBlock: aOneArgBlock [
 	pluggableEvaluationBlockSender := thisContext sender. 
 	pluggableEvaluationBlock := aOneArgBlock
 ]
 
-{ #category : #context }
+{ #category : 'context' }
 DAPServer >> removeMessageProcess: anId [
 	self context removeMessageProcess: anId
 ]
 
-{ #category : #cache }
+{ #category : 'cache' }
 DAPServer >> resetCache [
 	variablesReferenceCache removeAll.
 	sourcesReferenceCache removeAll
 ]
 
-{ #category : #context }
+{ #category : 'context' }
 DAPServer >> resetContext [
 	serverContext := DAPContext new
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> sendData: answer toClient: clientSocket [
 	answer
 		ifNotEmpty: [ clientSocket
@@ -814,12 +815,12 @@ DAPServer >> sendData: answer toClient: clientSocket [
 							contentStream << answer ]) ]
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> sendMessage: aDAPMessage [
 	self sendData: (aDAPMessage beConvertedBy: self) toClient: socketClient
 ]
 
-{ #category : #'debugger support' }
+{ #category : 'debugger support' }
 DAPServer >> setBreakpoints: breakpointList inCompiledMethod: aCompiledMethod [
 	| breakpoint |
 	'Set breakpoint' record.
@@ -832,7 +833,7 @@ DAPServer >> setBreakpoints: breakpointList inCompiledMethod: aCompiledMethod [
 	
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> shouldStop [
 
 	"this variable should be at true when the execution is over"
@@ -840,13 +841,13 @@ DAPServer >> shouldStop [
 	^ shouldStop ifNil: [ ^ false ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> shouldStop: anObject [
 
 	shouldStop := anObject
 ]
 
-{ #category : #starting }
+{ #category : 'starting' }
 DAPServer >> start [
 	tcpServer := Socket newTCP.
 	tcpServer listenOn: 0 backlogSize: 10.
@@ -866,7 +867,7 @@ DAPServer >> start [
 	^ tcpServer localPort
 ]
 
-{ #category : #stopping }
+{ #category : 'stopping' }
 DAPServer >> stop [
 	serverLoop := false.
 	tcpServer closeAndDestroy.
@@ -877,12 +878,12 @@ DAPServer >> stop [
 	process terminate
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> threads [
 	^ threads
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPServer >> threads: anObject [
 	threads := anObject
 ]

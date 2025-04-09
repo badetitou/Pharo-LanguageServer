@@ -17,7 +17,7 @@ PLSFullDocumentDiagnosticsReport >> asJRPCJSON [
 	| dic |
 	dic := { 
 		       (#kind -> self kind asJRPCJSON).
-		       (#items -> self items asJRPCJSON) } asDictionary.
+		       (#items -> (self items collect: #asJRPCJSON)) } asDictionary.
 	self resultId ifNotNil: [ 
 		dic at: #resultId put: self resultId asJRPCJSON ].
 	^ dic

@@ -1,6 +1,6 @@
-Extension { #name : #Error }
+Extension { #name : 'Error' }
 
-{ #category : #'*PharoDAP' }
+{ #category : '*PharoDAP' }
 Error >> asDAPResponse [
 	^ { } asDictionary
 ]

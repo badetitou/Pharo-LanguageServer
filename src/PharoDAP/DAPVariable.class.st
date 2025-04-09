@@ -1,15 +1,17 @@
 Class {
-	#name : #DAPVariable,
-	#superclass : #DAPJsonableObject,
+	#name : 'DAPVariable',
+	#superclass : 'DAPJsonableObject',
 	#instVars : [
 		'name',
 		'value',
 		'variablesReference'
 	],
-	#category : #'PharoDAP-Types'
+	#category : 'PharoDAP-Types',
+	#package : 'PharoDAP',
+	#tag : 'Types'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariable >> asDAPJSON [
 	^ super asDAPJSON
 		at: #name put: self name;
@@ -18,32 +20,32 @@ DAPVariable >> asDAPJSON [
 		yourself
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariable >> name [
 	^ name
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariable >> name: anObject [
 	name := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariable >> value1 [
 	^ value
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariable >> value: anObject [
 	value := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariable >> variablesReference [
 	^ variablesReference
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPVariable >> variablesReference: anObject [
 	variablesReference := anObject
 ]

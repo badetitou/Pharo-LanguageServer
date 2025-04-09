@@ -1,6 +1,6 @@
-Extension { #name : #Boolean }
+Extension { #name : 'Boolean' }
 
-{ #category : #'*PharoDAP' }
+{ #category : '*PharoDAP' }
 Boolean >> asDAPJSON [
 	^ self
 ]

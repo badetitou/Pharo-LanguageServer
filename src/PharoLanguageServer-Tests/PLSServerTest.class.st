@@ -12,6 +12,31 @@ Class {
 }
 
 { #category : 'running - additional setup' }
+PLSServerTest >> addMyMalformedTonelDocument [
+	"missing the last ]"
+
+	| textDocument |
+	textDocument := Dictionary new.
+	textDocument at: #uri put: 'src/MyPackage/Benoit.class.st'.
+	textDocument at: #version put: '1'.
+	textDocument at: #languageId put: 'pharo'.
+	textDocument at: #text put: '"I am benoit"
+Class {
+	#name: #Benoit,
+	#superclass: #Object,
+	#instVars: [ ],
+	#category : #''MyPackage''
+}
+
+{ #category : #accessing }
+Benoit >> myMethod [
+	^ ''hello''
+'.
+
+	server didOpen: textDocument
+]
+
+{ #category : 'running - additional setup' }
 PLSServerTest >> addMyScriptDocument [
 
 	| textDocument |
@@ -21,6 +46,30 @@ PLSServerTest >> addMyScriptDocument [
 	textDocument at: #languageId put: 'pharo'.
 	textDocument at: #text put: '1 + 1.
 object := Object new'.
+
+	server didOpen: textDocument
+]
+
+{ #category : 'running - additional setup' }
+PLSServerTest >> addMyTonelDocument [
+
+	| textDocument |
+	textDocument := Dictionary new.
+	textDocument at: #uri put: 'src/MyPackage/Benoit.class.st'.
+	textDocument at: #version put: '1'.
+	textDocument at: #languageId put: 'pharo'.
+	textDocument at: #text put: '"I am benoit"
+Class {
+	#name: #Benoit,
+	#superclass: #Object,
+	#instVars: [ ],
+	#category : #''MyPackage''
+}
+
+{ #category : #accessing }
+Benoit >> myMethod [
+	^ ''hello''
+]'.
 
 	server didOpen: textDocument
 ]
@@ -108,6 +157,58 @@ PLSServerTest >> testDidOpen [
 ]
 
 { #category : 'test' }
+PLSServerTest >> testDidOpenMyTonelDocument [
+
+	self addMyTonelDocument.
+	self
+		assert:
+		(server context textItem: 'src/MyPackage/Benoit.class.st') class
+		equals: PLSTonelDocument
+]
+
+{ #category : 'tests' }
+PLSServerTest >> testDocumentDiagnostics [
+
+	| result diagnostic |
+	self addMyMalformedTonelDocument.
+
+	result := server
+		          documentDiagnosticFor:
+		          { (#uri -> 'src/MyPackage/Benoit.class.st') } asDictionary
+		          withIdentifier: nil
+		          andPreviousResult: nil.
+	self assert: (result at: #items) size equals: 1.
+	diagnostic := (result at: #items) anyOne.
+	self assert: (diagnostic at: #source) equals: 'Pharo Language Server'.
+	self
+		assert: ((diagnostic at: #range) at: #start at: #line)
+		equals: 10.
+	self
+		assert: ((diagnostic at: #range) at: #start at: #character)
+		equals: 10.
+	self assert: ((diagnostic at: #range) at: #end at: #line) equals: 10.
+	self
+		assert: ((diagnostic at: #range) at: #end at: #character)
+		equals: 10
+]
+
+{ #category : 'tests' }
+PLSServerTest >> testDocumentSymbol [
+
+	| result |
+	self addMyTonelDocument.
+
+	result := server documentSymbol:
+		          { (#uri -> 'src/MyPackage/Benoit.class.st') } asDictionary.
+	self assert: result size equals: 1.
+	self assert: result anyOne kind equals: PLSSymbolKind classID.
+	self assert: result anyOne children size equals: 1.
+	self
+		assert: result anyOne children anyOne kind
+		equals: PLSSymbolKind method
+]
+
+{ #category : 'test' }
 PLSServerTest >> testDocumentVariables [
 
 	| result |
@@ -123,6 +224,36 @@ PLSServerTest >> testDocumentVariables [
 		assert:
 		((result detect: [ :r | (r at: #name) = '#hello' ]) at: #value)
 		equals: '12'
+]
+
+{ #category : 'tests' }
+PLSServerTest >> testPostDealAnswer [
+
+	| aiResult |
+	aiResult := '```st
+	hello := 1 + 2
+	```'.
+	self
+		assert: (server postDealAnswer: aiResult)
+		equals: 'hello := 1 + 2'
+]
+
+{ #category : 'tests' }
+PLSServerTest >> testPostDealAnswerNoChange [
+
+	| aiResult |
+	aiResult := 'hello := 1 + 2'.
+	self
+		assert: (server postDealAnswer: aiResult)
+		equals: 'hello := 1 + 2'
+]
+
+{ #category : 'tests' }
+PLSServerTest >> testServerShutdown [
+
+	| shutdownAnswer |
+	shutdownAnswer := server serverShutdown.
+	self assert: shutdownAnswer equals: nil
 ]
 
 { #category : 'test' }

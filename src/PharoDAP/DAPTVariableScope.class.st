@@ -1,10 +1,12 @@
 Class {
-	#name : #DAPTVariableScope,
-	#superclass : #DAPTScope,
-	#category : #'PharoDAP-Types-Extension'
+	#name : 'DAPTVariableScope',
+	#superclass : 'DAPTScope',
+	#category : 'PharoDAP-Types-Extension',
+	#package : 'PharoDAP',
+	#tag : 'Types-Extension'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 DAPTVariableScope >> getDAPVariablesInContent: context [
 	^ self scope class allInstVarNames
 		collectWithIndex: [ :ivName :index | 

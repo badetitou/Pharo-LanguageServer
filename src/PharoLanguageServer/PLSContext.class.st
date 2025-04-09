@@ -1,5 +1,7 @@
 "
-The server use me to store informations such as the text item 
+The server use me to store informations such as the text item.
+
+- `traceValue` represent the level of trace sent to the client
 "
 Class {
 	#name : 'PLSContext',
@@ -7,12 +9,22 @@ Class {
 	#instVars : [
 		'textItems',
 		'messageProcesses',
-		'clientContext'
+		'clientContext',
+		'server',
+		'traceValue'
 	],
 	#category : 'PharoLanguageServer-Context',
 	#package : 'PharoLanguageServer',
 	#tag : 'Context'
 }
+
+{ #category : 'instance creation' }
+PLSContext class >> for: aServer [
+
+	^ self new
+		  server: aServer;
+		  yourself
+]
 
 { #category : 'accessing' }
 PLSContext >> clientContext [
@@ -28,8 +40,10 @@ PLSContext >> clientContext: anObject [
 
 { #category : 'initialization' }
 PLSContext >> initialize [
+
 	textItems := Dictionary new.
-	messageProcesses := Dictionary new
+	messageProcesses := Dictionary new.
+	traceValue := PLSTraceValue messages
 ]
 
 { #category : 'message processing' }
@@ -57,9 +71,25 @@ PLSContext >> removeMessageProcess: anId [
 	anId ifNotNil: [ self messageProcesses removeKey: anId ]
 ]
 
+{ #category : 'accessing' }
+PLSContext >> server [
+
+	^ server
+]
+
+{ #category : 'accessing' }
+PLSContext >> server: anObject [
+
+	server := anObject
+]
+
 { #category : 'text item' }
 PLSContext >> textItem: aURI [
-	^ self textItems at: aURI ifAbsentPut: [ PLSDocument fromURI: aURI ]
+
+	^ self textItems at: aURI ifAbsentPut: [
+		  (PLSDocument fromURI: aURI)
+			  server: self server;
+			  yourself ]
 ]
 
 { #category : 'text item' }
@@ -80,4 +110,16 @@ PLSContext >> textItems [
 { #category : 'text item' }
 PLSContext >> textItems: anObject [
 	textItems := anObject
+]
+
+{ #category : 'accessing' }
+PLSContext >> traceValue [
+
+	^ traceValue
+]
+
+{ #category : 'accessing' }
+PLSContext >> traceValue: anObject [
+
+	traceValue := anObject
 ]

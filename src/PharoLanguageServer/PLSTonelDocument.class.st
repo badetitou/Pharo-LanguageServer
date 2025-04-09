@@ -6,14 +6,20 @@ Class {
 	#tag : 'Document'
 }
 
-{ #category : 'instance creation' }
-PLSTonelDocument class >> fromDocumentDictionary: aDocumentDictionary [
-	^ self new
-		version: (aDocumentDictionary at: #version);
-		text: (aDocumentDictionary at: #text);
-		languageId: (aDocumentDictionary at: #languageId);
-		uri: (aDocumentDictionary at: #uri);
-		yourself
+{ #category : 'as yet unclassified' }
+PLSTonelDocument class >> supportDocument: aTextDocument [
+	"return true if this class can host this kind of textDocument"
+
+	^ ((aTextDocument at: #uri) endsWith: 'class.st') or: [
+		  (aTextDocument at: #uri) endsWith: 'extension.st' ]
+]
+
+{ #category : 'as yet unclassified' }
+PLSTonelDocument class >> supportDocumentUri: aTextDocumentUri [
+	"return true if this class can host this kind of textDocument"
+
+	^ (aTextDocumentUri endsWith: 'class.st') or: [
+		  aTextDocumentUri endsWith: 'extension.st' ]
 ]
 
 { #category : 'lsp - accessing' }
@@ -54,41 +60,45 @@ PLSTonelDocument >> codeLens [
 				     arguments: { className })) }) asArray
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : 'diagnostics' }
 PLSTonelDocument >> diagnostics [
 
 	| diagnostics parsed |
 	parsed := self parsed.
 	diagnostics := (parsed
-		                select: [ :el | el isMethodDefinition and: [ el isErrorDefinition ] ]
-		                thenCollect: [ :errorDef | 
+		                select: [ :el |
+		                el isMethodDefinition and: [ el isErrorDefinition ] ]
+		                thenCollect: [ :errorDef |
 			                PLSDiagnostic new
 				                message: #'error in method definition';
-				                range: (PLSRange start: (self text toLineCharacter: errorDef startPos) end: (self text toLineCharacter: errorDef endPos)) ])
+				                range: (PLSRange
+						                 start:
+							                 (self text toLineCharacter: errorDef startPos)
+						                 end:
+							                 (self text toLineCharacter: errorDef endPos)) ])
 		               asOrderedCollection.
-	diagnostics addAll: (parsed
-			 select: [ :el | el isMethodDefinition and: [ el isErrorDefinition not ] ]
-			 thenCollect: [ :el | 
+	diagnostics addAll: ((parsed
+			 select: [ :el |
+			 el isMethodDefinition and: [ el isErrorDefinition not ] ])
+			 flatCollect: [ :el |
 				 ((PLSDiagnosticsParamsEngine new
 					   document: self;
 					   source: el source;
 					   sourceIsMethod: true;
-					   yourself) requestor: self binder) computeDiagnostics diagnostics collect: [ :diag | 
+					   yourself) requestor: self binder) computeDiagnostics collect: [
+					 :diag |
 					 | lineCharMethod |
 					 lineCharMethod := self text toLineCharacter: el startPos.
-					 diag range start at: #line put: (diag range start at: #line) + (lineCharMethod at: #line) + 2.
-					 diag range end at: #line put: (diag range end at: #line) + (lineCharMethod at: #line) + 2.
+					 diag range start
+						 at: #line
+						 put:
+						 (diag range start at: #line) + (lineCharMethod at: #line) + 2.
+					 diag range end
+						 at: #line
+						 put:
+						 (diag range end at: #line) + (lineCharMethod at: #line) + 2.
 					 diag ] ]).
-	^ (PLSPublishDiagnosticsParams new
-		   diagnostics: diagnostics flattened asArray asJRPCJSON;
-		   uri: self uri;
-		   version: self version;
-		   yourself) asJRPCJSON
-]
-
-{ #category : 'testing' }
-PLSTonelDocument >> isTonelDocument [
-	^ true
+	^ diagnostics
 ]
 
 { #category : 'lsp - accessing' }

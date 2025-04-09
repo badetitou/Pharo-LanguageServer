@@ -42,12 +42,6 @@ PLSServer >> codeLenResolves: range command: command data: aData [
 	self flag: 'Not use in this version. All is done by codeLensTextDocument:'
 ]
 
-{ #category : 'lsp - code lens' }
-PLSServer >> codeLensTextDocument: textDocument [
-	<jrpc: #'textDocument/codeLens'>
-	^ (self context textItem: (textDocument at: #uri)) codeLens
-]
-
 { #category : 'commands' }
 PLSServer >> commandNotebookPrintIt: line textDocument: textDocumentURI [
 
@@ -110,12 +104,15 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 			            self context textItem: (textDocument at: #uri) ].
 	document version: (textDocument at: #version).
 	document text: (contentChanges anyOne at: #text).
-	self
-		sendData: (self convertJRPCJsonableObjectToJSON:
-				 ((JRPCNotificationObject method:
-					   'textDocument/publishDiagnostics') params:
-					  document diagnostics) asJRPCJSON)
-		toClient: clientOutStream
+	"If diagnostic is not nil, we are in a pull diagnostic context. Else, we are in a push diagnostic context"
+	self context clientContext capabilities textDocument ifNotNil: [ :td |
+		td diagnostic ifNil: [
+			self
+				sendData: (self convertJRPCJsonableObjectToJSON:
+						 ((JRPCNotificationObject method:
+							   'textDocument/publishDiagnostics') params:
+							  document diagnostics) asJRPCJSON)
+				toClient: clientOutStream ] ]
 ]
 
 { #category : 'lsp - text synchronisation' }
@@ -140,22 +137,28 @@ PLSServer >> didClose: textDocument [
 
 { #category : 'lsp - text synchronisation' }
 PLSServer >> didOpen: textDocument [
+
 	<jrpc: #'textDocument/didOpen'>
 	| document |
 	document := self context
-		textItem: (textDocument at: #uri)
-		put: (PLSDocument from: textDocument).
-	(self isTonelDocument: textDocument)
-		ifFalse: [ self
-				sendData:
-					(self
-						convertJRPCJsonableObjectToJSON:
-							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
-								params:
-									((PLSDiagnosticsParamsEngine document: document)
-										requestor: document binder)
-										computeDiagnostics) asJRPCJSON)
-				toClient: clientOutStream ]
+		            textItem: (textDocument at: #uri)
+		            put: (PLSDocument from: textDocument).
+	document server: self.
+	(self isTonelDocument: textDocument) ifFalse: [
+		| diagnostics |
+		diagnostics := ((PLSDiagnosticsParamsEngine document: document)
+			                requestor: document binder) computeDiagnostics.
+
+		self
+			sendData: (self convertJRPCJsonableObjectToJSON:
+					 ((JRPCNotificationObject method:
+						   'textDocument/publishDiagnostics') params:
+						  (PLSPublishDiagnosticsParams new
+							   diagnostics: diagnostics asArray;
+							   uri: document uri;
+							   version: document version;
+							   yourself) asJRPCJSON) asJRPCJSON)
+			toClient: clientOutStream ]
 ]
 
 { #category : 'lsp - text synchronisation' }
@@ -168,6 +171,7 @@ PLSServer >> didSave: textDocument text: text [
 
 { #category : 'lsp - document symbol' }
 PLSServer >> documentSymbol: textDocument [
+
 	<jrpc: #'textDocument/documentSymbol'>
 	| document |
 	document := self context textItem: (textDocument at: #uri).
@@ -260,6 +264,7 @@ PLSServer >> onInitializeTrace: trace processId: processId locale: locale client
 			 capabilities: (PLPClientCapabilities from: capabilities);
 			 rootUri: rootUri;
 			 yourself).
+	trace ifNotNil: [ self context traceValue: trace ].
 	^ PLSInitializeResult new
 ]
 
@@ -420,19 +425,6 @@ PLSServer >> plsTestPackages [
 			   , '.class.st'"
 ]
 
-{ #category : 'lsp - completion' }
-PLSServer >> postDealAnswer: answer [
-
-	^ (answer trimBoth withoutPrefix: '```') withoutSuffix: '```'
-]
-
-{ #category : 'lsp - initialization' }
-PLSServer >> serverShutdown [
-
-	<jrpc: #shutdown>
-	SmalltalkImage current snapshot: false andQuit: true
-]
-
 { #category : 'dap' }
 PLSServer >> startDapServer [
 	<jrpc: #'dap:startServer'>
@@ -489,7 +481,7 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 
 	api payload
 		temperature: 0.2;
-		model: 'codestral-2405';
+		model: 'codestral-2501';
 		top_p: 1;
 		max_tokens: 250;
 		prompt: (internalTextDocument text copyFrom: 1 to: userPosition).

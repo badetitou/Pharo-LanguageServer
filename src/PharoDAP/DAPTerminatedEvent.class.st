@@ -21,12 +21,14 @@ Internal Representation and Key Implementation Points.
     Implementation Points
 "
 Class {
-	#name : #DAPTerminatedEvent,
-	#superclass : #DAPEvent,
-	#category : #'PharoDAP-Structure'
+	#name : 'DAPTerminatedEvent',
+	#superclass : 'DAPEvent',
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 DAPTerminatedEvent >> initialize [
 	super initialize.
 	event := 'terminated'

@@ -1,14 +1,16 @@
 Class {
-	#name : #DAPTScope,
-	#superclass : #Object,
+	#name : 'DAPTScope',
+	#superclass : 'Object',
 	#instVars : [
 		'scope',
 		'inCache'
 	],
-	#category : #'PharoDAP-Types-Extension'
+	#category : 'PharoDAP-Types-Extension',
+	#package : 'PharoDAP',
+	#tag : 'Types-Extension'
 }
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 DAPTScope >> getDAPVariablesInContent: context [
 	| localVars bindingVars |
 
@@ -66,22 +68,22 @@ DAPTScope >> getDAPVariablesInContent: context [
 
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPTScope >> inCache [
 	^ inCache
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPTScope >> inCache: anObject [
 	inCache := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPTScope >> scope [
 	^ scope
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPTScope >> scope: anObject [
 	scope := anObject
 ]

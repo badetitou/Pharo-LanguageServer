@@ -1,13 +1,15 @@
 Class {
-	#name : #DAPScopesResponse,
-	#superclass : #DAPResponse,
+	#name : 'DAPScopesResponse',
+	#superclass : 'DAPResponse',
 	#instVars : [
 		'scopes'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScopesResponse >> asDAPJSON [
 	| dic |
 	self body at: #scopes put: self scopes asArray.
@@ -15,19 +17,19 @@ DAPScopesResponse >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScopesResponse >> initialize [
 	super initialize.
 	body := Dictionary new.
 	scopes := OrderedCollection new.
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScopesResponse >> scopes [
 	^ scopes
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPScopesResponse >> scopes: anObject [
 	scopes := anObject
 ]

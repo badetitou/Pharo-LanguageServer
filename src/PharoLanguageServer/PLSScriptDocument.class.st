@@ -6,26 +6,26 @@ Class {
 	#tag : 'Document'
 }
 
-{ #category : 'instance creation' }
-PLSScriptDocument class >> fromDocumentDictionary: aDocumentDictionary [
+{ #category : 'as yet unclassified' }
+PLSScriptDocument class >> supportDocument: aTextDocument [
+	"I will be default one"
 
-	^ self new
-		  version: (aDocumentDictionary at: #version);
-		  text: (aDocumentDictionary at: #text ifAbsent: '');
-		  languageId: (aDocumentDictionary at: #languageId ifAbsent: '');
-		  uri: (aDocumentDictionary at: #uri);
-		  yourself
+	^ ((aTextDocument at: #uri) endsWith: '.st') and: [
+		  (PLSTonelDocument supportDocument: aTextDocument) not ]
 ]
 
-{ #category : 'lsp - accessing' }
+{ #category : 'as yet unclassified' }
+PLSScriptDocument class >> supportDocumentUri: aTextDocumentUri [
+	"I am the default one"
+
+	^ (aTextDocumentUri endsWith: '.st') and: [ (PLSTonelDocument supportDocumentUri: aTextDocumentUri) not ]
+]
+
+{ #category : 'diagnostics' }
 PLSScriptDocument >> diagnostics [
-	^ ((PLSDiagnosticsParamsEngine document: self) requestor: self binder)
-		computeDiagnostics asJRPCJSON
-]
 
-{ #category : 'testing' }
-PLSScriptDocument >> isScriptDocument [
-	^ true
+	^ ((PLSDiagnosticsParamsEngine document: self) requestor: self binder)
+		  computeDiagnostics asArray asJRPCJSON
 ]
 
 { #category : 'lsp - accessing' }

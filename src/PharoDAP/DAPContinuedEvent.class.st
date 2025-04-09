@@ -1,26 +1,28 @@
 Class {
-	#name : #DAPContinuedEvent,
-	#superclass : #DAPEvent,
+	#name : 'DAPContinuedEvent',
+	#superclass : 'DAPEvent',
 	#instVars : [
 		'threadId',
 		'allThreadsContinued'
 	],
-	#category : #'PharoDAP-Structure'
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPContinuedEvent >> allThreadsContinued [
 
 	^ allThreadsContinued ifNil:[ allThreadsContinued := true ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPContinuedEvent >> allThreadsContinued: anObject [
 
 	allThreadsContinued := anObject
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 DAPContinuedEvent >> asDAPJSON [
 	| dic |
 
@@ -30,19 +32,19 @@ DAPContinuedEvent >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : 'as yet unclassified' }
 DAPContinuedEvent >> initialize [
 	super initialize.
 	body := Dictionary new.
 	event := 'continued'
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPContinuedEvent >> threadId [
 	^ threadId
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPContinuedEvent >> threadId: anObject [
 	threadId := anObject
 ]

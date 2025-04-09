@@ -50,11 +50,7 @@ PLSDiagnosticsParamsEngine >> computeDiagnostics [
 					  range: (PLSRange
 							   start: (source toLineCharacter: aErrorBlock start)
 							   end: (source toLineCharacter: aErrorBlock stop))) ]).
-	^ PLSPublishDiagnosticsParams new
-		  diagnostics: diagnostics;
-		  uri: document uri;
-		  version: document version;
-		  yourself
+	^ diagnostics
 ]
 
 { #category : 'accessing' }

@@ -3,9 +3,32 @@ Class {
 	#superclass : 'Object',
 	#traits : 'TPLCClient',
 	#classTraits : 'TPLCClient classTrait',
+	#instVars : [
+		'receivedAnswer'
+	],
 	#category : 'PharoLanguageProtocol-Tests',
 	#package : 'PharoLanguageProtocol-Tests'
 }
+
+{ #category : 'accessing' }
+PLPDummyClient >> answerLoop [
+
+	^ answerLoop
+]
+
+{ #category : 'accessing' }
+PLPDummyClient >> answerLoop: aBoolean [
+
+	answerLoop := aBoolean
+]
+
+{ #category : 'plp - tests' }
+PLPDummyClient >> anwserWithAccent: answer [
+	"Should never go here"
+
+	<jrpc: #'plptest/frenchAccent'>
+	self receivedAnswer: answer
+]
 
 { #category : 'initialization' }
 PLPDummyClient >> initialize [
@@ -21,6 +44,27 @@ PLPDummyClient >> longServerMethod: answer [
 
 	<jrpc: #'plptest/longServerMethod'>
 	
+]
+
+{ #category : 'accessing' }
+PLPDummyClient >> receivedAnswer [
+
+	^ receivedAnswer
+]
+
+{ #category : 'accessing' }
+PLPDummyClient >> receivedAnswer: anObject [
+
+	receivedAnswer := anObject
+]
+
+{ #category : 'plp - tests' }
+PLPDummyClient >> sendAnwserWithAccent [
+
+	self
+		callMethod: 'plptest/frenchAccent'
+		arguments: nil
+		withId: self nextId
 ]
 
 { #category : 'plp - tests' }

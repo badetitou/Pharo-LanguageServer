@@ -1,6 +1,6 @@
-Extension { #name : #Dictionary }
+Extension { #name : 'Dictionary' }
 
-{ #category : #'*PharoDAP' }
+{ #category : '*PharoDAP' }
 Dictionary >> asDAPJSON [
 	^ (self associations collect: [ :assoc |
 		self assert: assoc key isString.

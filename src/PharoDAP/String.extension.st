@@ -1,11 +1,11 @@
-Extension { #name : #String }
+Extension { #name : 'String' }
 
-{ #category : #'*PharoDAP' }
+{ #category : '*PharoDAP' }
 String >> asDAPJSON [
 	^ self
 ]
 
-{ #category : #'*PharoDAP' }
+{ #category : '*PharoDAP' }
 String >> toLineColumn: position [
 	"given a position, return a dictionnary with the line and column of the cursor at this position"
 

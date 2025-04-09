@@ -1,10 +1,12 @@
 Class {
-	#name : #DAPInitializeRequest,
-	#superclass : #DAPRequest,
-	#category : #'PharoDAP-Structure'
+	#name : 'DAPInitializeRequest',
+	#superclass : 'DAPRequest',
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPInitializeRequest >> initialize [
 	super initialize.
 	command := 'initialize'

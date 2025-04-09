@@ -1,6 +1,6 @@
-Extension { #name : #Array }
+Extension { #name : 'Array' }
 
-{ #category : #'*PharoDAP' }
+{ #category : '*PharoDAP' }
 Array >> asDAPJSON [
 	^ self collect: #asDAPJSON
 ]

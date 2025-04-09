@@ -1,15 +1,16 @@
 Class {
-	#name : #DAPHandler,
-	#superclass : #Object,
+	#name : 'DAPHandler',
+	#superclass : 'Object',
 	#instVars : [
 		'methodName',
 		'receiver',
 		'messageSelector'
 	],
-	#category : #PharoDAP
+	#category : 'PharoDAP',
+	#package : 'PharoDAP'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> checkParametersForRequest: aDAPRequestObject [ 
 	aDAPRequestObject arguments
 		ifNil: [
@@ -24,7 +25,7 @@ DAPHandler >> checkParametersForRequest: aDAPRequestObject [
 			ifTrue: [ DAPInvalidParameters signal ]
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> executeWithArguments: anArrayOrDictionary [
 	^ self execute: [ self
 		send: self messageSelector
@@ -32,48 +33,48 @@ DAPHandler >> executeWithArguments: anArrayOrDictionary [
 		with: anArrayOrDictionary ] recordedAs: self messageSelector printString
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> messageSelector [
 	^ messageSelector
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> messageSelector: anObject [
 	messageSelector := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> methodName [
 	^ methodName
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> methodName: anObject [
 	methodName := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> parametersCount [
 	"Returns the number of parameters expected by the handler."
 	^ self parametersNames size
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> parametersNames [
 	^ (self receiver class >> self messageSelector) argumentNames
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> receiver [
 	^ receiver
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> receiver: anObject [
 	receiver := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPHandler >> send: aSelector to: aReceiver with: arguments [
 	^ aReceiver perform: aSelector with: arguments
 ]

@@ -24,7 +24,6 @@ PLPTests >> setUp [
 
 	client := PLPDummyClient new.
 	server := PLPDummyServer new.
-	server debugMode: true.
 	server answerLoopPriority: Processor activeProcess priority.
 	client answerLoopPriority: Processor activeProcess priority.
 	serverProcess := [ server start ]
@@ -39,7 +38,7 @@ PLPTests >> setUp [
 { #category : 'running' }
 PLPTests >> tearDown [
 
-	serverProcess terminate.
+	serverProcess ifNotNil: [ :p | p terminate ].
 	server stop.
 	super tearDown
 ]
@@ -131,6 +130,19 @@ PLPTests >> testDidOpenTextDocument [
 	self
 		assert: (server context textItem: self plpURI) uri
 		equals: '#test/plp'
+]
+
+{ #category : 'running' }
+PLPTests >> testFrenchAccentUTF8 [
+	"I test that the client can cancel a long processing request of the server"
+
+	client start.
+	client sendAnwserWithAccent.
+	[ client answerProcessor answerHandlers isEmpty ] whileFalse.
+	[ server context messageProcesses isEmpty ] whileFalse.
+	self
+		assert: client receivedAnswer asByteArray
+		equals: 'écrit du çode bizarre' utf8Encoded
 ]
 
 { #category : 'running' }

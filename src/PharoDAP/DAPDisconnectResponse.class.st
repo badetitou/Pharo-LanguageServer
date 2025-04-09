@@ -1,10 +1,12 @@
 Class {
-	#name : #DAPDisconnectResponse,
-	#superclass : #DAPResponse,
-	#category : #'PharoDAP-Structure'
+	#name : 'DAPDisconnectResponse',
+	#superclass : 'DAPResponse',
+	#category : 'PharoDAP-Structure',
+	#package : 'PharoDAP',
+	#tag : 'Structure'
 }
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPDisconnectResponse >> asDAPJSON [
 	^ Dictionary new
 ]

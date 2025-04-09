@@ -1,6 +1,6 @@
 Class {
-	#name : #DAPStackFrame,
-	#superclass : #DAPJsonableObject,
+	#name : 'DAPStackFrame',
+	#superclass : 'DAPJsonableObject',
 	#instVars : [
 		'id',
 		'name',
@@ -13,10 +13,12 @@ Class {
 		'moduleId',
 		'presentationHint'
 	],
-	#category : #'PharoDAP-Types'
+	#category : 'PharoDAP-Types',
+	#package : 'PharoDAP',
+	#tag : 'Types'
 }
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPStackFrame >> asDAPJSON [
 	| dic |
 	dic := super asDAPJSON
@@ -30,59 +32,59 @@ DAPStackFrame >> asDAPJSON [
 	^ dic
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> column [
 	^ column
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> column: anObject [
 	column := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> id [
 	^ id
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> id: anObject [
 	id := anObject
 ]
 
-{ #category : #initialization }
+{ #category : 'initialization' }
 DAPStackFrame >> initialize [
 	super initialize.
 	line := 0.
 	column := 0
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> line [
 	^ line
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> line: anObject [
 	line := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> name [
 	^ name
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> name: anObject [
 	name := anObject
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> source [
 	^ source
 ]
 
-{ #category : #accessing }
+{ #category : 'accessing' }
 DAPStackFrame >> source: anObject [
 	source := anObject
 ]
