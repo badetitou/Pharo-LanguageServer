@@ -287,7 +287,7 @@ PLSServerTest >> testTypeDefinitionAtIn [
 				          (#character -> 12) } asDictionary
 		          in: { (#uri -> 'src/myScript.st') } asDictionary.
 	self assert: result class equals: PLSLocation.
-	self assert: result uri equals: 'pharoImage://Kernel/Object.class.st'.
+	self assert: result uri equals: 'pharoImage:/Kernel/Object.class.st'.
 	self assert: result range class equals: PLSRange.
 	self assert: result range start class equals: PLSPosition.
 	self assert: result range start character equals: 0.
