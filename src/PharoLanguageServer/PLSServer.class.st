@@ -403,7 +403,7 @@ PLSServer >> plsTestInPackage: aPackageURI [
 
 	<jrpc: #'pls:test-in-package'>
 	^ [
-	  ((aPackageURI at: #authority) asPackage classes select: [ :class |
+	  (((aPackageURI at: #path) withoutPrefix: '/') asPackage classes select: [ :class |
 		   (class name endsWith: 'Tests') or: [ class name endsWith: 'Test' ] ])
 		  collect: [ :class | class plsURIString ]
 		  as: Array ]
@@ -418,7 +418,7 @@ PLSServer >> plsTestPackages [
 	^ (TestCase allSubclasses
 		   reject: #isAbstract
 		   thenCollect: [ :class | class package ]) asSet
-		  collect: [ :package | 'pharoImage://' , package name ]
+		  collect: [ :package | package plsURIString ]
 		  as: Array
 
 	"'pharoImage://' , class package name , '/' , class name
