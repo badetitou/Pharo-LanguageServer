@@ -24,6 +24,8 @@ PLSScriptDocument class >> supportDocumentUri: aTextDocumentUri [
 { #category : 'diagnostics' }
 PLSScriptDocument >> diagnostics [
 
+	(self text isNil or: [ self text isEmpty ]) ifTrue: [
+		^ {  } asArray asJRPCJSON ].
 	^ ((PLSDiagnosticsParamsEngine document: self) requestor: self binder)
 		  computeDiagnostics asArray asJRPCJSON
 ]

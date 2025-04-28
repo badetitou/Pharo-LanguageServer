@@ -64,6 +64,8 @@ PLSTonelDocument >> codeLens [
 PLSTonelDocument >> diagnostics [
 
 	| diagnostics parsed |
+	(self text isNil or: [ self text isEmpty ]) ifTrue: [
+		^ {  } asArray asJRPCJSON ].
 	parsed := self parsed.
 	diagnostics := (parsed
 		                select: [ :el |
@@ -77,9 +79,8 @@ PLSTonelDocument >> diagnostics [
 						                 end:
 							                 (self text toLineCharacter: errorDef endPos)) ])
 		               asOrderedCollection.
-	diagnostics addAll: ((parsed
-			 select: [ :el |
-			 el isMethodDefinition and: [ el isErrorDefinition not ] ])
+	diagnostics addAll: ((parsed select: [ :el |
+			  el isMethodDefinition and: [ el isErrorDefinition not ] ])
 			 flatCollect: [ :el |
 				 ((PLSDiagnosticsParamsEngine new
 					   document: self;
