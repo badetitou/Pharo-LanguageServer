@@ -334,6 +334,7 @@ PLSAbstractServer >> serverInitialized [
 PLSAbstractServer >> serverShutdown [
 
 	<jrpc: #shutdown>
+	self serverExit.
 	^ nil
 ]
 
