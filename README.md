@@ -11,7 +11,7 @@ My main goal is to provide a unique interface for several generic IDE to manipul
 I am used by the following client extensions:
 
 - [vscode-pharo](https://github.com/badetitou/vscode-pharo)
-- [vscode-eclipse](https://github.com/badetitou/eclipse-pharo) *Really only a POC. But you might be interested to have a look at it.*
+- [eclipse-pharo](https://github.com/badetitou/eclipse-pharo) *Really only a POC. But you might be interested to have a look at it.*
 
 > If you experiement with other IDE, do not hesitate to contact us in an Issue :)
 
