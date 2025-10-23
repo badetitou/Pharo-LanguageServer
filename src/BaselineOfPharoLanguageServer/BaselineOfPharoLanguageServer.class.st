@@ -63,7 +63,7 @@ BaselineOfPharoLanguageServer >> defineGroups: spec [
 			#( 'PLSDAP-Helpers' 'PharoLanguageServer' 'PharoLanguageServer-Tests'
 			   'PLS-Pharo9-Extension' ).
 	spec group: 'LSP-GTK' with: #( 'LSP' 'PharoLanguageServer-Gtk' ).
-	spec group: 'LSP-Toplo' with: #( 'LSP' 'SpecToplo' 'Roassal' 'PharoLanguageProtocol-Toplo' ).
+	spec group: 'LSP-Toplo' with: #( 'LSP' 'SpecToplo' 'Roassal' 'PharoLanguageServer-Toplo' ).
 	spec group: 'DAP' with: #( 'PharoDAP' ).
 	spec group: 'Tests' with: #( 'PharoLanguageProtocol-Tests' ).
 	spec
