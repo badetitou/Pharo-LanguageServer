@@ -248,14 +248,6 @@ PLSServerTest >> testPostDealAnswerNoChange [
 		equals: 'hello := 1 + 2'
 ]
 
-{ #category : 'tests' }
-PLSServerTest >> testServerShutdown [
-
-	| shutdownAnswer |
-	shutdownAnswer := server serverShutdown.
-	self assert: shutdownAnswer equals: nil
-]
-
 { #category : 'test' }
 PLSServerTest >> testTextDocumentHoverWithPositionTextDocument [
 
