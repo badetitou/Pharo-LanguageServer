@@ -222,6 +222,60 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 ]
 
 { #category : 'pls - ice' }
+PLSServer >> iceDiffLeavesOf: aDiff [
+
+	| tree |
+	tree := (aDiff respondsTo: #tree)
+		        ifTrue: [ aDiff tree ]
+		        ifFalse: [ ^ #() ].
+	^ tree allChildren select: [ :node | node children isEmpty ]
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceOriginalFileForPackage: packageName classFileName: classFileName [
+
+	| foundFile |
+	foundFile := nil.
+	IceRepository registry do: [ :repository |
+		| location directInRoot directInSrc |
+		foundFile ifNil: [ 
+			(repository respondsTo: #location) ifTrue: [ 
+				location := repository location.
+				location ifNotNil: [ 
+					directInRoot := location / packageName / classFileName.
+					directInRoot exists ifTrue: [ foundFile := directInRoot ].
+					foundFile ifNil: [ 
+						directInSrc := location / 'src' / packageName / classFileName.
+						directInSrc exists ifTrue: [ foundFile := directInSrc ] ].
+					(foundFile isNil and: [ location respondsTo: #allChildren ]) ifTrue: [ 
+						foundFile := location allChildren
+							             detect: [ :fileReference | 
+								             fileReference isFile and: [ 
+									             fileReference basename = classFileName and: [ 
+										             fileReference parent basename = packageName ] ] ]
+							             ifNone: [ nil ] ] ] ] ] ].
+	^ foundFile
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceOriginalResource: uri [ 
+
+	<jrpc: #'pls-ice:originalResource'>
+	| uriSegments packageName classFileName originalFile normalizedPath |
+	uriSegments := uri substrings: '/'.
+	uriSegments size < 3 ifTrue: [ ^ uri ].
+	packageName := uriSegments at: uriSegments size - 1.
+	classFileName := uriSegments last.
+	originalFile := self
+		                iceOriginalFileForPackage: packageName
+		                classFileName: classFileName.
+	originalFile ifNil: [ ^ uri ].
+	normalizedPath := originalFile pathString copyReplaceAll: '\' with: '/'.
+	(normalizedPath beginsWith: '/') ifFalse: [ normalizedPath := '/' , normalizedPath ].
+	^ 'file://' , normalizedPath
+]
+
+{ #category : 'pls - ice' }
 PLSServer >> iceRepositories [
 
 	<jrpc: #'pls-ice:repositories'>
@@ -243,6 +297,142 @@ PLSServer >> iceRepository: aRepositoryName [
 		        select: [ :a | a children isEmpty ]
 		        thenCollect: [ :a | a definition actualClass ]) asSet.
 	^ (set collect: #plsURIString) asArray
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryChangesFor: aRepositoryName [
+
+	| repository diff leaves changes seenUris |
+	repository := self iceRepositoryNamed: aRepositoryName.
+	diff := repository workingCopy diffToReferenceCommit.
+	leaves := self iceDiffLeavesOf: diff.
+	changes := OrderedCollection new.
+	seenUris := Set new.
+	leaves do: [ :leaf | 
+		| definition targetClass status uri |
+		definition := leaf definition.
+		(definition respondsTo: #actualClass) ifTrue: [ 
+			targetClass := definition actualClass.
+			targetClass ifNotNil: [ 
+				uri := targetClass plsURIString.
+				(seenUris includes: uri) ifFalse: [ 
+					seenUris add: uri.
+					status := self iceStatusForDiffLeaf: leaf.
+					changes add: { 
+							#uri -> uri.
+							#status -> status } asDictionary ] ] ] ].
+	^ changes asArray
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryCommit: aRepositoryName message: message [
+
+	<jrpc: #'pls-ice:commit'>
+	| repository workingCopy diff |
+	repository := self iceRepositoryNamed: aRepositoryName.
+	workingCopy := repository workingCopy.
+	diff := workingCopy diffToReferenceCommit.
+	(self iceDiffLeavesOf: diff) ifEmpty: [ ^ 'Nothing to commit in ' , repository name ].
+
+	(workingCopy respondsTo: #commitChanges:withMessage:force:) ifTrue: [ 
+		workingCopy
+			commitChanges: diff
+			withMessage: message
+			force: false.
+		^ 'Committed ' , repository name ].
+
+	(workingCopy respondsTo: #commitChanges:withMessage:) ifTrue: [ 
+		workingCopy
+			commitChanges: diff
+			withMessage: message.
+		^ 'Committed ' , repository name ].
+
+	(workingCopy respondsTo: #commitWithMessage:) ifTrue: [ 
+		workingCopy commitWithMessage: message.
+		^ 'Committed ' , repository name ].
+
+	(repository respondsTo: #commitWithMessage:) ifTrue: [ 
+		repository commitWithMessage: message.
+		^ 'Committed ' , repository name ].
+
+	^ self error: 'Iceberg commit API not available in this image.'
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryNamed: aRepositoryName [ 
+
+	^ IceRepository registry
+		  detect: [ :repository | repository name = aRepositoryName ]
+		  ifNone: [ self error: 'Iceberg repository not found: ' , aRepositoryName ]
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryPush: aRepositoryName [ 
+
+	<jrpc: #'pls-ice:push'>
+	| repository |
+	repository := self iceRepositoryNamed: aRepositoryName.
+	(repository respondsTo: #push) ifTrue: [ 
+		repository push.
+		^ 'Pushed ' , repository name ].
+
+	(repository respondsTo: #pushRemote:) ifTrue: [ 
+		| remote |
+		remote := self iceRepositoryPushRemoteOf: repository.
+		remote
+			ifNil: [ ^ self error: 'Unable to determine push remote for repository ' , repository name ]
+			ifNotNil: [ 
+				repository pushRemote: remote.
+				^ 'Pushed ' , repository name ] ].
+
+	^ self error: 'Iceberg push API not available in this image.'
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryPushRemoteOf: aRepository [
+
+	(aRepository respondsTo: #pushRemote) ifTrue: [ ^ aRepository pushRemote ].
+	(aRepository respondsTo: #upstreamRemote) ifTrue: [ ^ aRepository upstreamRemote ].
+	(aRepository respondsTo: #origin) ifTrue: [ ^ aRepository origin ].
+	(aRepository respondsTo: #remotes) ifTrue: [ 
+		| remotes |
+		remotes := aRepository remotes.
+		(remotes respondsTo: #detect:ifNone:) ifTrue: [ 
+			^ remotes
+				  detect: [ :remote | 
+					  (remote respondsTo: #name)
+						  and: [ remote name asString = 'origin' ] ]
+				  ifNone: [ remotes ifEmpty: [ nil ] ifNotEmpty: [ remotes anyOne ] ] ] ].
+	^ nil
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryStatus: aRepositoryName [
+
+	<jrpc: #'pls-ice:repositoryStatus'>
+	^ { 
+		  (#stagedChanges -> (#() asArray)).
+		  (#changes -> (self iceRepositoryChangesFor: aRepositoryName)) } asDictionary
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceStatusForDiffLeaf: aDiffLeaf [
+
+	| className |
+	(aDiffLeaf respondsTo: #isAddition) ifTrue: [
+		aDiffLeaf isAddition ifTrue: [ ^ 'added' ] ].
+	(aDiffLeaf respondsTo: #isDeletion) ifTrue: [
+		aDiffLeaf isDeletion ifTrue: [ ^ 'deleted' ] ].
+	(aDiffLeaf respondsTo: #isRemoval) ifTrue: [
+		aDiffLeaf isRemoval ifTrue: [ ^ 'deleted' ] ].
+	(aDiffLeaf respondsTo: #isConflict) ifTrue: [
+		aDiffLeaf isConflict ifTrue: [ ^ 'conflicted' ] ].
+	className := aDiffLeaf class name asString asLowercase.
+	(className includesSubstring: 'add') ifTrue: [ ^ 'added' ].
+	((className includesSubstring: 'remove') or: [ className includesSubstring: 'delete' ])
+		ifTrue: [ ^ 'deleted' ].
+	(className includesSubstring: 'conflict') ifTrue: [ ^ 'conflicted' ].
+	^ 'modified'
 ]
 
 { #category : 'lsp - formatting' }
