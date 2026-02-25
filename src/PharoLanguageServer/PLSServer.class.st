@@ -232,32 +232,6 @@ PLSServer >> iceDiffLeavesOf: aDiff [
 ]
 
 { #category : 'pls - ice' }
-PLSServer >> iceOriginalFileForPackage: packageName classFileName: classFileName [
-
-	| foundFile |
-	foundFile := nil.
-	IceRepository registry do: [ :repository |
-		| location directInRoot directInSrc |
-		foundFile ifNil: [ 
-			(repository respondsTo: #location) ifTrue: [ 
-				location := repository location.
-				location ifNotNil: [ 
-					directInRoot := location / packageName / classFileName.
-					directInRoot exists ifTrue: [ foundFile := directInRoot ].
-					foundFile ifNil: [ 
-						directInSrc := location / 'src' / packageName / classFileName.
-						directInSrc exists ifTrue: [ foundFile := directInSrc ] ].
-					(foundFile isNil and: [ location respondsTo: #allChildren ]) ifTrue: [ 
-						foundFile := location allChildren
-							             detect: [ :fileReference | 
-								             fileReference isFile and: [ 
-									             fileReference basename = classFileName and: [ 
-										             fileReference parent basename = packageName ] ] ]
-							             ifNone: [ nil ] ] ] ] ] ].
-	^ foundFile
-]
-
-{ #category : 'pls - ice' }
 PLSServer >> iceOriginalResource: uri [
 	"Return a virtual pharoImage URI for the reference version; never use the local filesystem."
 
