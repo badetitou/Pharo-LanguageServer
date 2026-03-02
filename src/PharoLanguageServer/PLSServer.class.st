@@ -222,6 +222,25 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 ]
 
 { #category : 'pls - ice' }
+PLSServer >> iceAddPackageToRepository: aRepositoryName packageName: packageName [
+
+	<jrpc: #'pls-ice:addPackage'>
+	| normalizedPackage repository workingCopy package |
+	normalizedPackage := packageName ifNil: [ '' ].
+	normalizedPackage := normalizedPackage trimBoth.
+	normalizedPackage ifEmpty: [ self error: 'Package name cannot be empty.' ].
+
+	repository := self iceRepositoryNamed: aRepositoryName.
+	self plsCreatePackage: normalizedPackage.
+	workingCopy := repository workingCopy.
+	(workingCopy includesPackageNamed: normalizedPackage) ifTrue: [
+		^ 'Package ' , normalizedPackage , ' is already managed by ' , repository name ].
+
+	workingCopy addPackageNamed: normalizedPackage.
+	^ 'Package ' , normalizedPackage , ' added to ' , repository name
+]
+
+{ #category : 'pls - ice' }
 PLSServer >> iceClassDefinitionNamed: className inPackageVersion: packageVersion [
 
 	| definitions |
