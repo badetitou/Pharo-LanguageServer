@@ -50,7 +50,7 @@ PLSServer >> commandNotebookPrintIt: line textDocument: textDocumentURI [
 	"Use path because #external also uses the fragment number of the cell"
 	compiler := self compilerFor: (textDocumentURI at: #path).
 	answer2 := [ compiler evaluate: line ]
-		           on: Exception
+		           on: Error
 		           do: [ :error | 
 			           'error' record.
 			           error ].
