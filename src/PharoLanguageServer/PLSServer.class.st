@@ -222,6 +222,46 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 ]
 
 { #category : 'pls - ice' }
+PLSServer >> iceClassDefinitionNamed: className inPackageVersion: packageVersion [
+
+	| definitions |
+	packageVersion ifNil: [ ^ nil ].
+	definitions := self iceDefinitionsInPackageVersion: packageVersion.
+	^ definitions
+		  detect: [ :definition | 
+			  self
+				  iceDefinition: definition
+				  matchesClassName: className ]
+		  ifNone: [ nil ]
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceDefinition: definition matchesClassName: className [
+
+	| definitionName |
+	definition ifNil: [ ^ false ].
+	(definition respondsTo: #isClassDefinition) ifTrue: [ 
+		(definition isClassDefinition not) ifTrue: [ ^ false ] ].
+	(definition respondsTo: #name) ifFalse: [ ^ false ].
+	definitionName := [ definition name asString ] on: Error do: [ nil ].
+	^ definitionName = className
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceDefinitionsInPackageVersion: packageVersion [
+
+	| snapshot |
+	(packageVersion respondsTo: #definitions) ifTrue: [ 
+		^ [ packageVersion definitions ] on: Error do: [ #() ] ].
+	(packageVersion respondsTo: #snapshot) ifTrue: [ 
+		snapshot := [ packageVersion snapshot ] on: Error do: [ nil ].
+		snapshot ifNotNil: [ 
+			(snapshot respondsTo: #definitions) ifTrue: [ 
+				^ [ snapshot definitions ] on: Error do: [ #() ] ] ] ].
+	^ #()
+]
+
+{ #category : 'pls - ice' }
 PLSServer >> iceDiffLeavesOf: aDiff [
 
 	| tree |
@@ -232,11 +272,65 @@ PLSServer >> iceDiffLeavesOf: aDiff [
 ]
 
 { #category : 'pls - ice' }
+PLSServer >> iceOriginalContent: uri [
+
+	"Return the original (reference commit) content for a pharoImage URI."
+	<jrpc: #'pls-ice:originalContent'>
+	| baseUri uriSegments packageName classFileName className repository source |
+	baseUri := uri copyUpTo: $?.
+	uriSegments := baseUri substrings: '/'.
+	uriSegments size < 3 ifTrue: [ ^ '' ].
+	packageName := uriSegments at: uriSegments size - 1.
+	classFileName := uriSegments last.
+	className := classFileName withoutSuffix: '.class.st'.
+	repository := self iceRepositoryContainingClassUri: baseUri.
+	source := repository
+		          ifNil: [ nil ]
+		          ifNotNil: [ 
+			          self
+				          iceOriginalContentFromRepository: repository
+				          packageName: packageName
+				          className: className ].
+	^ source
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceOriginalContentFromRepository: repository packageName: packageName className: className [
+
+	| workingCopy packageVersion source snapshot writer referenceCommit |
+	workingCopy := repository workingCopy.
+	referenceCommit := [ workingCopy referenceCommit ]
+		                   on: Error
+		                   do: [ nil ].
+	referenceCommit ifNil: [ ^ '' ].
+	packageVersion := self
+		                  icePackageVersionIn: referenceCommit
+		                  forPackageNamed: packageName
+		                  className: className.
+	snapshot := packageVersion mcSnapshot.
+	writer := TonelWriter new snapshot: snapshot.
+	source := String streamContents: [ :aStream |
+		          writer
+			          writeClass:
+			          (snapshot
+				           classDefinitionNamed: className
+				           ifAbsent: [ '' ])
+			          on: aStream ].
+	^ source
+]
+
+{ #category : 'pls - ice' }
 PLSServer >> iceOriginalResource: uri [
 	"Return a virtual pharoImage URI for the reference version; never use the local filesystem."
 
 	<jrpc: #'pls-ice:originalResource'>
-	^ uri
+	^ (uri copyUpTo: $?) , '?iceOriginal=1'
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> icePackageVersionIn: workingCopy forPackageNamed: packageName className: className [
+
+	^ workingCopy versionFor: packageName asPackage
 ]
 
 { #category : 'pls - ice' }
@@ -304,6 +398,18 @@ PLSServer >> iceRepositoryCommit: aRepositoryName message: message [
 ]
 
 { #category : 'pls - ice' }
+PLSServer >> iceRepositoryContainingClassUri: classUri [ 
+
+	^ IceRepository registry detect: [ :repository | 
+		  [ 
+		  (repository isValid and: [ repository respondsTo: #name ]) and: [ 
+			  (self iceRepositoryChangesFor: repository name)
+				  anySatisfy: [ :change | (change at: #uri) = classUri ] ] ]
+			  on: Error
+			  do: [ false ] ] ifNone: [ nil ]
+]
+
+{ #category : 'pls - ice' }
 PLSServer >> iceRepositoryNamed: aRepositoryName [
 
 	^ IceRepository registry
@@ -333,6 +439,40 @@ PLSServer >> iceRepositoryStatus: aRepositoryName [
 		  (#stagedChanges -> #(  ) asArray).
 		  (#changes -> (self iceRepositoryChangesFor: aRepositoryName)) }
 		  asDictionary
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceSourceFromDefinition: definition [
+
+	| source |
+	definition ifNil: [ ^ nil ].
+	#(contents sourceString sourceCode source tonelString)
+		do: [ :selector | 
+			(definition respondsTo: selector) ifTrue: [ 
+				source := [ definition perform: selector ]
+					          on: Error
+					          do: [ nil ].
+				source ifNotNil: [ 
+					source isString ifTrue: [ ^ source ].
+					(source respondsTo: #utf8Decoded) ifTrue: [ ^ source utf8Decoded ].
+					(source respondsTo: #asString) ifTrue: [ ^ source asString ] ] ] ].
+	(definition respondsTo: #actualClass) ifTrue: [ 
+		| currentClass |
+		currentClass := definition actualClass.
+		currentClass ifNotNil: [ ^ self iceSourceFromImageClassNamed: currentClass name ] ].
+	^ nil
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceSourceFromImageClassNamed: className [
+
+	| targetClass |
+	targetClass := self class environment
+		               at: className asSymbol
+		               ifAbsent: [ ^ '' ].
+		self halt. 
+	^ String streamContents: [ :stream |
+		  TonelWriter exportClass: targetClass on: stream ]
 ]
 
 { #category : 'pls - ice' }
