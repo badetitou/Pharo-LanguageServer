@@ -419,6 +419,16 @@ PLSServer >> iceRepositoryNamed: aRepositoryName [
 ]
 
 { #category : 'pls - ice' }
+PLSServer >> iceRepositoryPackages: aRepositoryName [
+
+	<jrpc: #'pls-ice:repositoryPackages'>
+	| repository workingCopy |
+	repository := self iceRepositoryNamed: aRepositoryName.
+	workingCopy := repository workingCopy.
+	^ (workingCopy packages collect: [:iceP | iceP package ]) asArray
+]
+
+{ #category : 'pls - ice' }
 PLSServer >> iceRepositoryPush: aRepositoryName [
 
 	<jrpc: #'pls-ice:push'>
@@ -470,7 +480,6 @@ PLSServer >> iceSourceFromImageClassNamed: className [
 	targetClass := self class environment
 		               at: className asSymbol
 		               ifAbsent: [ ^ '' ].
-		self halt. 
 	^ String streamContents: [ :stream |
 		  TonelWriter exportClass: targetClass on: stream ]
 ]
