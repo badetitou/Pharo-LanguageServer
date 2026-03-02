@@ -526,6 +526,70 @@ PLSServer >> onInitializeTrace: trace processId: processId locale: locale client
 ]
 
 { #category : 'pls' }
+PLSServer >> plsCreateClass: className packageName: packageName superclassName: superclassName instanceVariables: instanceVariables [
+
+	<jrpc: #'pls:createClass'>
+	| normalizedClassName normalizedPackageName normalizedSuperclassName normalizedInstanceVariables superclass existingClass createdClass |
+	normalizedClassName := className ifNil: [ '' ].
+	normalizedClassName := normalizedClassName trimBoth.
+	normalizedClassName ifEmpty: [
+		self error: 'Class name cannot be empty.' ].
+
+	normalizedPackageName := packageName ifNil: [ '' ].
+	normalizedPackageName := normalizedPackageName trimBoth.
+	normalizedPackageName ifEmpty: [
+		self error: 'Package name cannot be empty.' ].
+
+	normalizedSuperclassName := superclassName ifNil: [ 'Object' ].
+	normalizedSuperclassName := normalizedSuperclassName trimBoth.
+	normalizedSuperclassName ifEmpty: [
+		normalizedSuperclassName := 'Object' ].
+
+	normalizedInstanceVariables := instanceVariables ifNil: [ '' ].
+	normalizedInstanceVariables := normalizedInstanceVariables trimBoth.
+
+	self plsCreatePackage: normalizedPackageName.
+	existingClass := self class environment
+		                 at: normalizedClassName asSymbol
+		                 ifAbsent: [ nil ].
+	existingClass ifNotNil: [
+		^ 'Class ' , normalizedClassName , ' already exists.' ].
+
+	superclass := self class environment
+		              at: normalizedSuperclassName asSymbol
+		              ifAbsent: [
+		              self error:
+			              'Superclass not found: ' , normalizedSuperclassName ].
+	createdClass := superclass classInstaller make: [ :builder |
+		                builder
+			                superclass: superclass;
+			                name: normalizedClassName asSymbol;
+			                slotsFromString: normalizedInstanceVariables;
+			                sharedVariablesFromString: '';
+			                package: normalizedPackageName;
+			                environment: superclass environment ].
+	^ 'Class ' , createdClass name , ' created in package '
+	  , normalizedPackageName
+]
+
+{ #category : 'pls' }
+PLSServer >> plsCreatePackage: packageName [
+
+	<jrpc: #'pls:createPackage'>
+	| normalizedPackageName wasExisting |
+	normalizedPackageName := packageName ifNil: [ '' ].
+	normalizedPackageName := normalizedPackageName trimBoth.
+	normalizedPackageName ifEmpty: [
+		self error: 'Package name cannot be empty.' ].
+	wasExisting := self packageOrganizer hasPackage:
+		               normalizedPackageName.
+	self packageOrganizer ensurePackage: normalizedPackageName.
+	^ wasExisting
+		  ifTrue: [ 'Package ' , normalizedPackageName , ' already exists.' ]
+		  ifFalse: [ 'Package ' , normalizedPackageName , ' created.' ]
+]
+
+{ #category : 'pls' }
 PLSServer >> plsExecuteClass: class test: testMethod [
 	<jrpc: #'pls:executeClassTest'>
 	| result |
