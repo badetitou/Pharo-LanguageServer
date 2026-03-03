@@ -50,7 +50,7 @@ PLSServer >> commandNotebookPrintIt: line textDocument: textDocumentURI [
 	"Use path because #external also uses the fragment number of the cell"
 	compiler := self compilerFor: (textDocumentURI at: #path).
 	answer2 := [ compiler evaluate: line ]
-		           on: Exception
+		           on: Error
 		           do: [ :error | 
 			           'error' record.
 			           error ].
@@ -222,6 +222,137 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 ]
 
 { #category : 'pls - ice' }
+PLSServer >> iceAddPackageToRepository: aRepositoryName packageName: packageName [
+
+	<jrpc: #'pls-ice:addPackage'>
+	| normalizedPackage repository workingCopy package |
+	normalizedPackage := packageName ifNil: [ '' ].
+	normalizedPackage := normalizedPackage trimBoth.
+	normalizedPackage ifEmpty: [ self error: 'Package name cannot be empty.' ].
+
+	repository := self iceRepositoryNamed: aRepositoryName.
+	self plsCreatePackage: normalizedPackage.
+	workingCopy := repository workingCopy.
+	(workingCopy includesPackageNamed: normalizedPackage) ifTrue: [
+		^ 'Package ' , normalizedPackage , ' is already managed by ' , repository name ].
+
+	workingCopy addPackageNamed: normalizedPackage.
+	^ 'Package ' , normalizedPackage , ' added to ' , repository name
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceClassDefinitionNamed: className inPackageVersion: packageVersion [
+
+	| definitions |
+	packageVersion ifNil: [ ^ nil ].
+	definitions := self iceDefinitionsInPackageVersion: packageVersion.
+	^ definitions
+		  detect: [ :definition | 
+			  self
+				  iceDefinition: definition
+				  matchesClassName: className ]
+		  ifNone: [ nil ]
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceDefinition: definition matchesClassName: className [
+
+	| definitionName |
+	definition ifNil: [ ^ false ].
+	(definition respondsTo: #isClassDefinition) ifTrue: [ 
+		(definition isClassDefinition not) ifTrue: [ ^ false ] ].
+	(definition respondsTo: #name) ifFalse: [ ^ false ].
+	definitionName := [ definition name asString ] on: Error do: [ nil ].
+	^ definitionName = className
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceDefinitionsInPackageVersion: packageVersion [
+
+	| snapshot |
+	(packageVersion respondsTo: #definitions) ifTrue: [ 
+		^ [ packageVersion definitions ] on: Error do: [ #() ] ].
+	(packageVersion respondsTo: #snapshot) ifTrue: [ 
+		snapshot := [ packageVersion snapshot ] on: Error do: [ nil ].
+		snapshot ifNotNil: [ 
+			(snapshot respondsTo: #definitions) ifTrue: [ 
+				^ [ snapshot definitions ] on: Error do: [ #() ] ] ] ].
+	^ #()
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceDiffLeavesOf: aDiff [
+
+	| tree |
+	tree := (aDiff respondsTo: #tree)
+		        ifTrue: [ aDiff tree ]
+		        ifFalse: [ ^ #() ].
+	^ tree allChildren select: [ :node | node children isEmpty ]
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceOriginalContent: uri [
+
+	"Return the original (reference commit) content for a pharoImage URI."
+	<jrpc: #'pls-ice:originalContent'>
+	| baseUri uriSegments packageName classFileName className repository source |
+	baseUri := uri copyUpTo: $?.
+	uriSegments := baseUri substrings: '/'.
+	uriSegments size < 3 ifTrue: [ ^ '' ].
+	packageName := uriSegments at: uriSegments size - 1.
+	classFileName := uriSegments last.
+	className := classFileName withoutSuffix: '.class.st'.
+	repository := self iceRepositoryContainingClassUri: baseUri.
+	source := repository
+		          ifNil: [ nil ]
+		          ifNotNil: [ 
+			          self
+				          iceOriginalContentFromRepository: repository
+				          packageName: packageName
+				          className: className ].
+	^ source
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceOriginalContentFromRepository: repository packageName: packageName className: className [
+
+	| workingCopy packageVersion source snapshot writer referenceCommit |
+	workingCopy := repository workingCopy.
+	referenceCommit := [ workingCopy referenceCommit ]
+		                   on: Error
+		                   do: [ nil ].
+	referenceCommit ifNil: [ ^ '' ].
+	packageVersion := self
+		                  icePackageVersionIn: referenceCommit
+		                  forPackageNamed: packageName
+		                  className: className.
+	snapshot := packageVersion mcSnapshot.
+	writer := TonelWriter new snapshot: snapshot.
+	source := String streamContents: [ :aStream |
+		          writer
+			          writeClass:
+			          (snapshot
+				           classDefinitionNamed: className
+				           ifAbsent: [ '' ])
+			          on: aStream ].
+	^ source
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceOriginalResource: uri [
+	"Return a virtual pharoImage URI for the reference version; never use the local filesystem."
+
+	<jrpc: #'pls-ice:originalResource'>
+	^ (uri copyUpTo: $?) , '?iceOriginal=1'
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> icePackageVersionIn: workingCopy forPackageNamed: packageName className: className [
+
+	^ workingCopy versionFor: packageName asPackage
+]
+
+{ #category : 'pls - ice' }
 PLSServer >> iceRepositories [
 
 	<jrpc: #'pls-ice:repositories'>
@@ -245,6 +376,151 @@ PLSServer >> iceRepository: aRepositoryName [
 	^ (set collect: #plsURIString) asArray
 ]
 
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryChangesFor: aRepositoryName [
+
+	| repository diff leaves changes seenUris |
+	repository := self iceRepositoryNamed: aRepositoryName.
+	diff := repository workingCopy diffToReferenceCommit.
+	leaves := self iceDiffLeavesOf: diff.
+	changes := OrderedCollection new.
+	seenUris := Set new.
+	leaves do: [ :leaf | 
+		| definition targetClass status uri |
+		definition := leaf definition.
+		(definition respondsTo: #actualClass) ifTrue: [ 
+			targetClass := definition actualClass.
+			targetClass ifNotNil: [ 
+				uri := targetClass plsURIString.
+				(seenUris includes: uri) ifFalse: [ 
+					seenUris add: uri.
+					status := self iceStatusForDiffLeaf: leaf.
+					changes add: { 
+							#uri -> uri.
+							#status -> status } asDictionary ] ] ] ].
+	^ changes asArray
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryCommit: aRepositoryName message: message [
+
+	<jrpc: #'pls-ice:commit'>
+	| repository workingCopy diff |
+	repository := self iceRepositoryNamed: aRepositoryName.
+	workingCopy := repository workingCopy.
+	diff := workingCopy diffToReferenceCommit.
+	(self iceDiffLeavesOf: diff) ifEmpty: [
+		^ 'Nothing to commit in ' , repository name ].
+
+	workingCopy commitChanges: diff withMessage: message force: false.
+	^ 'Committed ' , repository name
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryContainingClassUri: classUri [ 
+
+	^ IceRepository registry detect: [ :repository | 
+		  [ 
+		  (repository isValid and: [ repository respondsTo: #name ]) and: [ 
+			  (self iceRepositoryChangesFor: repository name)
+				  anySatisfy: [ :change | (change at: #uri) = classUri ] ] ]
+			  on: Error
+			  do: [ false ] ] ifNone: [ nil ]
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryNamed: aRepositoryName [
+
+	^ IceRepository registry
+		  detect: [ :repository | repository name = aRepositoryName ]
+		  ifNone: [
+		  self error: 'Iceberg repository not found: ' , aRepositoryName ]
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryPackages: aRepositoryName [
+
+	<jrpc: #'pls-ice:repositoryPackages'>
+	| repository workingCopy |
+	repository := self iceRepositoryNamed: aRepositoryName.
+	workingCopy := repository workingCopy.
+	^ (workingCopy packages collect: [:iceP | iceP package ]) asArray
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryPush: aRepositoryName [
+
+	<jrpc: #'pls-ice:push'>
+	| repository |
+	repository := self iceRepositoryNamed: aRepositoryName.
+	(repository respondsTo: #push) ifTrue: [
+		repository push.
+		^ 'Pushed ' , repository name ].
+
+	^ self error: 'Iceberg push API not available in this image.'
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceRepositoryStatus: aRepositoryName [
+
+	<jrpc: #'pls-ice:repositoryStatus'>
+	^ {
+		  (#stagedChanges -> #(  ) asArray).
+		  (#changes -> (self iceRepositoryChangesFor: aRepositoryName)) }
+		  asDictionary
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceSourceFromDefinition: definition [
+
+	| source |
+	definition ifNil: [ ^ nil ].
+	#(contents sourceString sourceCode source tonelString)
+		do: [ :selector | 
+			(definition respondsTo: selector) ifTrue: [ 
+				source := [ definition perform: selector ]
+					          on: Error
+					          do: [ nil ].
+				source ifNotNil: [ 
+					source isString ifTrue: [ ^ source ].
+					(source respondsTo: #utf8Decoded) ifTrue: [ ^ source utf8Decoded ].
+					(source respondsTo: #asString) ifTrue: [ ^ source asString ] ] ] ].
+	(definition respondsTo: #actualClass) ifTrue: [ 
+		| currentClass |
+		currentClass := definition actualClass.
+		currentClass ifNotNil: [ ^ self iceSourceFromImageClassNamed: currentClass name ] ].
+	^ nil
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceSourceFromImageClassNamed: className [
+
+	| targetClass |
+	targetClass := self class environment
+		               at: className asSymbol
+		               ifAbsent: [ ^ '' ].
+	^ String streamContents: [ :stream |
+		  TonelWriter exportClass: targetClass on: stream ]
+]
+
+{ #category : 'pls - ice' }
+PLSServer >> iceStatusForDiffLeaf: aDiffLeaf [
+
+	| className |
+	(aDiffLeaf respondsTo: #isAddition) ifTrue: [
+		aDiffLeaf isAddition ifTrue: [ ^ 'added' ] ]..
+	(aDiffLeaf respondsTo: #isRemoval) ifTrue: [
+		aDiffLeaf isRemoval ifTrue: [ ^ 'deleted' ] ].
+	(aDiffLeaf respondsTo: #isConflict) ifTrue: [
+		aDiffLeaf isConflict ifTrue: [ ^ 'conflicted' ] ].
+	className := aDiffLeaf class name asString asLowercase.
+	(className includesSubstring: 'add') ifTrue: [ ^ 'added' ].
+	((className includesSubstring: 'remove') or: [ className includesSubstring: 'delete' ])
+		ifTrue: [ ^ 'deleted' ].
+	(className includesSubstring: 'conflict') ifTrue: [ ^ 'conflicted' ].
+	^ 'modified'
+]
+
 { #category : 'lsp - formatting' }
 PLSServer >> isTonelDocument: textDocument [
 	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
@@ -266,6 +542,70 @@ PLSServer >> onInitializeTrace: trace processId: processId locale: locale client
 			 yourself).
 	trace ifNotNil: [ self context traceValue: trace ].
 	^ PLSInitializeResult new
+]
+
+{ #category : 'pls' }
+PLSServer >> plsCreateClass: className packageName: packageName superclassName: superclassName instanceVariables: instanceVariables [
+
+	<jrpc: #'pls:createClass'>
+	| normalizedClassName normalizedPackageName normalizedSuperclassName normalizedInstanceVariables superclass existingClass createdClass |
+	normalizedClassName := className ifNil: [ '' ].
+	normalizedClassName := normalizedClassName trimBoth.
+	normalizedClassName ifEmpty: [
+		self error: 'Class name cannot be empty.' ].
+
+	normalizedPackageName := packageName ifNil: [ '' ].
+	normalizedPackageName := normalizedPackageName trimBoth.
+	normalizedPackageName ifEmpty: [
+		self error: 'Package name cannot be empty.' ].
+
+	normalizedSuperclassName := superclassName ifNil: [ 'Object' ].
+	normalizedSuperclassName := normalizedSuperclassName trimBoth.
+	normalizedSuperclassName ifEmpty: [
+		normalizedSuperclassName := 'Object' ].
+
+	normalizedInstanceVariables := instanceVariables ifNil: [ '' ].
+	normalizedInstanceVariables := normalizedInstanceVariables trimBoth.
+
+	self plsCreatePackage: normalizedPackageName.
+	existingClass := self class environment
+		                 at: normalizedClassName asSymbol
+		                 ifAbsent: [ nil ].
+	existingClass ifNotNil: [
+		^ 'Class ' , normalizedClassName , ' already exists.' ].
+
+	superclass := self class environment
+		              at: normalizedSuperclassName asSymbol
+		              ifAbsent: [
+		              self error:
+			              'Superclass not found: ' , normalizedSuperclassName ].
+	createdClass := superclass classInstaller make: [ :builder |
+		                builder
+			                superclass: superclass;
+			                name: normalizedClassName asSymbol;
+			                slotsFromString: normalizedInstanceVariables;
+			                sharedVariablesFromString: '';
+			                package: normalizedPackageName;
+			                environment: superclass environment ].
+	^ 'Class ' , createdClass name , ' created in package '
+	  , normalizedPackageName
+]
+
+{ #category : 'pls' }
+PLSServer >> plsCreatePackage: packageName [
+
+	<jrpc: #'pls:createPackage'>
+	| normalizedPackageName wasExisting |
+	normalizedPackageName := packageName ifNil: [ '' ].
+	normalizedPackageName := normalizedPackageName trimBoth.
+	normalizedPackageName ifEmpty: [
+		self error: 'Package name cannot be empty.' ].
+	wasExisting := self packageOrganizer hasPackage:
+		               normalizedPackageName.
+	self packageOrganizer ensurePackage: normalizedPackageName.
+	^ wasExisting
+		  ifTrue: [ 'Package ' , normalizedPackageName , ' already exists.' ]
+		  ifFalse: [ 'Package ' , normalizedPackageName , ' created.' ]
 ]
 
 { #category : 'pls' }

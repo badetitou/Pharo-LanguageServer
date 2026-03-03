@@ -62,7 +62,7 @@ DAPServer >> compilerFor: fileURI [
 
 	| compi |
 	compi := SmalltalkImage current compiler.
-	compi compilationContext noPattern: true.
+	compi compilationContext isScripting: true.
 	compi failBlock: [ nil ].
 	^ compi
 ]
