@@ -100,19 +100,12 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 	document := self context
 		            textItem: (textDocument at: #uri)
 		            ifAbsent: [
-			            self didOpen: textDocument.
-			            self context textItem: (textDocument at: #uri) ].
+				            self didOpen: textDocument.
+				            self context textItem: (textDocument at: #uri) ].
 	document version: (textDocument at: #version).
 	document text: (contentChanges anyOne at: #text).
 	"If diagnostic is not nil, we are in a pull diagnostic context. Else, we are in a push diagnostic context"
-	self context clientContext capabilities textDocument ifNotNil: [ :td |
-		td diagnostic ifNil: [
-			self
-				sendData: (self convertJRPCJsonableObjectToJSON:
-						 ((JRPCNotificationObject method:
-							   'textDocument/publishDiagnostics') params:
-							  document diagnostics) asJRPCJSON)
-				toClient: clientOutStream ] ]
+	self publishDiagnosticsFor: document
 ]
 
 { #category : 'lsp - text synchronisation' }
@@ -144,21 +137,8 @@ PLSServer >> didOpen: textDocument [
 		            textItem: (textDocument at: #uri)
 		            put: (PLSDocument from: textDocument).
 	document server: self.
-	(self isTonelDocument: textDocument) ifFalse: [
-		| diagnostics |
-		diagnostics := ((PLSDiagnosticsParamsEngine document: document)
-			                requestor: document binder) computeDiagnostics.
-
-		self
-			sendData: (self convertJRPCJsonableObjectToJSON:
-					 ((JRPCNotificationObject method:
-						   'textDocument/publishDiagnostics') params:
-						  (PLSPublishDiagnosticsParams new
-							   diagnostics: diagnostics asArray;
-							   uri: document uri;
-							   version: document version;
-							   yourself) asJRPCJSON) asJRPCJSON)
-			toClient: clientOutStream ]
+	"If diagnostic is not nil, we are in a pull diagnostic context. Else, we are in a push diagnostic context"
+	self publishDiagnosticsFor: document
 ]
 
 { #category : 'lsp - text synchronisation' }
@@ -763,6 +743,19 @@ PLSServer >> plsTestPackages [
 
 	"'pharoImage://' , class package name , '/' , class name
 			   , '.class.st'"
+]
+
+{ #category : 'lsp - text synchronisation' }
+PLSServer >> publishDiagnosticsFor: document [
+
+	self context clientContext capabilities textDocument ifNotNil: [ :td |
+			td diagnostic ifNil: [
+					self
+						sendData: (self convertJRPCJsonableObjectToJSON:
+								 ((JRPCNotificationObject method:
+									   'textDocument/publishDiagnostics') params:
+									  document diagnostics) asJRPCJSON)
+						toClient: clientOutStream ] ]
 ]
 
 { #category : 'dap' }
