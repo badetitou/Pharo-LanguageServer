@@ -24,10 +24,10 @@ BaselineOfPharoLanguageServer >> customProjectAttributes [
 BaselineOfPharoLanguageServer >> defineDependencies: spec [
 
 	spec
-		baseline: 'JRPC' with: [ 
-			spec
-				repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
-				loads: #( 'Deployment' ) ];
+		baseline: 'JRPC' with: [
+				spec
+					repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
+					loads: #( 'Deployment' ) ];
 		import: 'JRPC'.
 	spec
 		baseline: 'MoreLogger'
@@ -39,6 +39,11 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 	spec
 		baseline: 'LLMAPI'
 		with: [ spec repository: 'github://Evref-BL/Pharo-LLMAPI:main/src' ].
+
+	spec
+		baseline: 'SpecToplo'
+		with: [
+		spec repository: 'github://pharo-graphics/Spec-Toplo:v0.9.0/src' ]
 ]
 
 { #category : 'baselines' }
@@ -52,6 +57,7 @@ BaselineOfPharoLanguageServer >> defineGroups: spec [
 			#( 'PLSDAP-Helpers' 'PharoLanguageServer' 'PharoLanguageServer-Tests'
 			   'PLS-Pharo9-Extension' ).
 	spec group: 'LSP-GTK' with: #( 'LSP' 'PharoLanguageServer-Gtk' ).
+	spec group: 'LSP-Toplo' with: #( 'LSP' 'PharoLanguageServer-Toplo' ).
 	spec group: 'DAP' with: #( 'PharoDAP' ).
 	spec group: 'Tests' with: #( 'PharoLanguageProtocol-Tests' ).
 	spec
@@ -72,15 +78,19 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 	spec
 		package: 'PLSDAP-Helpers';
 		package: 'PharoLanguageServer' with: [
-			spec requires:
-					#( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' 'PharoLanguageProtocol'
-					   'LLMAPI' ) ];
+				spec requires:
+						#( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' 'PharoLanguageProtocol'
+						   'LLMAPI' ) ];
 		package: 'PharoLanguageServer-Tests'
 		with: [ spec requires: #( 'PharoLanguageServer' ) ];
 		package: 'PharoDAP'
 		with: [ spec requires: #( 'MoreLogger' 'PLSDAP-Helpers' ) ];
 		package: 'PharoLanguageServer-Gtk'
 		with: [ spec requires: #( 'SpecGtk' ) ].
+
+	spec
+		package: 'PharoLanguageServer-Toplo'
+		with: [ spec requires: #( 'SpecToplo' ) ].
 	spec package: 'PLS-Pharo9-Extension'.
 
 	"client"
