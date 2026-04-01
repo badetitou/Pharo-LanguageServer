@@ -44,6 +44,7 @@ Execute this code in any Pharo10/11 Image
 Metacello new
   githubUser: 'badetitou' project: 'Pharo-LanguageServer' commitish: 'v5' path: 'src';
   baseline: 'PharoLanguageServer';
+  onConflictUseIncoming;
   load
 ```
 
