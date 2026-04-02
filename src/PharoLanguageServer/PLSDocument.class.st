@@ -50,7 +50,7 @@ PLSDocument class >> fromDocumentDictionary: aDocumentDictionary [
 		  version: (aDocumentDictionary at: #version);
 		  text: (aDocumentDictionary at: #text ifAbsent: '');
 		  languageId: (aDocumentDictionary at: #languageId ifAbsent: '');
-		  uri: (self extractUriFrom: (aDocumentDictionary at: #uri));
+		  uri: (aDocumentDictionary at: #uri);
 		  yourself
 ]
 
