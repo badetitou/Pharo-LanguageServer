@@ -17,17 +17,18 @@ Class {
 
 { #category : 'defaults' }
 PLSAbstractServer class >> defaultPort [
+
 	^ 0
 ]
 
-{ #category : 'defaults' }
+{ #category : 'class initialization' }
 PLSAbstractServer class >> reset [
+
 	<script>
-	PLSServer
-		allInstancesDo: [ :inst | 
+	PLSServer allInstancesDo: [ :inst |
 			[ inst stop ]
 				on: Error
-				do: [ Transcript crShow: 'one server not stopped' ] ]
+				do: [ ] ]
 ]
 
 { #category : 'lsp - workspace' }

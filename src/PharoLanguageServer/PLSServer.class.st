@@ -397,15 +397,17 @@ PLSServer >> iceRepositoryCommit: aRepositoryName message: message [
 ]
 
 { #category : 'pls - ice' }
-PLSServer >> iceRepositoryContainingClassUri: classUri [ 
+PLSServer >> iceRepositoryContainingClassUri: classUri [
 
-	^ IceRepository registry detect: [ :repository | 
-		  [ 
-		  (repository isValid and: [ repository respondsTo: #name ]) and: [ 
-			  (self iceRepositoryChangesFor: repository name)
-				  anySatisfy: [ :change | (change at: #uri) = classUri ] ] ]
-			  on: Error
-			  do: [ false ] ] ifNone: [ nil ]
+	^ IceRepository registry
+		  detect: [ :repository |
+				  [
+					  repository isValid and: [
+							  (self iceRepositoryChangesFor: repository name) anySatisfy: [
+								  :change | (change at: #uri) = classUri ] ] ]
+					  on: Error
+					  do: [ false ] ]
+		  ifNone: [ nil ]
 ]
 
 { #category : 'pls - ice' }
