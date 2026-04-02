@@ -80,7 +80,10 @@ PLSServerTest >> setUp [
 	super setUp.
 	server := PLSServer new.
 	server debugMode: true.
-	server clientOutStream: NullStream new
+	server clientOutStream: NullStream new.
+	server context clientContext: (PLPInitializeParams new
+			 capabilities: (PLPClientCapabilities from: {  } asDictionary );
+			 yourself)
 ]
 
 { #category : 'running' }
