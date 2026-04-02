@@ -205,7 +205,7 @@ PLSServer >> formatTextDocument: textDocument withOptions: options [
 PLSServer >> iceAddPackageToRepository: aRepositoryName packageName: packageName [
 
 	<jrpc: #'pls-ice:addPackage'>
-	| normalizedPackage repository workingCopy package |
+	| normalizedPackage repository workingCopy |
 	normalizedPackage := packageName ifNil: [ '' ].
 	normalizedPackage := normalizedPackage trimBoth.
 	normalizedPackage ifEmpty: [ self error: 'Package name cannot be empty.' ].
@@ -488,15 +488,15 @@ PLSServer >> iceStatusForDiffLeaf: aDiffLeaf [
 
 	| className |
 	(aDiffLeaf respondsTo: #isAddition) ifTrue: [
-		aDiffLeaf isAddition ifTrue: [ ^ 'added' ] ]..
+		aDiffLeaf isAddition ifTrue: [ ^ 'added' ] ].
 	(aDiffLeaf respondsTo: #isRemoval) ifTrue: [
 		aDiffLeaf isRemoval ifTrue: [ ^ 'deleted' ] ].
 	(aDiffLeaf respondsTo: #isConflict) ifTrue: [
 		aDiffLeaf isConflict ifTrue: [ ^ 'conflicted' ] ].
 	className := aDiffLeaf class name asString asLowercase.
 	(className includesSubstring: 'add') ifTrue: [ ^ 'added' ].
-	((className includesSubstring: 'remove') or: [ className includesSubstring: 'delete' ])
-		ifTrue: [ ^ 'deleted' ].
+	((className includesSubstring: 'remove') or: [
+		 className includesSubstring: 'delete' ]) ifTrue: [ ^ 'deleted' ].
 	(className includesSubstring: 'conflict') ifTrue: [ ^ 'conflicted' ].
 	^ 'modified'
 ]
