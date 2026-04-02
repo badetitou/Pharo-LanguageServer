@@ -10,16 +10,19 @@ Class {
 PLSTonelDocument class >> supportDocument: aTextDocument [
 	"return true if this class can host this kind of textDocument"
 
-	^ ((aTextDocument at: #uri) endsWith: 'class.st') or: [
-		  (aTextDocument at: #uri) endsWith: 'extension.st' ]
+	| uri |
+	uri := self extractUriFrom: (aTextDocument at: #uri).
+
+	^ (uri endsWith: 'class.st') or: [ uri endsWith: 'extension.st' ]
 ]
 
 { #category : 'as yet unclassified' }
 PLSTonelDocument class >> supportDocumentUri: aTextDocumentUri [
 	"return true if this class can host this kind of textDocument"
 
-	^ (aTextDocumentUri endsWith: 'class.st') or: [
-		  aTextDocumentUri endsWith: 'extension.st' ]
+	| uri |
+	uri := self extractUriFrom: aTextDocumentUri.
+	^ (uri endsWith: 'class.st') or: [ uri endsWith: 'extension.st' ]
 ]
 
 { #category : 'lsp - accessing' }
