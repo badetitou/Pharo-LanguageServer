@@ -110,21 +110,20 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 
 { #category : 'lsp - text synchronisation' }
 PLSServer >> didClose: textDocument [
+
 	<jrpc: #'textDocument/didClose'>
 	| document |
 	document := self context removeItem: (textDocument at: #uri).
-	(self isTonelDocument: textDocument)
-		ifFalse: [ self
-				sendData:
-					(self
-						convertJRPCJsonableObjectToJSON:
-							((JRPCNotificationObject method: 'textDocument/publishDiagnostics')
-								params:
-									(PLSPublishDiagnosticsParams new
-										diagnostics: {};
-										uri: document uri;
-										version: document version;
-										yourself)) asJRPCJSON)
+	(PLSDocument isTonelDocument: textDocument) ifFalse: [
+			self
+				sendData: (self convertJRPCJsonableObjectToJSON:
+						 ((JRPCNotificationObject method:
+							   'textDocument/publishDiagnostics') params:
+							  (PLSPublishDiagnosticsParams new
+								   diagnostics: {  };
+								   uri: document uri;
+								   version: document version;
+								   yourself)) asJRPCJSON)
 				toClient: clientOutStream ]
 ]
 
@@ -143,10 +142,11 @@ PLSServer >> didOpen: textDocument [
 
 { #category : 'lsp - text synchronisation' }
 PLSServer >> didSave: textDocument text: text [
-	<jrpc: #'textDocument/didSave'>
 	"Install the code in the image if the code is part of a tonel file"
-	((textDocument at: #uri) endsWith: 'class.st')
-		ifTrue: [ (PLSTonelParser parseString: text asByteArray utf8Decoded) do: #load ]
+
+	<jrpc: #'textDocument/didSave'>
+	(PLSDocument isTonelDocument: textDocument) ifTrue: [
+		(PLSTonelParser parseString: text asByteArray utf8Decoded) do: #load ]
 ]
 
 { #category : 'lsp - document symbol' }
@@ -177,28 +177,27 @@ PLSServer >> documentVariables: textDocument [
 
 { #category : 'lsp - formatting' }
 PLSServer >> formatTextDocument: textDocument withOptions: options [
+
 	<jrpc: #'textDocument/formatting'>
 	| codeSource formatter lines endPosition |
 	codeSource := (self context textItem: (textDocument at: #uri)) text.
 	lines := codeSource lines.
 	endPosition := PLSPosition new
-		line: lines size;
-		character: lines last size;
-		yourself.
-	formatter := (self isTonelDocument: textDocument)
-		ifFalse: [ PLSFormater new sourceCode: codeSource ]
-		ifTrue: [ PLSTonelFormater new sourceCode: codeSource ].
-	^ {(PLSTextEdit new
-		newText: formatter formated;
-		range:
-			(PLSRange new
-				start:
-					(PLSPosition new
-						line: 0;
-						character: 0;
-						yourself);
-				end: endPosition;
-				yourself))}
+		               line: lines size;
+		               character: lines last size;
+		               yourself.
+	formatter := (PLSDocument isTonelDocument: textDocument)
+		             ifFalse: [ PLSFormater new sourceCode: codeSource ]
+		             ifTrue: [ PLSTonelFormater new sourceCode: codeSource ].
+	^ { (PLSTextEdit new
+		   newText: formatter formated;
+		   range: (PLSRange new
+				    start: (PLSPosition new
+						     line: 0;
+						     character: 0;
+						     yourself);
+				    end: endPosition;
+				    yourself)) }
 ]
 
 { #category : 'pls - ice' }
@@ -503,11 +502,6 @@ PLSServer >> iceStatusForDiffLeaf: aDiffLeaf [
 	^ 'modified'
 ]
 
-{ #category : 'lsp - formatting' }
-PLSServer >> isTonelDocument: textDocument [
-	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
-]
-
 { #category : 'lsp - initialization' }
 PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 
@@ -779,12 +773,12 @@ PLSServer >> textDocumentCompletionWithContext: context position: position textD
 				                  text;
 		                  position: position;
 		                  yourself.
-	(self isTonelDocument: textDocument) ifTrue: [ 
-		completionTool sourceClass: (([ 
-			  PLSTonelParser parseString:
-				  (self context textItem: (textDocument at: #uri)) text ]
-				  on: Error
-				  do: [ ^ {  } ]) detect: #isClassDefinition) actualClass ].
+	(PLSDocument isTonelDocument: textDocument) ifTrue: [
+			completionTool sourceClass: (([
+					  PLSTonelParser parseString:
+						  (self context textItem: (textDocument at: #uri)) text ]
+					  on: Error
+					  do: [ ^ {  } ]) detect: #isClassDefinition) actualClass ].
 	completionList := PLSCompletionList new.
 	completionList completionItems: completionTool entries asArray.
 	^ completionList

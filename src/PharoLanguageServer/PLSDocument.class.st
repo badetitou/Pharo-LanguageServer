@@ -28,7 +28,8 @@ Class {
 { #category : 'instance creation' }
 PLSDocument class >> extractUriFrom: aPseudoURIString [
 	"I extract additional element of URI for good usage"
-	^ (aPseudoURIString substrings: '?') anyOne
+
+	^ aPseudoURIString copyUpTo: $?
 ]
 
 { #category : 'instance creation' }
@@ -71,7 +72,10 @@ PLSDocument class >> fromURI: aTextDocumentURI [
 
 { #category : 'instance creation' }
 PLSDocument class >> isTonelDocument: textDocument [
-	^ ((textDocument at: #uri) endsWith: 'class.st') or: [ (textDocument at: #uri) endsWith: 'extension.st' ]
+
+	| uri |
+	uri := self extractUriFrom: (textDocument at: #uri).
+	^ (uri endsWith: 'class.st') or: [ uri endsWith: 'extension.st' ]
 ]
 
 { #category : 'instance creation' }

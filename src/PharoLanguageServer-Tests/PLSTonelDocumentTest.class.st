@@ -27,3 +27,14 @@ PLSTonelDocumentTest >> testCreateFromTextDocument [
 					 (#version -> 1) } asDictionary) class
 		equals: PLSTonelDocument
 ]
+
+{ #category : 'tests' }
+PLSTonelDocumentTest >> testCreateFromTextDocumentWithIceRepositoryURI [
+
+	self
+		assert: (PLSDocument from: {
+					 (#uri -> 'hello.class.st?iceRepository=my-repo').
+					 (#languageId -> 'hello.class.st').
+					 (#version -> 1) } asDictionary) class
+		equals: PLSTonelDocument
+]
