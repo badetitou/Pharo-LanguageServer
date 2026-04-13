@@ -53,7 +53,7 @@ PLSDocumentTest >> testCreateFromTextDocumentWithComplexURI [
 			            (#uri -> 'hello.xyz?hello=3').
 			            (#languageId -> 'hello.xyz').
 			            (#version -> 1) } asDictionary.
-	self assert: doc uri equals: 'hello.xyz'.
+	self assert: doc uri equals: 'hello.xyz?hello=3'.
 	self assert: doc class equals: PLSDocument
 ]
 
