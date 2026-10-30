@@ -34,12 +34,16 @@ PLSAbstractServer class >> defaultPort [
 
 { #category : 'class initialization' }
 PLSAbstractServer class >> reset [
+	"Stop the language servers of the image, and the MCP servers they started, including the ones a saved image restarted by itself"
 
 	<script>
 	PLSServer allInstancesDo: [ :inst |
 			[ inst stop ]
 				on: Error
-				do: [ ] ]
+				do: [ ] ].
+	self environment
+		at: #PLSMCPEndpoint
+		ifPresent: [ :endpointClass | endpointClass stopAll ]
 ]
 
 { #category : 'lsp - workspace' }
@@ -232,10 +236,10 @@ PLSAbstractServer >> notifyMethod: aMethodString arguments: arguments [
 ]
 
 { #category : 'lsp - initialization' }
-PLSAbstractServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
+PLSAbstractServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri initializationOptions: initializationOptions [
+
 	<jrpc: #initialize>
-	self subclassResponsibility.
-	
+	self subclassResponsibility
 ]
 
 { #category : 'starting' }

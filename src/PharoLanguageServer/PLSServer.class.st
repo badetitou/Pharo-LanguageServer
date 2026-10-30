@@ -17,7 +17,8 @@ Class {
 		'envFlushProcess',
 		'envFirstChangeTime',
 		'envLastChangeTime',
-		'envOverflow'
+		'envOverflow',
+		'mcpEndpoint'
 	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
@@ -582,6 +583,15 @@ PLSServer >> envClassify: id protocol: protocol [
 ]
 
 { #category : 'pls - env edition' }
+PLSServer >> envCodeErrorClass [
+	"Answer the error the compiler signals for code that does not compile: OCCodeError since Pharo 13, CodeError before"
+
+	^ self class environment
+		  at: #OCCodeError
+		  ifAbsent: [ self class environment at: #CodeError ]
+]
+
+{ #category : 'pls - env edition' }
 PLSServer >> envCompilationFailure: diagnostics [
 
 	^ {
@@ -715,7 +725,7 @@ PLSServer >> envCompileMethodIn: aBehavior from: source protocol: protocol repla
 							             to: warning node stop
 							             severity: 2).
 					            warning resume: warning defaultAction ] ]
-		            on: OCCodeError
+		            on: self envCodeErrorClass
 		            do: [ :error |
 				            diagnostics add: (self
 						             envDiagnostic: error messageText
@@ -2214,6 +2224,52 @@ PLSServer >> isSubscribedToEnvironmentChanges [
 	^ envChangesMutex notNil
 ]
 
+{ #category : 'pls - mcp' }
+PLSServer >> mcpEnabledIn: initializationOptions [
+	"The MCP server starts unless the client says otherwise"
+
+	| options |
+	initializationOptions isDictionary ifFalse: [ ^ true ].
+	options := initializationOptions at: #mcp ifAbsent: [ ^ true ].
+	options isDictionary ifFalse: [ ^ true ].
+	^ (options at: #enabled ifAbsent: [ true ]) ~= false
+]
+
+{ #category : 'pls - mcp' }
+PLSServer >> mcpEndpoint [
+	"The address of the MCP server of the image, as announced in the capabilities, or nil when it does not run"
+
+	<jrpc: #'pls:mcpEndpoint'>
+	^ mcpEndpoint ifNotNil: [ :endpoint |
+		  endpoint isRunning ifTrue: [ endpoint asJRPCJSON ] ]
+]
+
+{ #category : 'pls - mcp' }
+PLSServer >> mcpStartWith: initializationOptions [
+	"Start the MCP server of evref-BL/MCP in this image, so that agents work on it, unless the client disabled it (initializationOptions.mcp.enabled = false) or PharoLanguageServer-MCP is not loaded. Answer it, or nil.
+	 A failure to start leaves the language server working without it"
+
+	| endpointClass |
+	(self mcpEnabledIn: initializationOptions) ifFalse: [ ^ nil ].
+	endpointClass := self class environment
+		                 at: #PLSMCPEndpoint
+		                 ifAbsent: [ ^ nil ].
+	self mcpStop.
+	^ [ mcpEndpoint := endpointClass start ]
+		  on: Error
+		  do: [ :error |
+				  self record:
+					  'Unable to start the MCP server: ' , error messageText.
+				  error return: nil ]
+]
+
+{ #category : 'pls - mcp' }
+PLSServer >> mcpStop [
+
+	mcpEndpoint ifNotNil: [ :endpoint | endpoint stop ].
+	mcpEndpoint := nil
+]
+
 { #category : 'lsp - navigation' }
 PLSServer >> navCallItemOf: aMethod [
 	"Answer the CallHierarchyItem of aMethod. Its data keeps the pls-env id of the method"
@@ -2769,9 +2825,10 @@ PLSServer >> navWordTargetAt: position in: text of: aClass [
 ]
 
 { #category : 'lsp - initialization' }
-PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
+PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri initializationOptions: initializationOptions [
 
 	<jrpc: #initialize>
+	| result |
 	self context clientContext: (PLPInitializeParams new
 			 trace: trace;
 			 processId: processId;
@@ -2783,7 +2840,10 @@ PLSServer >> onInitializeTrace: trace processId: processId locale: locale client
 			 rootUri: rootUri;
 			 yourself).
 	trace ifNotNil: [ self context traceValue: trace ].
-	^ PLSInitializeResult new
+	result := PLSInitializeResult new.
+	(self mcpStartWith: initializationOptions) ifNotNil: [ :endpoint |
+		result capabilities experimental at: #mcp put: endpoint asJRPCJSON ].
+	^ result
 ]
 
 { #category : 'lsp - text synchronisation' }
@@ -3046,6 +3106,7 @@ PLSServer >> startDapServer [
 PLSServer >> stop [
 
 	self envUnsubscribe.
+	self mcpStop.
 	super stop
 ]
 

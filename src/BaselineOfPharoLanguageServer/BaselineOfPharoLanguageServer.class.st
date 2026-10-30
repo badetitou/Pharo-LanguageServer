@@ -22,11 +22,12 @@ BaselineOfPharoLanguageServer >> customProjectAttributes [
 
 { #category : 'baselines' }
 BaselineOfPharoLanguageServer >> defineDependencies: spec [
+	"MCP depends on this fork of JRPC: both must load the same one"
 
 	spec
 		baseline: 'JRPC' with: [
 				spec
-					repository: 'github://juliendelplanque/JRPC:v3.2.1/src';
+					repository: 'github://Evref-BL/JRPC:v4.0.0/src';
 					loads: #( 'Deployment' ) ];
 		import: 'JRPC'.
 	spec
@@ -35,21 +36,24 @@ BaselineOfPharoLanguageServer >> defineDependencies: spec [
 	spec
 		baseline: 'SpecGtk'
 		with: [ spec repository: 'github://pharo-spec/Spec-Gtk:/src' ].
-
 	spec
 		baseline: 'LLMAPI'
 		with: [ spec repository: 'github://Evref-BL/Pharo-LLMAPI:main/src' ].
-
 	spec
 		baseline: 'SpecToplo'
 		with: [
-		spec repository: 'github://pharo-graphics/Spec-Toplo:v0.9.0/src' ]
+		spec repository: 'github://pharo-graphics/Spec-Toplo:v0.9.0/src' ].
+	"Without the UI group: the image of the language server is headless"
+	spec baseline: 'MCP' with: [
+			spec
+				repository: 'github://Evref-BL/MCP:v3.1.0/src';
+				loads: #( 'Core' 'IDE' ) ]
 ]
 
 { #category : 'baselines' }
 BaselineOfPharoLanguageServer >> defineGroups: spec [
 
-	spec group: 'default' with: #( 'LSP' 'DAP' 'LSC' 'Tests' ).
+	spec group: 'default' with: #( 'LSP' 'DAP' 'LSC' 'LSP-MCP' 'Tests' ).
 	spec group: 'LSC' with: #( 'PharoLanguageClient' ).
 	spec
 		group: 'LSP'
@@ -58,6 +62,11 @@ BaselineOfPharoLanguageServer >> defineGroups: spec [
 			   'PLS-Pharo9-Extension' ).
 	spec group: 'LSP-GTK' with: #( 'LSP' 'PharoLanguageServer-Gtk' ).
 	spec group: 'LSP-Toplo' with: #( 'LSP' 'PharoLanguageServer-Toplo' ).
+	"The MCP server of evref-BL/MCP, that the language server starts for the agents"
+	spec
+		group: 'LSP-MCP'
+		with:
+		#( 'LSP' 'PharoLanguageServer-MCP' 'PharoLanguageServer-MCP-Tests' ).
 	spec group: 'DAP' with: #( 'PharoDAP' ).
 	spec group: 'Tests' with: #( 'PharoLanguageProtocol-Tests' ).
 	spec
@@ -83,21 +92,23 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 						   'LLMAPI' ) ];
 		package: 'PharoLanguageServer-Tests'
 		with: [ spec requires: #( 'PharoLanguageServer' ) ];
+		package: 'PharoLanguageServer-MCP'
+		with: [ spec requires: #( 'PharoLanguageServer'
+				   'MCP' ) ];
+		package: 'PharoLanguageServer-MCP-Tests'
+		with: [ spec requires: #( 'PharoLanguageServer-MCP' ) ];
 		package: 'PharoDAP'
 		with: [ spec requires: #( 'MoreLogger' 'PLSDAP-Helpers' ) ];
 		package: 'PharoLanguageServer-Gtk'
 		with: [ spec requires: #( 'SpecGtk' ) ].
-
 	spec
 		package: 'PharoLanguageServer-Toplo'
 		with: [ spec requires: #( 'SpecToplo' ) ].
 	spec package: 'PLS-Pharo9-Extension'.
-
 	"client"
 	spec
 		package: 'PharoLanguageClient'
 		with: [ spec requires: #( 'JRPC' 'PharoLanguageProtocol' ) ].
-
 	spec
 		package: 'PharoLanguageClienLocal'
 		with: [ spec requires: #( 'PharoLanguageClient' ) ]
