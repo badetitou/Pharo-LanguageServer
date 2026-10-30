@@ -191,6 +191,22 @@ PLSServerEnvironmentTest >> testPackageChildrenAreTagsThenRootClassesThenExtensi
 ]
 
 { #category : 'tests' }
+PLSServerEnvironmentTest >> testPackageEntityTellsWhetherItIsModified [
+
+	| entity |
+	entity := server envEntity: 'package:PharoLanguageServer-Tests'.
+	self assert: (entity at: #repository) equals: 'Pharo-LanguageServer'.
+	self
+		assert: (entity at: #modified)
+		equals: ((IceRepository registry detect: [ :repository |
+				  repository name = 'Pharo-LanguageServer' ]) workingCopy
+				 packageNamed: 'PharoLanguageServer-Tests') isDirty.
+	self deny:
+		((server envEntity: 'class:PLSServerEnvironmentTest') includesKey:
+			 #modified)
+]
+
+{ #category : 'tests' }
 PLSServerEnvironmentTest >> testPackageParentIsItsProject [
 
 	self
@@ -210,6 +226,16 @@ PLSServerEnvironmentTest >> testProjectChildrenAreItsLoadedPackages [
 			 server packageOrganizer hasPackage: (id allButFirst: 8) ]).
 	self deny: ((self childrenIdsOf: 'project:*') includes:
 			 'package:PharoLanguageServer')
+]
+
+{ #category : 'tests' }
+PLSServerEnvironmentTest >> testProjectEntityGivesTheRepositoryOfItsBaseline [
+
+	| entity |
+	entity := server envEntity: 'project:PharoLanguageServer'.
+	self assert: (entity at: #repository) equals: 'Pharo-LanguageServer'.
+	self assert: (entity at: #package) isNil.
+	self assert: ((entity at: #modified) isKindOf: Boolean)
 ]
 
 { #category : 'tests' }
@@ -271,4 +297,13 @@ PLSServerEnvironmentTest >> testUnknownIdsAreRejected [
 	   'method:Array>>noSuchSelector' 'protocol:Array>>no such protocol'
 	   'tag:PharoLanguageServer/NoSuchTag' ) do: [ :id |
 		self should: [ server envEntity: id ] raise: PLSUnknownEntity ]
+]
+
+{ #category : 'tests' }
+PLSServerEnvironmentTest >> testVolatileProjectHasNoRepository [
+
+	| entity |
+	entity := server envEntity: 'project:*'.
+	self assert: (entity at: #repository) isNil.
+	self assert: ((entity at: #modified) isKindOf: Boolean)
 ]
