@@ -9,6 +9,9 @@ Methods in `pls` protocol are pharo language server feature.
 Class {
 	#name : 'PLSServer',
 	#superclass : 'PLSAbstractServer',
+	#instVars : [
+		'envProjectPackages'
+	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
 }
@@ -165,6 +168,478 @@ PLSServer >> documentVariables: textDocument [
 				isDirectory: assoc value class allInstVarNames isNotEmpty;
 				yourself ]
 		as: Array) asJRPCJSON
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envBaselineNamed: aString [
+
+	| baseline |
+	baseline := self class environment classNamed: 'BaselineOf' , aString.
+	(baseline notNil and: [
+			 (baseline inheritsFrom: BaselineOf) and: [
+				 baseline includesSelector: #baseline: ] ]) ifFalse: [
+		PLSUnknownEntity signal: 'Unknown project: ' , aString printString ].
+	^ baseline
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envBaselines [
+	"Answer the Metacello baselines of the image, sorted by name"
+
+	^ (BaselineOf allSubclasses select: [ :baseline |
+		   baseline includesSelector: #baseline: ]) sorted: [ :a :b |
+		  a name <= b name ]
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envBehaviorNamed: aString [
+	"aString is a class or trait name, followed by ' class' for its class side"
+
+	| class |
+	class := self class environment classOrTraitNamed:
+		         (aString withoutSuffix: ' class').
+	(class isNil or: [ class isClassSide ]) ifTrue: [
+		PLSUnknownEntity signal: 'Unknown class: ' , aString printString ].
+	^ (aString endsWith: ' class')
+		  ifTrue: [ class classSide ]
+		  ifFalse: [ class ]
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envBehaviorPathOf: aBehavior [
+
+	^ aBehavior isClassSide
+		  ifTrue: [ aBehavior instanceSide name , ' class' ]
+		  ifFalse: [ aBehavior name ]
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envChildren: id offset: offset limit: limit [
+	"Answer one page of the children of the entity id, as nodes, with the total number of children.
+	 offset is zero-based and defaults to 0; limit defaults to all the remaining children"
+
+	<jrpc: #'pls-env:children'>
+	| ids start stop |
+	ids := self envChildrenIds: id.
+	start := (offset ifNil: [ 0 ]) max: 0.
+	stop := limit
+		        ifNil: [ ids size ]
+		        ifNotNil: [ start + limit min: ids size ].
+	^ {
+		  (#items -> ((start + 1 to: stop)
+			    collect: [ :index | self envNode: (ids at: index) ]
+			    as: Array)).
+		  (#total -> ids size) } asDictionary
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envChildrenIds: id [
+	"Answer the ids of the children of the entity id, in display order"
+
+	^ self
+		  perform:
+		  ('env' , (self envKindOf: id) capitalized , 'Children:') asSymbol
+		  with: (self envPathOf: id)
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envClassChildren: aString [
+	"A class has two sides, the instance side and the class side"
+
+	self envClassNamed: aString.
+	^ {
+		  ('side:' , aString).
+		  ('side:' , aString , ' class') }
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envClassNamed: aString [
+	"Answer the class or trait named aString. Its class side is not a class entity but a side"
+
+	(aString endsWith: ' class') ifTrue: [
+		PLSUnknownEntity signal: 'Unknown class: ' , aString printString ].
+	^ self envBehaviorNamed: aString
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envClassNode: aString [
+
+	| class |
+	class := self envClassNamed: aString.
+	^ Dictionary new
+		  at: #name put: class name;
+		  at: #parent put: (class packageTag isRoot
+				   ifTrue: [ 'package:' , class package name ]
+				   ifFalse: [
+					   'tag:' , class package name , '/' , class packageTag name ]);
+		  at: #hasChildren put: true;
+		  at: #flags put: {
+				  (#abstract -> class isAbstract).
+				  (#test -> (class includesBehavior: TestCase)).
+				  (#deprecated -> class isDeprecated).
+				  (#trait -> class isTrait) } asDictionary;
+		  yourself
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envEntity: id [
+	"Answer the node of the entity id, completed with its package and Iceberg repository, and its superclass for a class"
+
+	<jrpc: #'pls-env:entity'>
+	| entity packageName |
+	entity := self envNode: id.
+	packageName := self envPackageNameOf: id.
+	entity
+		at: #package
+		put: (packageName ifNotNil: [ 'package:' , packageName ]).
+	entity at: #repository put: (packageName ifNotNil: [
+				 (IceRepository registry
+					  detect: [ :repository |
+						  repository workingCopy includesPackageNamed: packageName ]
+					  ifNone: [ nil ]) ifNotNil: [ :repository | repository name ] ]).
+	(entity at: #kind) = 'class' ifTrue: [
+			entity
+				at: #superclass
+				put:
+					((self envBehaviorNamed: (self envPathOf: id)) superclass
+						 ifNotNil: [ :superclass | 'class:' , superclass name ]) ].
+	^ entity
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envExtensionsChildren: aString [
+
+	^ ((self envPackageNamed: aString) extensionMethods collect: [
+			   :method |
+			   'method:' , (self envBehaviorPathOf: method methodClass) , '>>'
+			   , method selector ]) asArray sort
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envExtensionsNode: aString [
+	"The extensions of a package gather the methods it adds to classes of other packages"
+
+	| package |
+	package := self envPackageNamed: aString.
+	^ Dictionary new
+		  at: #name put: 'Extensions';
+		  at: #parent put: 'package:' , package name;
+		  at: #hasChildren put: package extensionMethods notEmpty;
+		  at: #flags put: Dictionary new;
+		  yourself
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envKindOf: id [
+	"Answer the kind of the entity id, the part before its first colon"
+
+	| kind |
+	kind := id copyUpTo: $:.
+	(#( 'project' 'package' 'tag' 'extensions' 'class' 'side' 'protocol'
+	    'method' ) includes: kind) ifFalse: [
+		PLSUnknownEntity signal: 'Unknown entity: ' , id printString ].
+	^ kind
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envMethodChildren: aString [
+
+	self envMethodNamed: aString.
+	^ #(  )
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envMethodNamed: aString [
+	"aString is 'Behavior>>selector'. Class names hold no '>', so the first '>>' ends the behavior even for a selector such as >>"
+
+	| index |
+	index := aString indexOfSubCollection: '>>'.
+	index = 0 ifTrue: [
+		PLSUnknownEntity signal: 'Unknown method: ' , aString printString ].
+	^ (self envBehaviorNamed: (aString first: index - 1))
+		  compiledMethodAt: (aString allButFirst: index + 1) asSymbol
+		  ifAbsent: [
+		  PLSUnknownEntity signal: 'Unknown method: ' , aString printString ]
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envMethodNode: aString [
+
+	| method |
+	method := self envMethodNamed: aString.
+	^ Dictionary new
+		  at: #name put: method selector;
+		  at: #parent
+		  put:
+			  'protocol:' , (self envBehaviorPathOf: method methodClass) , '>>'
+			  , method protocolName;
+		  at: #hasChildren put: false;
+		  at: #flags put: {
+				  (#abstract -> method isAbstract).
+				  (#extension -> method isExtension).
+				  (#override -> method isOverriding).
+				  (#test -> method isTestMethod).
+				  (#deprecated -> method isDeprecated).
+				  (#fromTrait -> method isFromTrait) } asDictionary;
+		  yourself
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envNode: id [
+	"Answer the node of the entity id: its id, kind, name, parent, flags and whether it has children"
+
+	| kind |
+	kind := self envKindOf: id.
+	^ (self
+		   perform: ('env' , kind capitalized , 'Node:') asSymbol
+		   with: (self envPathOf: id))
+		  at: #id put: id;
+		  at: #kind put: kind;
+		  yourself
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envPackageChildren: aString [
+	"Answer the tags of the package, then the classes outside any tag, then its extensions if any"
+
+	| package |
+	package := self envPackageNamed: aString.
+	^ ((package tags reject: [ :tag | tag isRoot ]) collect: [ :tag |
+		   'tag:' , aString , '/' , tag name ]) asArray sort
+	  , ((package tags detect: [ :tag | tag isRoot ] ifNone: [ nil ])
+			   ifNil: [ #(  ) ]
+			   ifNotNil: [ :root |
+					   (root classes collect: [ :class | 'class:' , class name ])
+						   asArray sort ]) , (package extensionMethods
+		   ifEmpty: [ #(  ) ]
+		   ifNotEmpty: [ { ('extensions:' , aString) } ])
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envPackageNameOf: id [
+	"Answer the name of the package that holds the entity id, or nil for a project.
+	 An extension protocol belongs to the package of its methods"
+
+	| kind path |
+	kind := self envKindOf: id.
+	path := self envPathOf: id.
+	kind = 'project' ifTrue: [ ^ nil ].
+	kind = 'package' | (kind = 'extensions') ifTrue: [
+		^ (self envPackageNamed: path) name ].
+	kind = 'tag' ifTrue: [ ^ (self envTagNamed: path) package name ].
+	kind = 'method' ifTrue: [ ^ (self envMethodNamed: path) package name ].
+	kind = 'protocol' ifTrue: [
+			| behaviorAndProtocol |
+			behaviorAndProtocol := self envProtocolNamed: path.
+			^ behaviorAndProtocol value methodSelectors
+				  ifEmpty: [ behaviorAndProtocol key package name ]
+				  ifNotEmpty: [ :selectors |
+					  (behaviorAndProtocol key >> selectors anyOne) package name ] ].
+	^ (self envBehaviorNamed: path) package name
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envPackageNamed: aString [
+
+	^ self packageOrganizer
+		  packageNamed: aString
+		  ifAbsent: [
+		  PLSUnknownEntity signal: 'Unknown package: ' , aString printString ]
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envPackageNamesOfBaseline: aBaseline [
+	"Answer the names of the packages declared by aBaseline, its own package included, loaded or not.
+	 Reading a spec is slow, so the answer is cached until #baseline: is recompiled"
+
+	| specMethod entry |
+	envProjectPackages ifNil: [ envProjectPackages := Dictionary new ].
+	specMethod := aBaseline >> #baseline:.
+	entry := envProjectPackages at: aBaseline name ifAbsent: [ nil ].
+	(entry isNil or: [ entry key ~~ specMethod ]) ifTrue: [
+			entry := specMethod
+			         ->
+				         (([ aBaseline project version packages collect: #name ]
+					           on: Error
+					           do: [ #(  ) ]) asSet
+					          add: aBaseline package name;
+					          yourself).
+			envProjectPackages at: aBaseline name put: entry ].
+	^ entry value
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envPackageNode: aString [
+
+	| package |
+	package := self envPackageNamed: aString.
+	^ Dictionary new
+		  at: #name put: package name;
+		  at: #parent put: (self envProjectIdOfPackageNamed: package name);
+		  at: #hasChildren put: (package definedClasses notEmpty or: [
+					   package extensionMethods notEmpty ]);
+		  at: #flags put: { (#test -> package isTestPackage) } asDictionary;
+		  yourself
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envPathOf: id [
+	"Answer the path of the entity id, the part after its first colon"
+
+	^ id allButFirst: (id indexOf: $:)
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envProjectChildren: aString [
+	"Answer the loaded packages of the project. The volatile project holds those of no baseline"
+
+	| names |
+	names := aString = '*'
+		         ifTrue: [
+				         | declared |
+				         declared := Set new.
+				         self envBaselines do: [ :baseline |
+					         declared addAll:
+						         (self envPackageNamesOfBaseline: baseline) ].
+				         (self packageOrganizer packages collect: #name) reject: [
+					         :name | declared includes: name ] ]
+		         ifFalse: [
+				         (self envPackageNamesOfBaseline:
+					          (self envBaselineNamed: aString)) select: [ :name |
+					         self packageOrganizer hasPackage: name ] ].
+	^ names asArray sort collect: [ :name | 'package:' , name ]
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envProjectIdOfPackageNamed: aString [
+	"Answer the project of the package: the first baseline by name that declares it, or else the volatile project"
+
+	^ 'project:' , ((self envBaselines
+		    detect: [ :baseline |
+			    (self envPackageNamesOfBaseline: baseline) includes: aString ]
+		    ifNone: [ ^ 'project:*' ]) name withoutPrefix: 'BaselineOf')
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envProjectNode: aString [
+	"aString is the name of a baseline without its BaselineOf prefix, or * for the volatile project"
+
+	aString = '*' ifFalse: [ self envBaselineNamed: aString ].
+	^ Dictionary new
+		  at: #name put: (aString = '*'
+				   ifTrue: [ 'Volatile' ]
+				   ifFalse: [ aString ]);
+		  at: #parent put: nil;
+		  at: #hasChildren put: true;
+		  at: #flags put: { (#volatile -> (aString = '*')) } asDictionary;
+		  yourself
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envProjects [
+	"Answer the nodes of the projects of the image: one per Metacello baseline, then the volatile project that gathers the packages of no baseline"
+
+	<jrpc: #'pls-env:projects'>
+	^ (self envBaselines collect: [ :baseline |
+		   'project:' , (baseline name withoutPrefix: 'BaselineOf') ])
+		  asArray , { 'project:*' } collect: [ :id | self envNode: id ]
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envProtocolChildren: aString [
+
+	| behaviorAndProtocol path |
+	behaviorAndProtocol := self envProtocolNamed: aString.
+	path := self envBehaviorPathOf: behaviorAndProtocol key.
+	^ (behaviorAndProtocol value methodSelectors collect: [ :selector |
+		   'method:' , path , '>>' , selector ]) asArray sort
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envProtocolNamed: aString [
+	"aString is 'Behavior>>protocol'. Answer the behavior -> the protocol"
+
+	| index behavior |
+	index := aString indexOfSubCollection: '>>'.
+	index = 0 ifTrue: [
+		PLSUnknownEntity signal: 'Unknown protocol: ' , aString printString ].
+	behavior := self envBehaviorNamed: (aString first: index - 1).
+	^ behavior -> (behavior
+		   protocolNamed: (aString allButFirst: index + 1)
+		   ifAbsent: [
+		   PLSUnknownEntity signal: 'Unknown protocol: ' , aString printString ])
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envProtocolNode: aString [
+
+	| behaviorAndProtocol |
+	behaviorAndProtocol := self envProtocolNamed: aString.
+	^ Dictionary new
+		  at: #name put: behaviorAndProtocol value name;
+		  at: #parent
+		  put: 'side:' , (self envBehaviorPathOf: behaviorAndProtocol key);
+		  at: #hasChildren
+		  put: behaviorAndProtocol value methodSelectors notEmpty;
+		  at: #flags
+		  put:
+			  { (#extension -> behaviorAndProtocol value isExtensionProtocol) }
+				  asDictionary;
+		  yourself
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envSideChildren: aString [
+
+	^ ((self envBehaviorNamed: aString) protocols collect: [ :protocol |
+		   'protocol:' , aString , '>>' , protocol name ]) asArray sort
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envSideNode: aString [
+
+	| behavior |
+	behavior := self envBehaviorNamed: aString.
+	^ Dictionary new
+		  at: #name put: (behavior isClassSide
+				   ifTrue: [ 'class side' ]
+				   ifFalse: [ 'instance side' ]);
+		  at: #parent put: 'class:' , behavior instanceSide name;
+		  at: #hasChildren put: behavior protocols notEmpty;
+		  at: #flags put: Dictionary new;
+		  yourself
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envTagChildren: aString [
+
+	^ ((self envTagNamed: aString) classes collect: [ :class |
+		   'class:' , class name ]) asArray sort
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envTagNamed: aString [
+	"aString is 'Package/Tag'"
+
+	| package |
+	package := self envPackageNamed: (aString copyUpTo: $/).
+	^ package tags
+		  detect: [ :tag |
+		  tag isRoot not and: [ tag name = (aString copyAfter: $/) ] ]
+		  ifNone: [ PLSUnknownEntity signal: 'Unknown tag: ' , aString printString ]
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envTagNode: aString [
+
+	| tag |
+	tag := self envTagNamed: aString.
+	^ Dictionary new
+		  at: #name put: tag name;
+		  at: #parent put: 'package:' , tag package name;
+		  at: #hasChildren put: tag classes notEmpty;
+		  at: #flags put: Dictionary new;
+		  yourself
 ]
 
 { #category : 'lsp - formatting' }

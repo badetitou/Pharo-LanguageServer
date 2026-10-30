@@ -12,7 +12,8 @@ Class {
 		'typeDefinitionOptions',
 		'codeActionProvider',
 		'diagnosticProvider',
-		'inlineCompletionProvider'
+		'inlineCompletionProvider',
+		'experimental'
 	],
 	#category : 'PharoLanguageServer-Structure-Capabilities',
 	#package : 'PharoLanguageServer',
@@ -45,6 +46,7 @@ PLSServerCapabilities class >> forPharo [
 				   workspaceDiagnostics: false;
 				   yourself) asJRPCJSON;
 		  typeDefinitionOptions: PLSTypeDefinitionOptions new;
+		  experimental: { (#'pls-env' -> { (#version -> 1) } asDictionary) } asDictionary;
 		  yourself
 ]
 
@@ -83,6 +85,8 @@ PLSServerCapabilities >> asJRPCJSON [
 		dic
 			at: #inlineCompletionProvider
 			put: self inlineCompletionProvider asJRPCJSON ].
+	self experimental ifNotNil: [
+		dic at: #experimental put: self experimental asJRPCJSON ].
 	^ dic
 ]
 
@@ -156,6 +160,18 @@ PLSServerCapabilities >> documentSymbolProvider [
 PLSServerCapabilities >> documentSymbolProvider: anObject [
 
 	documentSymbolProvider := anObject
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> experimental [
+
+	^ experimental
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> experimental: anObject [
+
+	experimental := anObject
 ]
 
 { #category : 'converting' }
