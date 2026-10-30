@@ -5,7 +5,8 @@ Class {
 		'completionContext',
 		'source',
 		'position',
-		'sourceClass'
+		'sourceClass',
+		'sourceIsMethod'
 	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
@@ -23,21 +24,22 @@ PLSCompletion >> completionContext: anObject [
 
 { #category : 'initialization' }
 PLSCompletion >> entries [
+
 	completionContext := CompletionContext
-		engine: PLSCompletionEngine new
-		class: self sourceClass
-		source: self source
-		position: self position.
-	^ self completionContext entries
-		collectWithIndex: [ :entry :index |
-			PLSCompletionItem new
-				label: entry contents;
-				insertTextFormat: PLSInsertTextFormat snippet;
-				insertText: entry contents toPLSSnippet ;
-				kind: entry asPLSCompletionItemKind;
-				data: index;
-				"documentation: entry description description;"
-				yourself ]
+		                     engine: (PLSCompletionEngine new
+				                      scripting: self sourceIsMethod not;
+				                      yourself)
+		                     class: self sourceClass
+		                     source: self source
+		                     position: self position.
+	^ self completionContext entries collectWithIndex: [ :entry :index |
+			  PLSCompletionItem new
+				  label: entry contents;
+				  insertTextFormat: PLSInsertTextFormat snippet;
+				  insertText: entry contents toPLSSnippet;
+				  kind: entry asPLSCompletionItemKind;
+				  data: index;
+				  "documentation: entry description description;"yourself ]
 ]
 
 { #category : 'initialization' }
@@ -76,4 +78,17 @@ PLSCompletion >> sourceClass [
 { #category : 'accessing' }
 PLSCompletion >> sourceClass: anObject [
 	sourceClass := anObject
+]
+
+{ #category : 'accessing' }
+PLSCompletion >> sourceIsMethod [
+
+	^ sourceIsMethod ifNil: [ false ]
+]
+
+{ #category : 'accessing' }
+PLSCompletion >> sourceIsMethod: aBoolean [
+	"Tell whether the source is a method of sourceClass rather than a script"
+
+	sourceIsMethod := aBoolean
 ]

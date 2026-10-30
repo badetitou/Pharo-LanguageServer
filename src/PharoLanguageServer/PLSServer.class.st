@@ -271,6 +271,22 @@ PLSServer >> envChangesAreSettled [
 					  now - envFirstChangeTime >= self envMaxDelay ] ] ]
 ]
 
+{ #category : 'pls - env edition' }
+PLSServer >> envCheckVersionOf: id is: expectedVersion [
+	"Signal a conflict if expectedVersion is given and the entity id is no longer at that version, or no longer exists"
+
+	| currentVersion |
+	expectedVersion ifNil: [ ^ self ].
+	currentVersion := [ self envVersionOf: id ]
+		                  on: PLSUnknownEntity
+		                  do: [ nil ].
+	currentVersion = expectedVersion ifFalse: [
+			PLSEntityConflict new
+				id: id;
+				currentVersion: currentVersion;
+				signal ]
+]
+
 { #category : 'pls - env' }
 PLSServer >> envChildren: id offset: offset limit: limit [
 	"Answer one page of the children of the entity id, as nodes, with the total number of children.
@@ -423,6 +439,179 @@ PLSServer >> envClassRepackaged: anAnnouncement [
 						 envClassParentIdIn: anAnnouncement oldPackage
 						 tag: anAnnouncement oldTag);
 				yourself ]
+]
+
+{ #category : 'pls - env edition' }
+PLSServer >> envCompilationFailure: diagnostics [
+
+	^ {
+		  (#compiled -> false).
+		  (#id -> nil).
+		  (#version -> nil).
+		  (#diagnostics -> diagnostics asArray) } asDictionary
+]
+
+{ #category : 'pls - env edition' }
+PLSServer >> envCompile: id source: source protocol: protocol expectedVersion: expectedVersion [
+	"Compile source into the image and answer whether it compiled, the id of the result, its version and the diagnostics.
+	 id is the method or class to replace, or the side of a class to add a method to. A source that declares another selector
+	 or class name creates that entity and leaves the one named by id unchanged.
+	 The protocol of a method defaults to the one of the method it replaces.
+	 With expectedVersion, the compilation is refused with a conflict if the entity id is no longer at that version"
+
+	<jrpc: #'pls-env:compile'>
+	| kind path |
+	kind := self envKindOf: id.
+	path := self envPathOf: id.
+	self envCheckVersionOf: id is: expectedVersion.
+	kind = 'class' ifTrue: [ ^ self envCompileClassFrom: source ].
+	kind = 'side' ifTrue: [
+			^ self
+				  envCompileMethodIn: (self envBehaviorNamed: path)
+				  from: source
+				  protocol: protocol
+				  replacing: nil ].
+	kind = 'method' ifTrue: [
+			| behavior |
+			behavior := self envBehaviorNamed:
+				            (path
+					             copyFrom: 1
+					             to: (path indexOfSubCollection: '>>') - 1).
+			^ self
+				  envCompileMethodIn: behavior
+				  from: source
+				  protocol: protocol
+				  replacing: ([ self envMethodNamed: path ]
+						   on: PLSUnknownEntity
+						   do: [ nil ]) ].
+	PLSUnknownEntity signal:
+		'Only classes and methods can be compiled: ' , id printString
+]
+
+{ #category : 'pls - env edition' }
+PLSServer >> envCompileClassFrom: source [
+
+	| definitions classDefinition diagnostics |
+	definitions := [ PLSTonelParser parseString: source ]
+		               on: Error
+		               do: [ :error |
+				               ^ self envCompilationFailure: { (self
+						                  envDiagnostic: error messageText
+						                  in: source
+						                  from: 1
+						                  to: source size
+						                  severity: 1) } ].
+	classDefinition := definitions
+		                   detect: [ :definition |
+		                   definition isClassDefinition ]
+		                   ifNone: [
+				                   ^ self envCompilationFailure: { (self
+						                      envDiagnostic: 'No class definition'
+						                      in: source
+						                      from: 1
+						                      to: source size
+						                      severity: 1) } ].
+	diagnostics := (definitions anySatisfy: [ :definition |
+		                definition isMethodDefinition ])
+		               ifTrue: [
+				               { (self
+					                envDiagnostic:
+					                'Methods are not compiled with a class definition'
+					                in: source
+					                from: 1
+					                to: source size
+					                severity: 2) } ]
+		               ifFalse: [ #(  ) ].
+	[ classDefinition load ]
+		on: Error
+		do: [ :error |
+				^ self envCompilationFailure: { (self
+						   envDiagnostic: error messageText
+						   in: source
+						   from: 1
+						   to: source size
+						   severity: 1) } ].
+	^ {
+		  (#compiled -> true).
+		  (#id -> ('class:' , classDefinition className)).
+		  (#version -> (self envVersionOfClass:
+			    (self class environment classNamed: classDefinition className))).
+		  (#diagnostics -> diagnostics) } asDictionary
+]
+
+{ #category : 'pls - env edition' }
+PLSServer >> envCompileMethodIn: aBehavior from: source protocol: protocol replacing: aMethodOrNil [
+	"Compile source in aBehavior. Syntax and semantic errors are answered as diagnostics; an undeclared variable is only a warning, as when Pharo loads code"
+
+	| ast diagnostics selector |
+	ast := RBParser parseFaultyMethod: source.
+	diagnostics := OrderedCollection new.
+	ast acceptVisitor:
+		(RBParseErrorNodeVisitor new visitBlock: [ :errorNode |
+				 diagnostics add: (self
+						  envDiagnostic: errorNode errorMessage
+						  in: source
+						  from: errorNode start
+						  to: errorNode stop
+						  severity: 1) ]).
+	diagnostics ifNotEmpty: [ ^ self envCompilationFailure: diagnostics ].
+	selector := [
+		            [
+			            aBehavior
+				            compile: source
+				            classified: (protocol ifNil: [
+							             ((aBehavior
+								               compiledMethodAt: ast selector
+								               ifAbsent: [ aMethodOrNil ]) ifNotNil: [ :method |
+								              method protocolName ]) ifNil: [
+								             Protocol unclassified ] ]) ]
+			            on: OCUndeclaredVariableWarning
+			            do: [ :warning |
+					            diagnostics add: (self
+							             envDiagnostic:
+							             'Undeclared variable: ' , warning node name
+							             in: source
+							             from: warning node start
+							             to: warning node stop
+							             severity: 2).
+					            warning resume: warning defaultAction ] ]
+		            on: OCCodeError
+		            do: [ :error |
+				            diagnostics add: (self
+						             envDiagnostic: error messageText
+						             in: source
+						             from:
+						             (error node
+							              ifNil: [ error position ]
+							              ifNotNil: [ :node | node start ])
+						             to:
+						             (error node
+							              ifNil: [ error position ]
+							              ifNotNil: [ :node | node stop ])
+						             severity: 1).
+				            ^ self envCompilationFailure: diagnostics ].
+	^ {
+		  (#compiled -> true).
+		  (#id
+		   ->
+		   ('method:' , (self envBehaviorPathOf: aBehavior) , '>>'
+		    , selector)).
+		  (#version -> (self envVersionOfMethod: aBehavior >> selector)).
+		  (#diagnostics -> diagnostics asArray) } asDictionary
+]
+
+{ #category : 'pls - env edition' }
+PLSServer >> envDiagnostic: message in: source from: start to: stop severity: severity [
+	"start and stop are the one-based indexes of the first and last characters of the error in source.
+	 severity is 1 for an error, 2 for a warning"
+
+	^ {
+		  (#message -> message).
+		  (#severity -> severity).
+		  (#range -> (PLSRange
+			    start: (source toLineCharacter: (start - 1 max: 0))
+			    end: (source toLineCharacter: (stop max: start))) asJRPCJSON) }
+		  asDictionary
 ]
 
 { #category : 'pls - env' }
@@ -960,6 +1149,34 @@ PLSServer >> envQuietDelay [
 	^ 100
 ]
 
+{ #category : 'pls - env edition' }
+PLSServer >> envRead: id [
+	"Answer the source of the class or method id, with its version. The source of a class is its Tonel definition, comment included"
+
+	<jrpc: #'pls-env:read'>
+	| kind |
+	kind := self envKindOf: id.
+	kind = 'method' ifTrue: [
+			| method |
+			method := self envMethodNamed: (self envPathOf: id).
+			^ {
+				  (#id -> id).
+				  (#source -> method sourceCode).
+				  (#protocol -> method protocolName).
+				  (#side
+				   -> ('side:' , (self envBehaviorPathOf: method methodClass))).
+				  (#version -> (self envVersionOfMethod: method)) } asDictionary ].
+	kind = 'class' ifTrue: [
+			| class |
+			class := self envClassNamed: (self envPathOf: id).
+			^ {
+				  (#id -> id).
+				  (#source -> (self envTonelDefinitionOf: class)).
+				  (#version -> (self envVersionOfClass: class)) } asDictionary ].
+	PLSUnknownEntity signal:
+		'Only classes and methods can be read: ' , id printString
+]
+
 { #category : 'pls - env changes' }
 PLSServer >> envRecord: aBlock [
 	"Add the change built by aBlock to the pending ones. A change replaces a pending change of the same kind on the same entity.
@@ -987,6 +1204,31 @@ PLSServer >> envRecord: aBlock [
 					envChanges size > self envMaxChanges ifTrue: [
 							envOverflow := true.
 							envChanges := OrderedDictionary new ] ] ]
+]
+
+{ #category : 'pls - env edition' }
+PLSServer >> envRemove: id expectedVersion: expectedVersion [
+	"Remove the class or method id from the image.
+	 With expectedVersion, the removal is refused with a conflict if the entity is no longer at that version"
+
+	<jrpc: #'pls-env:remove'>
+	| kind |
+	kind := self envKindOf: id.
+	self envCheckVersionOf: id is: expectedVersion.
+	kind = 'method' ifTrue: [
+			| method |
+			method := self envMethodNamed: (self envPathOf: id).
+			method isFromTrait ifTrue: [
+					PLSUnknownEntity signal:
+						id printString , ' comes from the trait ' , method origin name
+						, ', remove it there' ].
+			method methodClass removeSelector: method selector.
+			^ { (#removed -> id) } asDictionary ].
+	kind = 'class' ifTrue: [
+			(self envClassNamed: (self envPathOf: id)) removeFromSystem.
+			^ { (#removed -> id) } asDictionary ].
+	PLSUnknownEntity signal:
+		'Only classes and methods can be removed: ' , id printString
 ]
 
 { #category : 'pls - env' }
@@ -1111,6 +1353,15 @@ PLSServer >> envTagRenamed: anAnnouncement [
 				yourself ]
 ]
 
+{ #category : 'pls - env edition' }
+PLSServer >> envTonelDefinitionOf: aClass [
+
+	^ String streamContents: [ :stream |
+			  TonelWriter new
+				  writeClassDefinition: aClass asClassDefinition
+				  on: stream ]
+]
+
 { #category : 'pls - env changes' }
 PLSServer >> envUnsubscribe [
 
@@ -1118,6 +1369,20 @@ PLSServer >> envUnsubscribe [
 	envFlushProcess ifNotNil: [ :flushProcess | flushProcess terminate ].
 	envFlushProcess := nil.
 	envChangesMutex := nil
+]
+
+{ #category : 'pls - env edition' }
+PLSServer >> envVersionOf: id [
+	"Answer the version of the class or method id, or nil for another kind of entity"
+
+	| kind |
+	kind := self envKindOf: id.
+	kind = 'method' ifTrue: [
+		^ self envVersionOfMethod:
+			  (self envMethodNamed: (self envPathOf: id)) ].
+	kind = 'class' ifTrue: [
+		^ self envVersionOfClass: (self envClassNamed: (self envPathOf: id)) ].
+	^ nil
 ]
 
 { #category : 'pls - env changes' }
@@ -1142,18 +1407,16 @@ PLSServer >> envVersionOfMethod: aMethod [
 PLSServer >> formatTextDocument: textDocument withOptions: options [
 
 	<jrpc: #'textDocument/formatting'>
-	| codeSource formatter lines endPosition |
-	codeSource := (self context textItem: (textDocument at: #uri)) text.
+	| document codeSource lines endPosition |
+	document := self context textItem: (textDocument at: #uri).
+	codeSource := document text.
 	lines := codeSource lines.
 	endPosition := PLSPosition new
 		               line: lines size;
 		               character: lines last size;
 		               yourself.
-	formatter := (PLSDocument isTonelDocument: textDocument)
-		             ifFalse: [ PLSFormater new sourceCode: codeSource ]
-		             ifTrue: [ PLSTonelFormater new sourceCode: codeSource ].
 	^ { (PLSTextEdit new
-		   newText: formatter formated;
+		   newText: document formattedText;
 		   range: (PLSRange new
 				    start: (PLSPosition new
 						     line: 0;
@@ -1756,19 +2019,22 @@ PLSServer >> stop [
 PLSServer >> textDocumentCompletionWithContext: context position: position textDocument: textDocument [
 
 	<jrpc: #'textDocument/completion'>
-	| completionList completionTool |
+	| completionList completionTool document |
+	document := self context textItem: (textDocument at: #uri).
 	completionTool := PLSCompletion new
-		                  source:
-			                  (self context textItem: (textDocument at: #uri))
-				                  text;
+		                  source: document text;
 		                  position: position;
 		                  yourself.
-	(PLSDocument isTonelDocument: textDocument) ifTrue: [
-			completionTool sourceClass: (([
-					  PLSTonelParser parseString:
-						  (self context textItem: (textDocument at: #uri)) text ]
-					  on: Error
-					  do: [ ^ {  } ]) detect: #isClassDefinition) actualClass ].
+	(PLSDocument isTonelDocument: textDocument)
+		ifTrue: [
+				completionTool sourceClass:
+					(([ PLSTonelParser parseString: document text ]
+						  on: Error
+						  do: [ ^ {  } ]) detect: #isClassDefinition) actualClass ]
+		ifFalse: [
+				completionTool
+					sourceClass: document completionClass;
+					sourceIsMethod: document isMethodSource ].
 	completionList := PLSCompletionList new.
 	completionList completionItems: completionTool entries asArray.
 	^ completionList

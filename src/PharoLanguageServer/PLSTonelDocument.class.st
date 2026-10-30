@@ -105,6 +105,12 @@ PLSTonelDocument >> diagnostics [
 	^ diagnostics
 ]
 
+{ #category : 'accessing' }
+PLSTonelDocument >> formattedText [
+
+	^ (PLSTonelFormater new sourceCode: self text) formated
+]
+
 { #category : 'lsp - accessing' }
 PLSTonelDocument >> nodeAt: aPosition [
 

@@ -102,6 +102,13 @@ PLSDocument >> codeLens [
 	^ {}
 ]
 
+{ #category : 'accessing' }
+PLSDocument >> completionClass [
+	"Answer the class in which completion takes place, or nil for a script"
+
+	^ nil
+]
+
 { #category : 'diagnostics' }
 PLSDocument >> diagnostics [
 	"return a collection of diagnostic"
@@ -109,9 +116,22 @@ PLSDocument >> diagnostics [
 	^ {  }
 ]
 
+{ #category : 'accessing' }
+PLSDocument >> formattedText [
+
+	^ (PLSFormater new sourceCode: self text) formated
+]
+
 { #category : 'initialization' }
 PLSDocument >> initialize [
 	binder := PLSBinder new
+]
+
+{ #category : 'accessing' }
+PLSDocument >> isMethodSource [
+	"Answer whether my text is the source of one method of completionClass"
+
+	^ false
 ]
 
 { #category : 'accessing' }

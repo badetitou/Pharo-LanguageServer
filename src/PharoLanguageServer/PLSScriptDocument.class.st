@@ -6,19 +6,22 @@ Class {
 	#tag : 'Document'
 }
 
-{ #category : 'as yet unclassified' }
+{ #category : 'testing' }
 PLSScriptDocument class >> supportDocument: aTextDocument [
 	"I will be default one"
 
 	^ ((aTextDocument at: #uri) endsWith: '.st') and: [
-		  (PLSTonelDocument supportDocument: aTextDocument) not ]
+			  (PLSTonelDocument supportDocument: aTextDocument) not and: [
+				  (PLSMethodDocument supportDocument: aTextDocument) not ] ]
 ]
 
-{ #category : 'as yet unclassified' }
+{ #category : 'testing' }
 PLSScriptDocument class >> supportDocumentUri: aTextDocumentUri [
 	"I am the default one"
 
-	^ (aTextDocumentUri endsWith: '.st') and: [ (PLSTonelDocument supportDocumentUri: aTextDocumentUri) not ]
+	^ (aTextDocumentUri endsWith: '.st') and: [
+			  (PLSTonelDocument supportDocumentUri: aTextDocumentUri) not and: [
+				  (PLSMethodDocument supportDocumentUri: aTextDocumentUri) not ] ]
 ]
 
 { #category : 'diagnostics' }
