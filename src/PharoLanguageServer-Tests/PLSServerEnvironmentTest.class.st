@@ -155,6 +155,29 @@ PLSServerEnvironmentTest >> testMethodFlags [
 ]
 
 { #category : 'tests' }
+PLSServerEnvironmentTest >> testMethodFromATraitNamesItsTrait [
+
+	| class method |
+	class := Object allSubclasses detect: [ :each |
+			         each isTrait not and: [
+					         each selectors anySatisfy: [ :selector |
+						         (each >> selector) isFromTrait ] ] ].
+	method := class >> (class selectors detect: [ :selector |
+		           (class >> selector) isFromTrait ]).
+	self
+		assert:
+			((server envNode: 'method:' , class name , '>>' , method selector)
+				 at: #trait)
+		equals: 'class:' , method origin instanceSide name.
+	self assert:
+		(((server envEntity: 'side:' , class name) at: #traits) includes:
+			 'class:' , method origin instanceSide name).
+	self deny:
+		((server envNode: 'method:PLSAbstractServer>>initializeStreams')
+			 includesKey: #trait)
+]
+
+{ #category : 'tests' }
 PLSServerEnvironmentTest >> testPackageChildrenAreTagsThenRootClassesThenExtensions [
 
 	| ids |
@@ -206,6 +229,26 @@ PLSServerEnvironmentTest >> testSelectorHoldingGreaterThanSigns [
 	entity := server envEntity: 'method:Behavior>>>>'.
 	self assert: (entity at: #name) equals: #'>>'.
 	self assert: ((entity at: #parent) beginsWith: 'protocol:Behavior>>')
+]
+
+{ #category : 'tests' }
+PLSServerEnvironmentTest >> testSideEntityGivesSlotsTraitsAndRedefinedSelectors [
+
+	| entity |
+	entity := server envEntity: 'side:PLSAbstractServer'.
+	self assert: ((entity at: #slots) includes: 'serverContext').
+	self assert: ((entity at: #traits) includes: 'class:TPLPCommon').
+	self assert: ((entity at: #overridden) includes:
+			 'textDocumentHoverWithPosition:textDocument:').
+	self deny: ((entity at: #overridden) includes: 'initializeStreams').
+	self
+		assert:
+		((server envEntity: 'side:PLSAbstractServer class') at: #traits)
+		equals: (entity at: #traits).
+	self
+		assert: ((server envEntity: 'side:PLSAbstractServer class') at:
+				 #classVariables)
+		equals: #(  )
 ]
 
 { #category : 'tests' }

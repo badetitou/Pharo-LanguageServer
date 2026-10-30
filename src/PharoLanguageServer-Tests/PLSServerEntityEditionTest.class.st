@@ -79,6 +79,21 @@ PLSServerEntityEditionTest >> testCapabilitiesAnnounceEdition [
 	self assert: ((experimental at: #'pls-env') at: #edit)
 ]
 
+{ #category : 'tests' }
+PLSServerEntityEditionTest >> testClassifyMethod [
+
+	| answer version |
+	version := self versionOf: 'method:PLSEntityEditionProbe>>count'.
+	answer := server
+		          envClassify: 'method:PLSEntityEditionProbe>>count'
+		          protocol: 'counting'.
+	self assert: (answer at: #protocol) equals: 'counting'.
+	self assert: (probeClass >> #count) protocolName equals: 'counting'.
+	self
+		assert: (self versionOf: 'method:PLSEntityEditionProbe>>count')
+		equals: version
+]
+
 { #category : 'tests - edition' }
 PLSServerEntityEditionTest >> testCompileARemovedMethodIsAConflict [
 
@@ -325,6 +340,23 @@ PLSServerEntityEditionTest >> testOnlyClassesAndMethodsAreEdited [
 					source: 'foo'
 					protocol: nil
 					expectedVersion: nil ]
+		raise: PLSUnknownEntity
+]
+
+{ #category : 'tests' }
+PLSServerEntityEditionTest >> testOnlyMethodsAreClassified [
+
+	self
+		should: [
+			server
+				envClassify: 'class:PLSEntityEditionProbe'
+				protocol: 'counting' ]
+		raise: PLSUnknownEntity.
+	self
+		should: [
+			server
+				envClassify: 'method:PLSEntityEditionProbe>>count'
+				protocol: '' ]
 		raise: PLSUnknownEntity
 ]
 

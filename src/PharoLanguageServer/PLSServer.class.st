@@ -177,6 +177,37 @@ PLSServer >> documentVariables: textDocument [
 		as: Array) asJRPCJSON
 ]
 
+{ #category : 'pls - env' }
+PLSServer >> envAddRepositoryOf: id to: entity [
+	"Complete the entity id with the name of its Iceberg repository, and, for a project or a package, whether that repository holds changes of it not committed yet.
+	 The repository of a project is the one of its baseline"
+
+	| kind path repositories packageName |
+	kind := self envKindOf: id.
+	path := self envPathOf: id.
+	repositories := self envRepositoriesByPackageName.
+	packageName := kind = 'project'
+		               ifTrue: [
+		               path = '*' ifFalse: [
+			               (self envBaselineNamed: path) package name ] ]
+		               ifFalse: [ self envPackageNameOf: id ].
+	entity at: #repository put: (packageName ifNotNil: [
+				 (repositories at: packageName ifAbsent: [ nil ]) ifNotNil: [
+					 :repository | repository name ] ]).
+	kind = 'package' ifTrue: [
+			entity
+				at: #modified
+				put:
+				(self envIsPackageNamed: packageName modifiedIn: repositories) ].
+	kind = 'project' ifTrue: [
+			entity
+				at: #modified
+				put: ((self envProjectChildren: path) anySatisfy: [ :packageId |
+							 self
+								 envIsPackageNamed: (self envPathOf: packageId)
+								 modifiedIn: repositories ]) ]
+]
+
 { #category : 'pls - env changes' }
 PLSServer >> envAnnouncementSelectors [
 	"Answer the system announcements that change the environment model, with the method that records each of them"
@@ -442,6 +473,25 @@ PLSServer >> envClassRepackaged: anAnnouncement [
 ]
 
 { #category : 'pls - env edition' }
+PLSServer >> envClassify: id protocol: protocol [
+	"Move the method id to protocol without compiling it again, and answer its id and its new protocol"
+
+	<jrpc: #'pls-env:classify'>
+	| method |
+	(self envKindOf: id) = 'method' ifFalse: [
+			PLSUnknownEntity signal:
+				'Only methods can be classified: ' , id printString ].
+	(protocol isNil or: [ protocol isEmpty ]) ifTrue: [
+		PLSUnknownEntity signal: 'A protocol is needed to classify ' , id ].
+	method := self envMethodNamed: (self envPathOf: id).
+	method methodClass classify: method selector under: protocol.
+	^ {
+		  (#id -> id).
+		  (#protocol -> (method methodClass >> method selector) protocolName) }
+		  asDictionary
+]
+
+{ #category : 'pls - env edition' }
 PLSServer >> envCompilationFailure: diagnostics [
 
 	^ {
@@ -616,8 +666,9 @@ PLSServer >> envDiagnostic: message in: source from: start to: stop severity: se
 
 { #category : 'pls - env' }
 PLSServer >> envEntity: id [
-	"Answer the node of the entity id, completed with its package and Iceberg repository, its superclass for a class,
-	 and the version of a class or method, which changes with its source"
+	"Answer the node of the entity id, completed with its package and Iceberg repository, whether that repository holds
+	 uncommitted changes of a project or package, its superclass for a class, the version of a class or method, which
+	 changes with its source, and the slots, traits and redefined selectors of a side"
 
 	<jrpc: #'pls-env:entity'>
 	| entity packageName |
@@ -626,11 +677,7 @@ PLSServer >> envEntity: id [
 	entity
 		at: #package
 		put: (packageName ifNotNil: [ 'package:' , packageName ]).
-	entity at: #repository put: (packageName ifNotNil: [
-				 (IceRepository registry
-					  detect: [ :repository |
-						  repository workingCopy includesPackageNamed: packageName ]
-					  ifNone: [ nil ]) ifNotNil: [ :repository | repository name ] ]).
+	self envAddRepositoryOf: id to: entity.
 	(entity at: #kind) = 'class' ifTrue: [
 			| class |
 			class := self envClassNamed: (self envPathOf: id).
@@ -639,6 +686,10 @@ PLSServer >> envEntity: id [
 				put: (class superclass ifNotNil: [ :superclass |
 						 'class:' , superclass name ]).
 			entity at: #version put: (self envVersionOfClass: class) ].
+	(entity at: #kind) = 'side' ifTrue: [
+			self
+				envSideDetailsOf: (self envBehaviorNamed: (self envPathOf: id))
+				in: entity ].
 	(entity at: #kind) = 'method' ifTrue: [
 			entity
 				at: #version
@@ -706,6 +757,16 @@ PLSServer >> envIgnoresBehavior: aBehavior [
 	"Anonymous classes, such as those of tests and tools, are not part of the environment"
 
 	^ aBehavior instanceSide isAnonymous
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envIsPackageNamed: aString modifiedIn: repositories [
+	"Answer whether the Iceberg repository of the package holds changes of it not committed yet"
+
+	^ (repositories at: aString ifAbsent: [ nil ])
+		  ifNil: [ false ]
+		  ifNotNil: [ :repository |
+			  (repository workingCopy packageNamed: aString) isDirty ]
 ]
 
 { #category : 'pls - env' }
@@ -793,23 +854,26 @@ PLSServer >> envMethodNamed: aString [
 { #category : 'pls - env' }
 PLSServer >> envMethodNode: aString [
 
-	| method |
+	| method node |
 	method := self envMethodNamed: aString.
-	^ Dictionary new
-		  at: #name put: method selector;
-		  at: #parent
-		  put:
-			  'protocol:' , (self envBehaviorPathOf: method methodClass) , '>>'
-			  , method protocolName;
-		  at: #hasChildren put: false;
-		  at: #flags put: {
-				  (#abstract -> method isAbstract).
-				  (#extension -> method isExtension).
-				  (#override -> method isOverriding).
-				  (#test -> method isTestMethod).
-				  (#deprecated -> method isDeprecated).
-				  (#fromTrait -> method isFromTrait) } asDictionary;
-		  yourself
+	node := Dictionary new
+		        at: #name put: method selector;
+		        at: #parent
+		        put:
+			        'protocol:' , (self envBehaviorPathOf: method methodClass)
+			        , '>>' , method protocolName;
+		        at: #hasChildren put: false;
+		        at: #flags put: {
+				        (#abstract -> method isAbstract).
+				        (#extension -> method isExtension).
+				        (#override -> method isOverriding).
+				        (#test -> method isTestMethod).
+				        (#deprecated -> method isDeprecated).
+				        (#fromTrait -> method isFromTrait) } asDictionary;
+		        yourself.
+	method isFromTrait ifTrue: [
+		node at: #trait put: 'class:' , method origin instanceSide name ].
+	^ node
 ]
 
 { #category : 'pls - env changes' }
@@ -1232,10 +1296,269 @@ PLSServer >> envRemove: id expectedVersion: expectedVersion [
 ]
 
 { #category : 'pls - env' }
+PLSServer >> envRepositoriesByPackageName [
+	"Answer the Iceberg repository of each package that one holds, by package name"
+
+	| repositories |
+	repositories := Dictionary new.
+	IceRepository registry do: [ :repository |
+			repository workingCopy packages do: [ :package |
+				repositories at: package name ifAbsentPut: [ repository ] ] ].
+	^ repositories
+]
+
+{ #category : 'pls - env search' }
+PLSServer >> envSearch: query kinds: kinds limit: limit [
+	"Answer the projects, packages, classes and methods that match query, best matches first, at most limit of each kind (default 50).
+	 kinds defaults to all four. query is a term, or a class and a term: `Array col`, `Array class new`, `Array>>col`.
+	 A term matches a name that holds it, ignoring case; an exact name comes first, then a name that begins with it.
+	 A class whose name is exactly the class of the query also offers the methods it inherits"
+
+	<jrpc: #'pls-env:search'>
+	| wanted max matches items complete |
+	wanted := kinds ifNil: [ #( 'class' 'method' 'package' 'project' ) ].
+	max := limit ifNil: [ 50 ].
+	matches := self
+		           envSearchMatchesOf: (query ifNil: [ '' ]) trimBoth
+		           kinds: wanted.
+	items := OrderedCollection new.
+	complete := true.
+	#( 'class' 'method' 'package' 'project' ) do: [ :kind |
+			| found |
+			found := (matches at: kind ifAbsent: [ #(  ) ]) sorted: [ :a :b |
+				         self envSearchMatch: a precedes: b ].
+			found size > max ifTrue: [ complete := false ].
+			(found first: (found size min: max)) do: [ :match |
+				items add: (self envSearchItemOf: match) ] ].
+	^ {
+		  (#items -> items asArray).
+		  (#complete -> complete) } asDictionary
+]
+
+{ #category : 'pls - env search' }
+PLSServer >> envSearchItemOf: aMatch [
+	"Answer the node of the subject of aMatch, with its label and package. The label of a method names the side it was found on:
+	 `Array>>collect:` for SequenceableCollection>>collect: found from Array"
+
+	| subject id label |
+	subject := aMatch third.
+	subject isCompiledMethod
+		ifTrue: [
+				id := self envMethodIdOf: subject.
+				label := (self envBehaviorPathOf: aMatch fourth) , '>>'
+				         , subject selector ]
+		ifFalse: [
+				id := (subject isKindOf: Package)
+					      ifTrue: [ 'package:' , subject name ]
+					      ifFalse: [
+							      (subject inheritsFrom: BaselineOf)
+								      ifTrue: [ 'project:' , aMatch second ]
+								      ifFalse: [ self envClassIdOf: subject ] ].
+				label := aMatch second ].
+	^ (self envNode: id)
+		  at: #label put: label;
+		  at: #package
+		  put:
+			  ((self envPackageNameOf: id) ifNotNil: [ :name |
+					   'package:' , name ]);
+		  yourself
+]
+
+{ #category : 'pls - env search' }
+PLSServer >> envSearchMatch: a precedes: b [
+	"Best score first, then shortest name, then by name"
+
+	a first = b first ifFalse: [ ^ a first < b first ].
+	a second size = b second size ifFalse: [
+		^ a second size < b second size ].
+	^ a second <= b second
+]
+
+{ #category : 'pls - env search' }
+PLSServer >> envSearchMatchesOf: query kinds: kinds [
+	"Answer the matches of query by kind. A match is {score. name to sort by. subject. receiver}:
+	 a baseline, a package, a class, or a method and the side it is looked up from"
+
+	| matches terms |
+	matches := Dictionary new.
+	kinds do: [ :kind | matches at: kind put: OrderedCollection new ].
+	terms := self envSearchTermsOf: query.
+	terms first ifNotNil: [ :classTerm |
+			(kinds includes: 'method') ifTrue: [
+					self
+						envSearchMethodsOfClassesMatching: classTerm
+						classSide: terms second
+						selector: terms third
+						into: (matches at: 'method') ].
+			^ matches ].
+	terms third ifEmpty: [ ^ matches ].
+	matches at: 'project' ifPresent: [ :found |
+			self envBaselines do: [ :baseline |
+					| name |
+					name := baseline name withoutPrefix: 'BaselineOf'.
+					(self envSearchScoreOf: name for: terms third) ifNotNil: [ :score |
+							found add: {
+									score.
+									name.
+									baseline.
+									nil } ] ] ].
+	matches at: 'package' ifPresent: [ :found |
+			self packageOrganizer packages do: [ :package |
+					(self envSearchScoreOf: package name for: terms third) ifNotNil: [
+							:score |
+							found add: {
+									score.
+									package name.
+									package.
+									nil } ] ] ].
+	matches at: 'class' ifPresent: [ :found |
+			Smalltalk allClassesAndTraits do: [ :class |
+					(self envSearchScoreOf: class name for: terms third) ifNotNil: [
+							:score |
+							found add: {
+									score.
+									class name.
+									class.
+									nil } ] ] ].
+	matches at: 'method' ifPresent: [ :found |
+			Smalltalk allClassesAndTraits do: [ :class |
+					{
+						class instanceSide.
+						class classSide } do: [ :behavior |
+							behavior selectorsAndMethodsDo: [ :selector :method |
+									(self envSearchScoreOf: selector for: terms third) ifNotNil: [
+											:score |
+											found add: {
+													score.
+													selector.
+													method.
+													behavior } ] ] ] ] ].
+	^ matches
+]
+
+{ #category : 'pls - env search' }
+PLSServer >> envSearchMethodsOfClassesMatching: classTerm classSide: aBoolean selector: selectorTerm into: found [
+	"Add the methods of the classes that match classTerm. A class named exactly classTerm also offers its inherited methods,
+	 each after its own methods that match as well"
+
+	Smalltalk allClassesAndTraits do: [ :class |
+			(self envSearchScoreOf: class name for: classTerm) ifNotNil: [
+					:classScore |
+					| behavior |
+					behavior := aBoolean
+						            ifTrue: [ class classSide ]
+						            ifFalse: [ class instanceSide ].
+					classScore = 0
+						ifTrue: [
+								behavior allSelectors do: [ :selector |
+										(self envSearchScoreOf: selector for: selectorTerm)
+											ifNotNil: [ :score |
+													| method |
+													method := behavior lookupSelector: selector.
+													found add: {
+															(method methodClass == behavior
+																 ifTrue: [ score * 2 ]
+																 ifFalse: [ score * 2 + 1 ]).
+															selector.
+															method.
+															behavior } ] ] ]
+						ifFalse: [
+								behavior selectorsAndMethodsDo: [ :selector :method |
+										(self envSearchScoreOf: selector for: selectorTerm)
+											ifNotNil: [ :score |
+													found add: {
+															(classScore * 6 + (score * 2)).
+															selector.
+															method.
+															behavior } ] ] ] ] ]
+]
+
+{ #category : 'pls - env search' }
+PLSServer >> envSearchScoreOf: aString for: aTerm [
+	"Answer 0 when aString is aTerm, 1 when it begins with aTerm, 2 when it holds aTerm, ignoring case, or else nil"
+
+	aTerm ifEmpty: [ ^ 1 ].
+	(aString includesSubstring: aTerm caseSensitive: false) ifFalse: [
+		^ nil ].
+	(aString beginsWith: aTerm caseSensitive: false) ifFalse: [ ^ 2 ].
+	^ aString size = aTerm size
+		  ifTrue: [ 0 ]
+		  ifFalse: [ 1 ]
+]
+
+{ #category : 'pls - env search' }
+PLSServer >> envSearchTermsOf: query [
+	"Answer {class term or nil. class side. selector term} of query: `col`, `Array col`, `Array class new`, `Array>>col` or `Array class>>#new`"
+
+	| classPart selectorPart tokens |
+	(query includesSubstring: '>>')
+		ifTrue: [
+				| index |
+				index := query indexOfSubCollection: '>>'.
+				classPart := (query first: index - 1) substrings.
+				selectorPart := (query allButFirst: index + 1) trimBoth ]
+		ifFalse: [
+				tokens := query substrings.
+				tokens size <= 1 ifTrue: [
+						^ {
+							  nil.
+							  false.
+							  ((tokens ifEmpty: [ '' ] ifNotEmpty: [ tokens first ])
+								   withoutPrefix: '#') } ].
+				classPart := (tokens size > 2 or: [ tokens second ~= 'class' ])
+					             ifTrue: [
+							             tokens first: (tokens second = 'class'
+									              ifTrue: [ 2 ]
+									              ifFalse: [ 1 ]) ]
+					             ifFalse: [ tokens ].
+				selectorPart := ''.
+				(tokens allButFirst: classPart size) do: [ :token |
+					selectorPart := selectorPart , token ] ].
+	classPart ifEmpty: [
+			^ {
+				  nil.
+				  false.
+				  (selectorPart withoutPrefix: '#') } ].
+	^ {
+		  classPart first.
+		  (classPart size > 1 and: [ classPart second = 'class' ]).
+		  (selectorPart withoutPrefix: '#') }
+]
+
+{ #category : 'pls - env' }
 PLSServer >> envSideChildren: aString [
 
 	^ ((self envBehaviorNamed: aString) protocols collect: [ :protocol |
 		   'protocol:' , aString , '>>' , protocol name ]) asArray sort
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envSideDetailsOf: aBehavior in: entity [
+	"Complete the entity of a side with its own slots, the class variables of its class (instance side only),
+	 the ids of the traits its class uses, and its selectors that a subclass redefines"
+
+	| subclassSelectors |
+	entity at: #slots put: (aBehavior localSlots
+			 collect: [ :slot | slot name asString ]
+			 as: Array).
+	entity at: #classVariables put: (aBehavior isClassSide
+			 ifTrue: [ #(  ) ]
+			 ifFalse: [
+					 (aBehavior classVariables
+						  collect: [ :variable | variable name asString ]
+						  as: Array) sort ]).
+	entity
+		at: #traits
+		put: (aBehavior instanceSide traitComposition allTraits
+				 collect: [ :trait | 'class:' , trait name ]
+				 as: Array).
+	subclassSelectors := Set new.
+	aBehavior allSubclassesDo: [ :subclass |
+		subclassSelectors addAll: subclass localSelectors ].
+	entity at: #overridden put: (aBehavior selectors
+			 select: [ :selector | subclassSelectors includes: selector ]
+			 thenCollect: [ :selector | selector asString ]) asArray sort.
+	^ entity
 ]
 
 { #category : 'pls - env' }
@@ -1277,6 +1600,39 @@ PLSServer >> envSubscribe [
 	envFlushProcess := [ self envFlushLoop ]
 		                   forkAt: Processor userBackgroundPriority
 		                   named: 'PLS environment changes'
+]
+
+{ #category : 'pls - env search' }
+PLSServer >> envSymbolOf: anItem [
+	"Answer the LSP SymbolInformation of an item of pls-env:search. It names a method as its label, `Array>>collect:`,
+	 and in its container the class that defines it when the method is inherited"
+
+	| packageName path container |
+	packageName := (anItem at: #package) withoutPrefix: 'package:'.
+	path := self envPathOf: (anItem at: #id).
+	container := packageName.
+	(anItem at: #kind) = 'method' ifTrue: [
+			| definer |
+			definer := path first: (path indexOfSubCollection: '>>') - 1.
+			((anItem at: #label) beginsWith: definer , '>>') ifFalse: [
+				container := definer , ' (' , packageName , ')' ] ].
+	^ {
+		  (#name -> (anItem at: #label)).
+		  (#kind -> ((anItem at: #kind) = 'method'
+			    ifTrue: [ 6 ]
+			    ifFalse: [ 5 ])).
+		  (#containerName -> container).
+		  (#location -> {
+			   (#uri
+			    -> (self envUriOf: (anItem at: #id) inPackage: packageName)).
+			   (#range -> {
+				    (#start -> {
+					     (#line -> 0).
+					     (#character -> 0) } asDictionary).
+				    (#end -> {
+					     (#line -> 0).
+					     (#character -> 0) } asDictionary) } asDictionary) }
+			   asDictionary) } asDictionary
 ]
 
 { #category : 'pls - env changes' }
@@ -1369,6 +1725,40 @@ PLSServer >> envUnsubscribe [
 	envFlushProcess ifNotNil: [ :flushProcess | flushProcess terminate ].
 	envFlushProcess := nil.
 	envChangesMutex := nil
+]
+
+{ #category : 'pls - env search' }
+PLSServer >> envUriOf: id inPackage: packageName [
+	"Answer the URI of the editor of a class or method of the extension:
+	 pharo:/<image>/<package>/<class>.class.st or pharo:/<image>/<package>/<class>/<instance|class>/<selector>.st.
+	 A selector escapes % and / first, since they cannot stay in a path segment; see docs/environment-model.md"
+
+	| path segments encoder |
+	path := self envPathOf: id.
+	segments := OrderedCollection
+		            with: Smalltalk imageFile basenameWithoutExtension
+		            with: packageName.
+	(self envKindOf: id) = 'class'
+		ifTrue: [ segments add: path , '.class.st' ]
+		ifFalse: [
+				| side selector |
+				side := path first: (path indexOfSubCollection: '>>') - 1.
+				selector := path allButFirst: side size + 2.
+				segments
+					add: (side withoutSuffix: ' class');
+					add: ((side endsWith: ' class')
+							 ifTrue: [ 'class' ]
+							 ifFalse: [ 'instance' ]);
+					add: ((selector copyReplaceAll: '%' with: '%25')
+							 copyReplaceAll: '/'
+							 with: '%2F') , '.st' ].
+	encoder := ZnPercentEncoder new.
+	^ String streamContents: [ :stream |
+			  stream nextPutAll: 'pharo:'.
+			  segments do: [ :segment |
+					  stream
+						  nextPut: $/;
+						  nextPutAll: (encoder encode: segment) ] ]
 ]
 
 { #category : 'pls - env edition' }
@@ -2135,4 +2525,14 @@ PLSServer >> typeDefinitionAt: position in: textDocument [
 				   start: (PLSPosition line: 0 character: 0)
 				   end: (PLSPosition line: 0 character: 0));
 		  yourself
+]
+
+{ #category : 'lsp - workspace symbol' }
+PLSServer >> workspaceSymbol: query [
+	"Answer the classes and methods that match query, as pls-env:search finds them, located in the editors of the entities"
+
+	<jrpc: #'workspace/symbol'>
+	(query isNil or: [ query trimBoth isEmpty ]) ifTrue: [ ^ #(  ) ].
+	^ ((self envSearch: query kinds: #( 'class' 'method' ) limit: 100)
+		   at: #items) collect: [ :item | self envSymbolOf: item ]
 ]
