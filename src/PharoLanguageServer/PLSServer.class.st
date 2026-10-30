@@ -99,9 +99,7 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 	| document |
 	document := self context
 		            textItem: (textDocument at: #uri)
-		            ifAbsent: [
-				            self didOpen: textDocument.
-				            self context textItem: (textDocument at: #uri) ].
+		            ifAbsent: [ self openDocument: textDocument ].
 	document version: (textDocument at: #version).
 	document text: (contentChanges anyOne at: #text).
 	"If diagnostic is not nil, we are in a pull diagnostic context. Else, we are in a push diagnostic context"
@@ -115,16 +113,13 @@ PLSServer >> didClose: textDocument [
 	| document |
 	document := self context removeItem: (textDocument at: #uri).
 	(PLSDocument isTonelDocument: textDocument) ifFalse: [
-			self
-				sendData: (self convertJRPCJsonableObjectToJSON:
-						 ((JRPCNotificationObject method:
-							   'textDocument/publishDiagnostics') params:
-							  (PLSPublishDiagnosticsParams new
-								   diagnostics: {  };
-								   uri: document uri;
-								   version: document version;
-								   yourself)) asJRPCJSON)
-				toClient: clientOutStream ]
+		self
+			sendNotification: 'textDocument/publishDiagnostics'
+			params: (PLSPublishDiagnosticsParams new
+					 diagnostics: {  };
+					 uri: document uri;
+					 version: document version;
+					 yourself) ]
 ]
 
 { #category : 'lsp - text synchronisation' }
@@ -132,10 +127,7 @@ PLSServer >> didOpen: textDocument [
 
 	<jrpc: #'textDocument/didOpen'>
 	| document |
-	document := self context
-		            textItem: (textDocument at: #uri)
-		            put: (PLSDocument from: textDocument).
-	document server: self.
+	document := self openDocument: textDocument.
 	"If diagnostic is not nil, we are in a pull diagnostic context. Else, we are in a push diagnostic context"
 	self publishDiagnosticsFor: document
 ]
@@ -520,6 +512,18 @@ PLSServer >> onInitializeTrace: trace processId: processId locale: locale client
 	^ PLSInitializeResult new
 ]
 
+{ #category : 'lsp - text synchronisation' }
+PLSServer >> openDocument: textDocument [
+	"Register the document sent by the client and answer it"
+
+	| document |
+	document := self context
+		            textItem: (textDocument at: #uri)
+		            put: (PLSDocument from: textDocument).
+	document server: self.
+	^ document
+]
+
 { #category : 'pls' }
 PLSServer >> plsCreateClass: className packageName: packageName superclassName: superclassName instanceVariables: instanceVariables [
 
@@ -745,13 +749,7 @@ PLSServer >> plsTestPackages [
 PLSServer >> publishDiagnosticsFor: document [
 
 	self context clientContext capabilities textDocument ifNotNil: [ :td |
-			td diagnostic ifNil: [
-					self
-						sendData: (self convertJRPCJsonableObjectToJSON:
-								 ((JRPCNotificationObject method:
-									   'textDocument/publishDiagnostics') params:
-									  document diagnostics) asJRPCJSON)
-						toClient: clientOutStream ] ]
+		td diagnostic ifNil: [ self sendDiagnosticsforDocument: document ] ]
 ]
 
 { #category : 'dap' }

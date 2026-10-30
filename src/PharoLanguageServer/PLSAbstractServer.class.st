@@ -1,3 +1,13 @@
+"
+I am the base of the Pharo language server: I read JSON-RPC messages from the client and answer them.
+
+Each incoming message is handled in its own process (see `handleRequest:toClient:`).
+
+Messaging rules:
+- A `<jrpc:>` handler answers its result; `handleRequest:toClient:` sends the response. A handler never writes the response itself.
+- A handler, or any other code, that must push something to the client uses `sendNotification:params:` or `sendRequest:params:`.
+- `sendMessage:` is the single entry point writing to the client. It writes each message as one framed block while holding `outputMutex`, so messages sent from concurrent processes are never interleaved.
+"
 Class {
 	#name : 'PLSAbstractServer',
 	#superclass : 'JRPCServer',
@@ -9,7 +19,8 @@ Class {
 		'serverContext',
 		'messagesProcesses',
 		'clientInStream',
-		'clientOutStream'
+		'clientOutStream',
+		'outputMutex'
 	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
@@ -35,13 +46,11 @@ PLSAbstractServer class >> reset [
 PLSAbstractServer >> applyWorkspaceEdit: workspaceEdit withLabel: aLabel [
 
 	self
-		sendData: (self convertJRPCJsonableObjectToJSON:
-				 ((JRPCRequestObject id: self nextId method: 'workspace/applyEdit')
-					  params: (PLSApplyWorkspaceEditParams new
-							   label: aLabel;
-							   edit: workspaceEdit;
-							   yourself)) asJRPCJSON)
-		toClient: clientOutStream
+		sendRequest: 'workspace/applyEdit'
+		params: (PLSApplyWorkspaceEditParams new
+				 label: aLabel;
+				 edit: workspaceEdit;
+				 yourself)
 ]
 
 { #category : 'lsp - initialization' }
@@ -155,6 +164,7 @@ PLSAbstractServer >> initialize [
 	serverContext := PLSContext for: self.
 	withStdIO := false.
 	messagesProcesses := Dictionary new.
+	outputMutex := Mutex new.
 	answerLoop := true.
 	answerLoopPriority := Processor lowIOPriority.
 	currentId := 0
@@ -193,13 +203,8 @@ PLSAbstractServer >> logMessage: aString ofType: messageType [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
 
 	self
-		sendData:
-			(self
-				convertJRPCJsonableObjectToJSON:
-					((JRPCNotificationObject method: 'window/logMessage')
-						params: (PLSLogMessage message: aString type: messageType))
-						asJRPCJSON)
-		toClient: clientOutStream
+		sendNotification: 'window/logMessage'
+		params: (PLSLogMessage message: aString type: messageType)
 ]
 
 { #category : 'lsp - trace' }
@@ -212,11 +217,7 @@ PLSAbstractServer >> logTrace: aString withAdditionnalInformation: verboseString
 	trace message: aString.
 	self context traceValue = PLSTraceValue verbose ifTrue: [
 		trace verbose: verboseString ].
-	self
-		sendData: (self convertJRPCJsonableObjectToJSON:
-				 ((JRPCNotificationObject method: '$/logTrace') params: trace)
-					 asJRPCJSON)
-		toClient: clientOutStream
+	self sendNotification: '$/logTrace' params: trace
 ]
 
 { #category : 'context' }
@@ -227,11 +228,7 @@ PLSAbstractServer >> messageProcess: anId	put: aProcess [
 { #category : 'plp - base protocol' }
 PLSAbstractServer >> notifyMethod: aMethodString arguments: arguments [
 
-	self
-		sendData: (self convertJRPCJsonableObjectToJSON:
-				 ((JRPCNotificationObject method: aMethodString) params: arguments)
-					 asJRPCJSON)
-		toClient: clientOutStream
+	self sendNotification: aMethodString params: arguments
 ]
 
 { #category : 'lsp - initialization' }
@@ -285,10 +282,17 @@ PLSAbstractServer >> resetContext [
 
 { #category : 'starting' }
 PLSAbstractServer >> sendData: answer2 toClient: stream [
+	"Write answer2 as one framed message. Use sendMessage: rather than calling me directly"
 
-	answer2 ifNotEmpty: [
-		self getHeaderFor: answer2 into: stream.
-		stream << answer2 utf8Encoded.
+	| message |
+	answer2 ifEmpty: [ ^ self ].
+	message := ByteArray streamContents: [ :bytes |
+		           bytes nextPutAll:
+			           (String streamContents: [ :header |
+				            self getHeaderFor: answer2 into: header ]) asByteArray.
+		           bytes nextPutAll: answer2 utf8Encoded ].
+	outputMutex critical: [
+		stream nextPutAll: message.
 		stream flush ]
 ]
 
@@ -296,25 +300,46 @@ PLSAbstractServer >> sendData: answer2 toClient: stream [
 PLSAbstractServer >> sendDiagnosticsforDocument: document [
 
 	self
-		sendData: (self convertJRPCJsonableObjectToJSON:
-				 ((JRPCNotificationObject method:
-					   'textDocument/publishDiagnostics') params:
-					  (PLSPublishDiagnosticsParams new
-						   diagnostics: document diagnostics;
-						   uri: document uri;
-						   version: document version;
-						   yourself)) asJRPCJSON)
+		sendNotification: 'textDocument/publishDiagnostics'
+		params: (PLSPublishDiagnosticsParams new
+				 diagnostics: document diagnostics;
+				 uri: document uri;
+				 version: document version;
+				 yourself)
+]
+
+{ #category : 'messaging' }
+PLSAbstractServer >> sendMessage: aJRPCObject [
+	"Single entry point to write a message (response, notification or request) to the client"
+
+	self
+		sendData:
+		(self convertJRPCJsonableObjectToJSON: aJRPCObject asJRPCJSON)
 		toClient: clientOutStream
+]
+
+{ #category : 'messaging' }
+PLSAbstractServer >> sendNotification: aMethodString params: params [
+
+	self sendMessage:
+		((JRPCNotificationObject method: aMethodString) params: params)
+]
+
+{ #category : 'messaging' }
+PLSAbstractServer >> sendRequest: aMethodString params: params [
+	"Send a request to the client and answer its id"
+
+	| id |
+	id := self nextId.
+	self sendMessage:
+		((JRPCRequestObject id: id method: aMethodString) params: params).
+	^ id
 ]
 
 { #category : 'lsp - telemetry' }
 PLSAbstractServer >> sendTelemetry: anObject [
 	"anObject must be an array or a dictionary (after asJRPCJSON)"
-	self
-		sendData: (self convertJRPCJsonableObjectToJSON:
-				 ((JRPCNotificationObject method: 'telemetry/event') params:
-					  anObject) asJRPCJSON)
-		toClient: clientOutStream
+	self sendNotification: 'telemetry/event' params: anObject
 ]
 
 { #category : 'lsp - initialization' }
@@ -350,19 +375,13 @@ PLSAbstractServer >> setTrace: value [
 PLSAbstractServer >> showDocument: documentURI external: aBooleanOrNil withFocus: focusBooleanOrNil atRange: aPLSRangeOrNil [
 	
 	self
-		sendData:
-			(self
-				convertJRPCJsonableObjectToJSON:
-					((JRPCRequestObject id: 400 method: 'window/showDocument')
-						params: (PLSShowDocument new 
-							uri: documentURI;
-							external: aBooleanOrNil;
-							takeFocus: focusBooleanOrNil;
-							selection: aPLSRangeOrNil;
-							yourself
-							))
-						asJRPCJSON)
-		toClient: clientOutStream
+		sendRequest: 'window/showDocument'
+		params: (PLSShowDocument new
+				 uri: documentURI;
+				 external: aBooleanOrNil;
+				 takeFocus: focusBooleanOrNil;
+				 selection: aPLSRangeOrNil;
+				 yourself)
 ]
 
 { #category : 'lsp - message' }
@@ -370,13 +389,8 @@ PLSAbstractServer >> showMessage: aString ofType: messageType [
 	"The show message notification is sent from a server to a client to ask the client to display a particular message in the user interface"
 
 	self
-		sendData:
-			(self
-				convertJRPCJsonableObjectToJSON:
-					((JRPCNotificationObject method: 'window/showMessage')
-						params: (PLSShowMessage message: aString type: messageType))
-						asJRPCJSON)
-		toClient: clientOutStream
+		sendNotification: 'window/showMessage'
+		params: (PLSShowMessage message: aString type: messageType)
 ]
 
 { #category : 'starting' }
