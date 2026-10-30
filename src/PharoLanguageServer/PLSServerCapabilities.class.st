@@ -14,7 +14,11 @@ Class {
 		'diagnosticProvider',
 		'inlineCompletionProvider',
 		'experimental',
-		'workspaceSymbolProvider'
+		'workspaceSymbolProvider',
+		'referencesProvider',
+		'implementationProvider',
+		'callHierarchyProvider',
+		'typeHierarchyProvider'
 	],
 	#category : 'PharoLanguageServer-Structure-Capabilities',
 	#package : 'PharoLanguageServer',
@@ -48,7 +52,15 @@ PLSServerCapabilities class >> forPharo [
 				   yourself) asJRPCJSON;
 		  typeDefinitionOptions: PLSTypeDefinitionOptions new;
 		  workspaceSymbolProvider: true;
-		  experimental: { (#'pls-env' -> { (#version -> 1). (#didChange -> true). (#edit -> true). (#search -> true) } asDictionary) } asDictionary;
+		  referencesProvider: true;
+		  implementationProvider: true;
+		  callHierarchyProvider: true;
+		  typeHierarchyProvider: true;
+		  experimental: { (#'pls-env' -> {
+				   (#version -> 1).
+				   (#didChange -> true).
+				   (#edit -> true).
+				   (#search -> true) } asDictionary) } asDictionary;
 		  yourself
 ]
 
@@ -64,36 +76,62 @@ PLSServerCapabilities >> asJRPCJSON [
 	self hoverProvider ifNotNil: [
 		dic at: #hoverProvider put: self hoverProvider asJRPCJSON ].
 	self documentFormattingProvider ifNotNil: [
-		dic
-			at: #documentFormattingProvider
-			put: self documentFormattingProvider asJRPCJSON ].
+			dic
+				at: #documentFormattingProvider
+				put: self documentFormattingProvider asJRPCJSON ].
 	self signatureHelp ifNotNil: [
 		dic at: #signatureHelpProvider put: self signatureHelp asJRPCJSON ].
 	self codeLens ifNotNil: [
 		dic at: #codeLensProvider put: self codeLens asJRPCJSON ].
 	self typeDefinitionOptions ifNotNil: [
-		dic
-			at: #typeDefinitionProvider
-			put: self typeDefinitionOptions asJRPCJSON ].
+			dic
+				at: #typeDefinitionProvider
+				put: self typeDefinitionOptions asJRPCJSON ].
 	self documentSymbolProvider ifNotNil: [
-		dic
-			at: #documentSymbolProvider
-			put: self documentSymbolProvider asJRPCJSON ].
+			dic
+				at: #documentSymbolProvider
+				put: self documentSymbolProvider asJRPCJSON ].
 	self codeActionProvider ifNotNil: [
 		dic at: #codeActionProvider put: self codeActionProvider asJRPCJSON ].
 	self diagnosticProvider ifNotNil: [
 		dic at: #diagnosticProvider put: self diagnosticProvider asJRPCJSON ].
 	self inlineCompletionProvider ifNotNil: [
-		dic
-			at: #inlineCompletionProvider
-			put: self inlineCompletionProvider asJRPCJSON ].
+			dic
+				at: #inlineCompletionProvider
+				put: self inlineCompletionProvider asJRPCJSON ].
 	self workspaceSymbolProvider ifNotNil: [
-		dic
-			at: #workspaceSymbolProvider
-			put: self workspaceSymbolProvider asJRPCJSON ].
+			dic
+				at: #workspaceSymbolProvider
+				put: self workspaceSymbolProvider asJRPCJSON ].
+	self referencesProvider ifNotNil: [
+		dic at: #referencesProvider put: self referencesProvider asJRPCJSON ].
+	self implementationProvider ifNotNil: [
+			dic
+				at: #implementationProvider
+				put: self implementationProvider asJRPCJSON ].
+	self callHierarchyProvider ifNotNil: [
+			dic
+				at: #callHierarchyProvider
+				put: self callHierarchyProvider asJRPCJSON ].
+	self typeHierarchyProvider ifNotNil: [
+			dic
+				at: #typeHierarchyProvider
+				put: self typeHierarchyProvider asJRPCJSON ].
 	self experimental ifNotNil: [
 		dic at: #experimental put: self experimental asJRPCJSON ].
 	^ dic
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> callHierarchyProvider [
+
+	^ callHierarchyProvider
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> callHierarchyProvider: anObject [
+
+	callHierarchyProvider := anObject
 ]
 
 { #category : 'accessing' }
@@ -193,6 +231,18 @@ PLSServerCapabilities >> hoverProvider: anObject [
 ]
 
 { #category : 'accessing' }
+PLSServerCapabilities >> implementationProvider [
+
+	^ implementationProvider
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> implementationProvider: anObject [
+
+	implementationProvider := anObject
+]
+
+{ #category : 'accessing' }
 PLSServerCapabilities >> inlineCompletionProvider [
 
 	^ inlineCompletionProvider
@@ -202,6 +252,18 @@ PLSServerCapabilities >> inlineCompletionProvider [
 PLSServerCapabilities >> inlineCompletionProvider: anObject [
 
 	inlineCompletionProvider := anObject
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> referencesProvider [
+
+	^ referencesProvider
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> referencesProvider: anObject [
+
+	referencesProvider := anObject
 ]
 
 { #category : 'as yet unclassified' }
@@ -238,6 +300,18 @@ PLSServerCapabilities >> typeDefinitionOptions [
 PLSServerCapabilities >> typeDefinitionOptions: anObject [
 
 	typeDefinitionOptions := anObject
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> typeHierarchyProvider [
+
+	^ typeHierarchyProvider
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> typeHierarchyProvider: anObject [
+
+	typeHierarchyProvider := anObject
 ]
 
 { #category : 'accessing' }

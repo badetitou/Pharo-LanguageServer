@@ -23,6 +23,96 @@ Class {
 	#package : 'PharoLanguageServer'
 }
 
+{ #category : 'lsp - navigation' }
+PLSServer >> callHierarchyIncomingCalls: item [
+	"Answer the senders of the selector of the method of item, with the ranges of the sends"
+
+	<jrpc: #'callHierarchy/incomingCalls'>
+	| method matcher |
+	method := self navMethodOfItem: item.
+	method ifNil: [ ^ #(  ) ].
+	matcher := self navMatcherOf:
+		           (self navSelectorTarget: method selector).
+	^ ((self navSorted:
+		    (SystemNavigation default allSendersOf: method selector))
+		   collect: [ :sender |
+				   {
+					   (#from -> (self navCallItemOf: sender)).
+					   (#fromRanges
+					    -> (self navRangesIn: sender where: matcher) asArray) }
+					   asDictionary ]) asArray
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> callHierarchyOutgoingCalls: item [
+	"Answer one call for each selector the method of item sends, to its most likely implementor, with the ranges of its sends"
+
+	<jrpc: #'callHierarchy/outgoingCalls'>
+	| method source sends |
+	method := self navMethodOfItem: item.
+	method ifNil: [ ^ #(  ) ].
+	source := method sourceCode.
+	sends := OrderedDictionary new.
+	((RBParser parseFaultyMethod: source) allChildren select: [ :node |
+		 node isMessage ]) do: [ :node |
+			(sends at: node selector ifAbsentPut: [ OrderedCollection new ])
+				add: node ].
+	^ (sends associations
+		   collect: [ :each |
+				   (self
+					    navImplementorOf: each key
+					    sentTo: each value first receiver
+					    from: method methodClass) ifNotNil: [ :implementor |
+						   {
+							   (#to -> (self navCallItemOf: implementor)).
+							   (#fromRanges
+							    ->
+								    (each value collect: [ :node |
+									     self navRangeOf: node in: source ]) asArray) }
+							   asDictionary ] ]
+		   thenSelect: [ :call | call notNil ]) asArray
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> callHierarchyPrepareWithPosition: position textDocument: textDocument [
+	"Answer the item of the method at position: the implementor of a selector sent there, or the method whose selector or body holds position"
+
+	<jrpc: #'textDocument/prepareCallHierarchy'>
+	| document target context method |
+	document := self context textItem: (textDocument at: #uri).
+	target := self navTargetIn: document at: position.
+	context := self navContextOf: document at: position.
+	(target notNil and: [
+		 (target at: #kind) = #selector and: [ target includesKey: #node ] ])
+		ifTrue: [
+				| node |
+				node := target at: #node.
+				method := node isMethod
+					          ifTrue: [
+							          ((target at: #context) at: #behavior) ifNotNil: [
+								          :behavior |
+								          behavior
+									          compiledMethodAt: node selector
+									          ifAbsent: [ nil ] ] ]
+					          ifFalse: [
+							          self
+								          navImplementorOf: node selector
+								          sentTo: node receiver
+								          from: ((target at: #context) at: #behavior) ] ]
+		ifFalse: [
+				(context notNil and: [
+					 (context at: #isMethod) and: [ (context at: #behavior) notNil ] ])
+					ifTrue: [
+							method := (context at: #behavior)
+								          compiledMethodAt:
+								          (RBParser parseFaultyMethod: (context at: #source))
+									          selector
+								          ifAbsent: [ nil ] ] ].
+	^ method
+		  ifNil: [ #(  ) ]
+		  ifNotNil: [ { (self navCallItemOf: method) } ]
+]
+
 { #category : 'pls - variables' }
 PLSServer >> childrenVariables: variableReference in: textDocument [
 
@@ -2124,6 +2214,560 @@ PLSServer >> isSubscribedToEnvironmentChanges [
 	^ envChangesMutex notNil
 ]
 
+{ #category : 'lsp - navigation' }
+PLSServer >> navCallItemOf: aMethod [
+	"Answer the CallHierarchyItem of aMethod. Its data keeps the pls-env id of the method"
+
+	| source ast id |
+	source := aMethod sourceCode.
+	ast := RBParser parseFaultyMethod: source.
+	id := self envMethodIdOf: aMethod.
+	^ {
+		  (#name -> (self envPathOf: id)).
+		  (#kind -> 6).
+		  (#detail -> aMethod package name).
+		  (#uri -> (self navUriOfMethod: aMethod)).
+		  (#range -> (self navRangeFrom: 1 to: source size in: source)).
+		  (#selectionRange -> (self navRangeOf: ast in: source)).
+		  (#data -> { (#id -> id) } asDictionary) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navClassOf: document at: position [
+	"Answer the class at position, or else the class of the method or definition document is about, or nil"
+
+	| context |
+	(self navTargetIn: document at: position) ifNotNil: [ :target |
+		(target at: #kind) = #class ifTrue: [ ^ target at: #class ] ].
+	context := self navContextOf: document at: position.
+	(context notNil and: [ (context at: #behavior) notNil ]) ifTrue: [
+		^ (context at: #behavior) instanceSide ].
+	(document isKindOf: PLSTonelDocument) ifTrue: [
+		^ self navTonelClassOf: document text ].
+	^ nil
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navClassOfItem: item [
+	"Answer the class of a TypeHierarchyItem, or nil if the image no longer holds it"
+
+	^ [ self envClassNamed: (self envPathOf: ((item at: #data) at: #id)) ]
+		  on: PLSUnknownEntity
+		  do: [ nil ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navClassTarget: aClass [
+
+	^ {
+		  (#kind -> #class).
+		  (#name -> aClass name).
+		  (#class -> aClass) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navContextOf: document at: position [
+	"Answer a dictionary that places position in the code of document:
+	 - #source, the source of the method or script that holds position;
+	 - #offset, the index in #source of the character after position;
+	 - #start, the index in the text of document of the first character of #source;
+	 - #behavior, the class of the method, or nil;
+	 - #isMethod, whether #source is a method rather than a script.
+	 Answer nil for a position outside the methods of a Tonel document"
+
+	| text offset |
+	text := document text.
+	offset := (text plsToPosition: position) + 1.
+	(document isKindOf: PLSTonelDocument) ifTrue: [
+		^ self navTonelContextOf: text at: offset ].
+	^ {
+		  (#source -> text).
+		  (#offset -> offset).
+		  (#start -> 1).
+		  (#behavior
+		   -> (document isMethodSource ifTrue: [ document behavior ])).
+		  (#isMethod -> document isMethodSource) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navDeclarationsOf: target [
+	"Answer the locations where target is declared, for the references that include declarations"
+
+	| kind |
+	kind := target at: #kind.
+	kind = #selector ifTrue: [
+		^ self navImplementorsOf: (target at: #name) ].
+	kind = #class ifTrue: [
+		^ { (self navLocationOfClass: (target at: #class)) } ].
+	kind = #instVar ifTrue: [
+			^ { (self
+				   navLocationOfClass: (target at: #class)
+				   declaring: (target at: #name)) } ].
+	((target at: #binding) isKindOf: ClassVariable) ifTrue: [
+			^ { (self
+				   navLocationOfClass: (target at: #binding) definingClass
+				   declaring: (target at: #name)) } ].
+	^ #(  )
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navImplementorOf: aSelector sentTo: receiver from: aBehavior [
+	"Answer the method most likely run by sending aSelector to the receiver node from a method of aBehavior, or nil:
+	 the lookup from aBehavior for self, from its superclass for super, from the class side of a class named as receiver,
+	 and else the implementor that is defined the highest in its hierarchy, a class rather than a trait, the most general one.
+	 The nodes come from a parse without semantic analysis: self and super are known by their names"
+
+	| implementors |
+	receiver isVariable ifTrue: [
+			aBehavior ifNotNil: [
+					receiver name = 'self' ifTrue: [
+						^ aBehavior lookupSelector: aSelector ].
+					receiver name = 'super' ifTrue: [
+							^ aBehavior superclass ifNotNil: [ :superclass |
+								  superclass lookupSelector: aSelector ] ] ].
+			((aBehavior ifNil: [ UndefinedObject ]) bindingOf: receiver name)
+				ifNotNil: [ :binding |
+						(binding value isClassOrTrait and: [
+							 binding value name = receiver name ]) ifTrue: [
+								(binding value classSide lookupSelector: aSelector) ifNotNil: [
+									:method | ^ method ] ] ] ].
+	implementors := (SystemNavigation default allImplementorsOf:
+		                 aSelector) reject: [ :method | method isFromTrait ].
+	implementors ifEmpty: [ ^ nil ].
+	(implementors reject: [ :method | method methodClass isTrait ])
+		ifNotEmpty: [ :classMethods | implementors := classMethods ].
+	^ (implementors asArray sort: [ :a :b |
+			   | depthA depthB |
+			   depthA := a methodClass instanceSide allSuperclasses size.
+			   depthB := b methodClass instanceSide allSuperclasses size.
+			   depthA = depthB
+				   ifTrue: [ a methodClass name <= b methodClass name ]
+				   ifFalse: [ depthA < depthB ] ]) first
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navImplementorsOf: aSelector [
+	"Answer the locations of the selectors of the implementors of aSelector"
+
+	^ self
+		  navLocationsIn:
+		  (SystemNavigation default allImplementorsOf: aSelector)
+		  where: [ :node | node isMethod ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navLine: line character: character [
+
+	^ {
+		  (#line -> line).
+		  (#character -> character) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navLocationOfClass: aClass [
+
+	^ self navLocationOfClass: aClass declaring: nil
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navLocationOfClass: aClass declaring: aVariableName [
+	"Answer the location of the editor of the definition of aClass, at the declaration of aVariableName if any"
+
+	| definition range |
+	definition := self envTonelDefinitionOf: aClass instanceSide.
+	range := self navRangeFrom: 1 to: 0 in: definition.
+	aVariableName ifNotNil: [
+			| index |
+			index := definition indexOfSubCollection:
+				         '''' , aVariableName , ''''.
+			index > 0 ifTrue: [
+					range := self
+						         navRangeFrom: index + 1
+						         to: index + aVariableName size
+						         in: definition ] ].
+	^ {
+		  (#uri -> (self navUriOfClass: aClass)).
+		  (#range -> range) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navLocationsIn: methods where: aBlock [
+	"Answer the LSP locations of the nodes of methods for which aBlock is true, in the editors of methods"
+
+	^ (self navSorted: methods) flatCollect: [ :method |
+			  | uri |
+			  uri := self navUriOfMethod: method.
+			  (self navRangesIn: method where: aBlock) collect: [ :range |
+					  {
+						  (#uri -> uri).
+						  (#range -> range) } asDictionary ] ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navMatcherOf: target [
+	"Answer a block that tells whether a node of a method uses target"
+
+	| name |
+	name := target at: #name.
+	(target at: #kind) = #selector ifTrue: [
+			^ [ :node |
+				  (node isMessage and: [ node selector == name ]) or: [
+					  node isLiteralNode and: [ node value == name ] ] ] ].
+	^ [ :node | node isVariable and: [ node name = name ] ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navMethodOfItem: item [
+	"Answer the method of a CallHierarchyItem, or nil if the image no longer holds it"
+
+	^ [
+	  self envMethodNamed: (self envPathOf: ((item at: #data) at: #id)) ]
+		  on: PLSUnknownEntity
+		  do: [ nil ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navPosition: index in: text [
+	"Answer the LSP position before the character at index in text. index is text size + 1 at the end of text"
+
+	| line start |
+	text ifEmpty: [ ^ self navLine: 0 character: 0 ].
+	line := -1.
+	start := 1.
+	text plsLineIndicesDo: [ :lineStart :lineEnd :next |
+			line := line + 1.
+			start := lineStart.
+			index <= next ifTrue: [
+					^ self
+						  navLine: line
+						  character: (index - lineStart min: lineEnd - lineStart + 1) ] ].
+	^ self navLine: line character: index - start
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navRangeFrom: start to: stop in: text [
+	"Answer the LSP range of the characters from start to stop of text"
+
+	^ {
+		  (#start -> (self navPosition: start in: text)).
+		  (#end -> (self navPosition: stop + 1 in: text)) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navRangeOf: node in: source [
+	"Answer the range of node in source. A message or a method is located by its selector"
+
+	(node isMessage or: [ node isMethod ]) ifTrue: [
+			^ self
+				  navRangeFrom: node keywordsIntervals first first
+				  to: node keywordsIntervals last last
+				  in: source ].
+	^ self navRangeFrom: node start to: node stop in: source
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navRangesIn: aMethod where: aBlock [
+	"Answer the ranges, in the source of aMethod, of its nodes for which aBlock is true.
+	 A method that holds none of them, such as a method that refers to a selector only through a pragma, answers its beginning"
+
+	| source ranges |
+	source := aMethod sourceCode.
+	ranges := ((RBParser parseFaultyMethod: source) allChildren select:
+		           aBlock) collect: [ :node |
+		          self navRangeOf: node in: source ].
+	^ ranges ifEmpty: [ { (self navRangeFrom: 1 to: 0 in: source) } ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navReferencingMethodsOf: target [
+
+	| kind |
+	kind := target at: #kind.
+	kind = #selector ifTrue: [
+		^ SystemNavigation default allSendersOf: (target at: #name) ].
+	kind = #class ifTrue: [
+			^ SystemNavigation default allReferencesTo:
+				  (target at: #class) binding ].
+	kind = #binding ifTrue: [
+		^ SystemNavigation default allReferencesTo: (target at: #binding) ].
+	kind = #instVar ifTrue: [
+		^ ((target at: #class) slotNamed: (target at: #name)) usingMethods ].
+	^ #(  )
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navSelectorTarget: aSelector [
+
+	^ {
+		  (#kind -> #selector).
+		  (#name -> aSelector asSymbol) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navSorted: methods [
+	"Answer methods without the copies of trait methods in the classes that use them, sorted by class then selector"
+
+	^ (methods reject: [ :method | method isFromTrait ]) asSet asArray
+		  sort: [ :a :b |
+				  a methodClass name = b methodClass name
+					  ifTrue: [ a selector <= b selector ]
+					  ifFalse: [ a methodClass name <= b methodClass name ] ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navSubtypesOf: aClass deep: aBoolean [
+	"Answer the subclasses of aClass, and the classes that use it when it is a trait, sorted by name. With aBoolean, all of their own subtypes too"
+
+	| subtypes |
+	subtypes := (aClass isTrait
+		             ifTrue: [
+		             aClass users asArray select: [ :each |
+			             each isInstanceSide ] ]
+		             ifFalse: [ aClass subclasses ]) asArray sort: [ :a :b |
+		            a name <= b name ].
+	aBoolean ifFalse: [ ^ subtypes ].
+	^ subtypes flatCollect: [ :each |
+		  { each } , (self navSubtypesOf: each deep: true) ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navSymbolTarget: aSymbol [
+	"A symbol names a class, as in a class definition, or a selector, as in a perform:"
+
+	(aSymbol notEmpty and: [ aSymbol first isUppercase ]) ifTrue: [
+			(self class environment classOrTraitNamed: aSymbol) ifNotNil: [
+				:class |
+				class isClassSide ifFalse: [ ^ self navClassTarget: class ] ] ].
+	^ self navSelectorTarget: aSymbol
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navTargetIn: document at: position [
+	"Answer what position designates in document, as a dictionary whose #kind is one of:
+	 - #selector, with its #name;
+	 - #class, with its #name and #class;
+	 - #instVar, with its #name and the #class that defines it;
+	 - #binding, a class or global variable, with its #name and #binding;
+	 - #temp, a temporary or argument, with its #name, the #scope node that defines it and the #context of its method.
+	 Answer nil when position designates none of them"
+
+	| context |
+	context := self navContextOf: document at: position.
+	context ifNotNil: [
+			| ast |
+			ast := (context at: #isMethod)
+				       ifTrue: [
+				       RBParser parseFaultyMethod: (context at: #source) ]
+				       ifFalse: [
+				       RBParser parseFaultyExpression: (context at: #source) ].
+			context at: #ast put: ast.
+			"The character after position, then the one before, so that a cursor at the end of a word designates it"
+			{
+				(context at: #offset).
+				((context at: #offset) - 1) } do: [ :offset |
+					(ast bestNodeFor: (offset to: offset)) ifNotNil: [ :node |
+							(self navTargetOf: node at: offset in: context) ifNotNil: [
+								:target | ^ target ] ] ] ].
+	^ self
+		  navWordTargetAt: position
+		  in: document text
+		  of: ((document isKindOf: PLSTonelDocument) ifTrue: [
+				   self navTonelClassOf: document text ])
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navTargetOf: node at: offset in: context [
+
+	(node isMessage or: [ node isMethod ]) ifTrue: [
+			^ (node keywordsIntervals anySatisfy: [ :each |
+				   each rangeIncludes: offset ]) ifTrue: [
+					  (self navSelectorTarget: node selector)
+						  at: #node put: node;
+						  at: #context put: context;
+						  yourself ] ].
+	(node isLiteralNode and: [ node value isSymbol ]) ifTrue: [
+		^ self navSymbolTarget: node value ].
+	node isVariable ifTrue: [ ^ self navVariableTarget: node in: context ].
+	^ nil
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navTempLocationsOf: target in: uri [
+	"Answer the locations of the uses of the temporary or argument target in the document uri"
+
+	| context scope text |
+	context := target at: #context.
+	scope := target at: #scope.
+	text := (self context textItem: uri) text.
+	^ ((scope allChildren select: [ :node |
+			    node isVariable and: [
+					    node name = (target at: #name) and: [
+						    (node whoDefines: node name) == scope ] ] ]) collect: [
+			   :node |
+			   {
+				   (#uri -> uri).
+				   (#range -> (self
+					     navRangeFrom: node start + (context at: #start) - 1
+					     to: node stop + (context at: #start) - 1
+					     in: text)) } asDictionary ]) asArray
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navTonelClassOf: text [
+	"Answer the class that the Tonel text defines or extends, or nil"
+
+	([ PLSTonelParser parseString: text ]
+		 on: Error
+		 do: [ #(  ) ])
+		detect: [ :each | each isClassDefinition ]
+		ifFound: [ :definition |
+				^ (self class environment classOrTraitNamed: definition className)
+					  ifNotNil: [ :class | class instanceSide ] ].
+	^ nil
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navTonelContextOf: text at: offset [
+	"Answer the context of offset in the method of the Tonel text that holds it, or nil.
+	 #source is the method as written in text, from its selector to its closing bracket excluded, with its opening bracket blanked:
+	 its indexes are the ones of text shifted by #start - 1"
+
+	| definitions method start open source class |
+	definitions := [ PLSTonelParser parseString: text ]
+		               on: Error
+		               do: [ ^ nil ].
+	method := definitions
+		          detect: [ :each |
+				          each isMethodDefinition and: [
+					          offset between: each startPos and: each endPos ] ]
+		          ifNone: [ ^ nil ].
+	start := (text indexOfSubCollection: '>>' startingAt: method startPos)
+	         + 2.
+	[ start < method bodyStartPos and: [ (text at: start) isSeparator ] ]
+		whileTrue: [ start := start + 1 ].
+	offset < start ifTrue: [ ^ nil ].
+	open := text indexOf: $[ startingAt: method bodyStartPos.
+	source := text copyFrom: start to: method endPos - 1.
+	source at: open - start + 1 put: Character space.
+	class := self class environment classOrTraitNamed: method className.
+	^ {
+		  (#source -> source).
+		  (#offset -> (offset - start + 1)).
+		  (#start -> start).
+		  (#behavior -> (class ifNotNil: [
+				    method classIsMeta
+					    ifTrue: [ class classSide ]
+					    ifFalse: [ class ] ])).
+		  (#isMethod -> true) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navTypeItemOf: aClass [
+	"Answer the TypeHierarchyItem of aClass. Its data keeps the pls-env id of the class"
+
+	| location id |
+	location := self navLocationOfClass: aClass.
+	id := self envClassIdOf: aClass.
+	^ {
+		  (#name -> aClass name).
+		  (#kind -> (aClass isTrait
+			    ifTrue: [ 11 ]
+			    ifFalse: [ 5 ])).
+		  (#detail -> aClass package name).
+		  (#uri -> (location at: #uri)).
+		  (#range -> (location at: #range)).
+		  (#selectionRange -> (location at: #range)).
+		  (#data -> { (#id -> id) } asDictionary) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navUriOfClass: aClass [
+
+	^ self
+		  envUriOf: (self envClassIdOf: aClass instanceSide)
+		  inPackage: aClass instanceSide package name
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navUriOfMethod: aMethod [
+
+	^ self
+		  envUriOf: (self envMethodIdOf: aMethod)
+		  inPackage: aMethod package name
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navVariableTarget: node in: context [
+
+	| name behavior binding |
+	name := node name.
+	(#( 'self' 'super' 'thisContext' ) includes: name) ifTrue: [ ^ nil ].
+	(node whoDefines: name) ifNotNil: [ :scope |
+			^ {
+				  (#kind -> #temp).
+				  (#name -> name).
+				  (#scope -> scope).
+				  (#context -> context) } asDictionary ].
+	behavior := context at: #behavior.
+	(behavior notNil and: [ behavior allInstVarNames includes: name ])
+		ifTrue: [
+				^ {
+					  (#kind -> #instVar).
+					  (#name -> name).
+					  (#class -> (behavior whichClassDefinesInstVar: name)) }
+					  asDictionary ].
+	binding := (behavior ifNil: [ UndefinedObject ]) bindingOf: name.
+	binding ifNil: [ ^ nil ].
+	(binding value isClassOrTrait and: [ binding value name = name ])
+		ifTrue: [ ^ self navClassTarget: binding value ].
+	^ {
+		  (#kind -> #binding).
+		  (#name -> name).
+		  (#binding -> binding) } asDictionary
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> navWordTargetAt: position in: text of: aClass [
+	"Answer what the word at position in text names, outside of a method: a class, as in a Tonel class definition or method header,
+	 or a variable declared by the Tonel definition of aClass, on either side. Answer nil otherwise.
+	 The keyword of a Tonel definition, such as `Class {`, names no class"
+
+	| offset start stop next word class |
+	offset := (text plsToPosition: position) + 1.
+	start := offset.
+	[ start > 1 and: [ (text at: start - 1) isAlphaNumeric ] ]
+		whileTrue: [ start := start - 1 ].
+	stop := offset - 1.
+	[ stop < text size and: [ (text at: stop + 1) isAlphaNumeric ] ]
+		whileTrue: [ stop := stop + 1 ].
+	stop < start ifTrue: [ ^ nil ].
+	word := text copyFrom: start to: stop.
+	aClass ifNotNil: [
+			{
+				aClass.
+				aClass classSide } do: [ :side |
+					(side allInstVarNames includes: word) ifTrue: [
+							^ {
+								  (#kind -> #instVar).
+								  (#name -> word).
+								  (#class -> (side whichClassDefinesInstVar: word)) }
+								  asDictionary ] ].
+			(aClass classVarNames includes: word asSymbol) ifTrue: [
+					^ {
+						  (#kind -> #binding).
+						  (#name -> word).
+						  (#binding -> (aClass classVariableNamed: word asSymbol)) }
+						  asDictionary ] ].
+	word first isUppercase ifFalse: [ ^ nil ].
+	next := stop + 1.
+	[ next <= text size and: [ (text at: next) isSeparator ] ]
+		whileTrue: [ next := next + 1 ].
+	(next <= text size and: [ (text at: next) = ${ ]) ifTrue: [ ^ nil ].
+	class := self class environment classOrTraitNamed: word.
+	(class isNil or: [ class isClassSide ]) ifTrue: [ ^ nil ].
+	^ self navClassTarget: class
+]
+
 { #category : 'lsp - initialization' }
 PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 
@@ -2443,6 +3087,25 @@ PLSServer >> textDocumentHoverWithPosition: position textDocument: textDocument 
 	^ { #contents -> hover contents } asDictionary
 ]
 
+{ #category : 'lsp - navigation' }
+PLSServer >> textDocumentImplementationWithPosition: position textDocument: textDocument [
+	"Answer the implementors of the selector at position, or the subclasses and users of the class or trait at position"
+
+	<jrpc: #'textDocument/implementation'>
+	| target |
+	target := self
+		          navTargetIn:
+		          (self context textItem: (textDocument at: #uri))
+		          at: position.
+	target ifNil: [ ^ #(  ) ].
+	(target at: #kind) = #selector ifTrue: [
+		^ (self navImplementorsOf: (target at: #name)) asArray ].
+	(target at: #kind) = #class ifTrue: [
+			^ ((self navSubtypesOf: (target at: #class) deep: true) collect: [
+				   :class | self navLocationOfClass: class ]) asArray ].
+	^ #(  )
+]
+
 { #category : 'lsp - completion' }
 PLSServer >> textDocumentInlineCompletionWithContext: context position: position textDocument: textDocument [
 
@@ -2472,6 +3135,30 @@ PLSServer >> textDocumentInlineCompletionWithContext: context position: position
 		   items: { (PLSInlineCompletionItem new insertText:
 					    (self postDealAnswer: answer)) };
 		   yourself) asJRPCJSON
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> textDocumentReferencesWithPosition: position textDocument: textDocument context: context [
+	"Answer the locations where the entity at position is used: the senders of a selector, the references to a class or variable.
+	 They are located in the editors of the methods, except the uses of a temporary, which stay in textDocument"
+
+	<jrpc: #'textDocument/references'>
+	| target locations |
+	target := self
+		          navTargetIn:
+		          (self context textItem: (textDocument at: #uri))
+		          at: position.
+	target ifNil: [ ^ #(  ) ].
+	(target at: #kind) = #temp ifTrue: [
+		^ self navTempLocationsOf: target in: (textDocument at: #uri) ].
+	locations := OrderedCollection new.
+	(context notNil and: [
+		 context at: #includeDeclaration ifAbsent: [ false ] ]) ifTrue: [
+		locations addAll: (self navDeclarationsOf: target) ].
+	locations addAll: (self
+			 navLocationsIn: (self navReferencingMethodsOf: target)
+			 where: (self navMatcherOf: target)).
+	^ locations asArray
 ]
 
 { #category : 'lsp - signature help' }
@@ -2525,6 +3212,45 @@ PLSServer >> typeDefinitionAt: position in: textDocument [
 				   start: (PLSPosition line: 0 character: 0)
 				   end: (PLSPosition line: 0 character: 0));
 		  yourself
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> typeHierarchyPrepareWithPosition: position textDocument: textDocument [
+	"Answer the item of the class at position, or of the class the document is about"
+
+	<jrpc: #'textDocument/prepareTypeHierarchy'>
+	^ (self
+		   navClassOf: (self context textItem: (textDocument at: #uri))
+		   at: position)
+		  ifNil: [ #(  ) ]
+		  ifNotNil: [ :class | { (self navTypeItemOf: class) } ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> typeHierarchySubtypes: item [
+	"Answer the subclasses of the class of item, or the classes that use the trait of item"
+
+	<jrpc: #'typeHierarchy/subtypes'>
+	^ (self navClassOfItem: item) ifNil: [ #(  ) ] ifNotNil: [ :class |
+			  ((self navSubtypesOf: class deep: false) collect: [ :each |
+				   self navTypeItemOf: each ]) asArray ]
+]
+
+{ #category : 'lsp - navigation' }
+PLSServer >> typeHierarchySupertypes: item [
+	"Answer the superclass of the class of item, then the traits it uses"
+
+	<jrpc: #'typeHierarchy/supertypes'>
+	| class supertypes |
+	class := self navClassOfItem: item.
+	class ifNil: [ ^ #(  ) ].
+	supertypes := OrderedCollection new.
+	class isTrait ifFalse: [
+		class superclass ifNotNil: [ :superclass |
+			supertypes add: superclass ] ].
+	supertypes addAll:
+		(class traits asArray sort: [ :a :b | a name <= b name ]).
+	^ (supertypes collect: [ :each | self navTypeItemOf: each ]) asArray
 ]
 
 { #category : 'lsp - workspace symbol' }
