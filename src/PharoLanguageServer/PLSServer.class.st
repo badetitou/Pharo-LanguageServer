@@ -10,7 +10,14 @@ Class {
 	#name : 'PLSServer',
 	#superclass : 'PLSAbstractServer',
 	#instVars : [
-		'envProjectPackages'
+		'envProjectPackages',
+		'envChanges',
+		'envChangesMutex',
+		'envChangesReady',
+		'envFlushProcess',
+		'envFirstChangeTime',
+		'envLastChangeTime',
+		'envOverflow'
 	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
@@ -170,6 +177,34 @@ PLSServer >> documentVariables: textDocument [
 		as: Array) asJRPCJSON
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envAnnouncementSelectors [
+	"Answer the system announcements that change the environment model, with the method that records each of them"
+
+	^ {
+		  (PackageAdded -> #envPackageAdded:).
+		  (PackageRemoved -> #envPackageRemoved:).
+		  (PackageRenamed -> #envPackageRenamed:).
+		  (PackageTagAdded -> #envTagAdded:).
+		  (PackageTagRemoved -> #envTagRemoved:).
+		  (PackageTagRenamed -> #envTagRenamed:).
+		  (ClassAdded -> #envClassAdded:).
+		  (ClassModifiedClassDefinition -> #envClassChanged:).
+		  (ClassCommented -> #envClassChanged:).
+		  (ClassParentRenamed -> #envClassChanged:).
+		  (ClassRenamed -> #envClassRenamed:).
+		  (ClassRepackaged -> #envClassRepackaged:).
+		  (ClassRemoved -> #envClassRemoved:).
+		  (ProtocolAdded -> #envProtocolAdded:).
+		  (ProtocolRemoved -> #envProtocolRemoved:).
+		  (ProtocolRenamed -> #envProtocolRenamed:).
+		  (MethodAdded -> #envMethodAdded:).
+		  (MethodModified -> #envMethodChanged:).
+		  (MethodRepackaged -> #envMethodChanged:).
+		  (MethodRecategorized -> #envMethodRecategorized:).
+		  (MethodRemoved -> #envMethodRemoved:) } asOrderedDictionary
+]
+
 { #category : 'pls - env' }
 PLSServer >> envBaselineNamed: aString [
 
@@ -213,6 +248,29 @@ PLSServer >> envBehaviorPathOf: aBehavior [
 		  ifFalse: [ aBehavior name ]
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envChange: kind id: id [
+	"kind is added, changed, removed, renamed or moved"
+
+	^ Dictionary new
+		  at: #kind put: kind;
+		  at: #id put: id;
+		  yourself
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envChangesAreSettled [
+	"Pending changes are sent once the system stays quiet for envQuietDelay, or envMaxDelay after the first of them.
+	 A flood of changes that overflowed waits for the quiet, so that the client reloads everything once"
+
+	^ envChangesMutex critical: [
+			  | now |
+			  now := Time millisecondClockValue.
+			  now - envLastChangeTime >= self envQuietDelay or: [
+				  envOverflow not and: [
+					  now - envFirstChangeTime >= self envMaxDelay ] ] ]
+]
+
 { #category : 'pls - env' }
 PLSServer >> envChildren: id offset: offset limit: limit [
 	"Answer one page of the children of the entity id, as nodes, with the total number of children.
@@ -242,6 +300,33 @@ PLSServer >> envChildrenIds: id [
 		  with: (self envPathOf: id)
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envClassAdded: anAnnouncement [
+
+	| class |
+	class := anAnnouncement classAffected instanceSide.
+	(self envIgnoresBehavior: class) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self envChange: 'added' id: (self envClassIdOf: class))
+				at: #parent
+				put:
+					(self envClassParentIdIn: class package tag: class packageTag);
+				at: #version put: (self envVersionOfClass: class);
+				yourself ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envClassChanged: anAnnouncement [
+
+	| class |
+	class := anAnnouncement classAffected instanceSide.
+	(self envIgnoresBehavior: class) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self envChange: 'changed' id: (self envClassIdOf: class))
+				at: #version put: (self envVersionOfClass: class);
+				yourself ]
+]
+
 { #category : 'pls - env' }
 PLSServer >> envClassChildren: aString [
 	"A class has two sides, the instance side and the class side"
@@ -250,6 +335,12 @@ PLSServer >> envClassChildren: aString [
 	^ {
 		  ('side:' , aString).
 		  ('side:' , aString , ' class') }
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envClassIdOf: aClass [
+
+	^ 'class:' , aClass instanceSide name
 ]
 
 { #category : 'pls - env' }
@@ -281,9 +372,63 @@ PLSServer >> envClassNode: aString [
 		  yourself
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envClassParentIdIn: aPackage tag: aTag [
+
+	^ (aTag isNil or: [ aTag isRoot ])
+		  ifTrue: [ 'package:' , aPackage name ]
+		  ifFalse: [ 'tag:' , aPackage name , '/' , aTag name ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envClassRemoved: anAnnouncement [
+	"A removed class is already renamed AnObsolete..."
+
+	| class |
+	class := anAnnouncement classRemoved instanceSide.
+	(self envIgnoresBehavior: class) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self
+				 envChange: 'removed'
+				 id: 'class:' , (class name withoutPrefix: 'AnObsolete'))
+				at: #parent put: (class package ifNotNil: [ :package |
+							 self envClassParentIdIn: package tag: class packageTag ]);
+				yourself ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envClassRenamed: anAnnouncement [
+	"The ids of the sides, protocols and methods of the class change with it"
+
+	(self envIgnoresBehavior: anAnnouncement classRenamed) ifTrue: [
+		^ self ].
+	self envRecord: [
+			(self envChange: 'renamed' id: 'class:' , anAnnouncement newName)
+				at: #oldId put: 'class:' , anAnnouncement oldName;
+				yourself ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envClassRepackaged: anAnnouncement [
+
+	| class |
+	class := anAnnouncement classRepackaged instanceSide.
+	(self envIgnoresBehavior: class) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self envChange: 'moved' id: (self envClassIdOf: class))
+				at: #parent put: (self
+						 envClassParentIdIn: anAnnouncement newPackage
+						 tag: anAnnouncement newTag);
+				at: #oldParent put: (self
+						 envClassParentIdIn: anAnnouncement oldPackage
+						 tag: anAnnouncement oldTag);
+				yourself ]
+]
+
 { #category : 'pls - env' }
 PLSServer >> envEntity: id [
-	"Answer the node of the entity id, completed with its package and Iceberg repository, and its superclass for a class"
+	"Answer the node of the entity id, completed with its package and Iceberg repository, its superclass for a class,
+	 and the version of a class or method, which changes with its source"
 
 	<jrpc: #'pls-env:entity'>
 	| entity packageName |
@@ -298,11 +443,19 @@ PLSServer >> envEntity: id [
 						  repository workingCopy includesPackageNamed: packageName ]
 					  ifNone: [ nil ]) ifNotNil: [ :repository | repository name ] ]).
 	(entity at: #kind) = 'class' ifTrue: [
+			| class |
+			class := self envClassNamed: (self envPathOf: id).
 			entity
 				at: #superclass
+				put: (class superclass ifNotNil: [ :superclass |
+						 'class:' , superclass name ]).
+			entity at: #version put: (self envVersionOfClass: class) ].
+	(entity at: #kind) = 'method' ifTrue: [
+			entity
+				at: #version
 				put:
-					((self envBehaviorNamed: (self envPathOf: id)) superclass
-						 ifNotNil: [ :superclass | 'class:' , superclass name ]) ].
+				(self envVersionOfMethod:
+					 (self envMethodNamed: (self envPathOf: id))) ].
 	^ entity
 ]
 
@@ -329,6 +482,43 @@ PLSServer >> envExtensionsNode: aString [
 		  yourself
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envFlushChanges [
+	"Send the pending changes to the client in one pls-env/didChange notification"
+
+	| mutex changes reset |
+	mutex := envChangesMutex ifNil: [ ^ self ].
+	mutex critical: [
+			changes := envChanges values asArray.
+			reset := envOverflow.
+			envChanges := OrderedDictionary new.
+			envOverflow := false.
+			envFirstChangeTime := nil ].
+	(changes isEmpty and: [ reset not ]) ifTrue: [ ^ self ].
+	clientOutStream ifNil: [ ^ self ].
+	self sendNotification: 'pls-env/didChange' params: {
+			(#changes -> changes).
+			(#reset -> reset) } asDictionary
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envFlushLoop [
+
+	[
+		envChangesReady wait.
+		[
+			(Delay forMilliseconds: 20) wait.
+			self envChangesAreSettled ] whileFalse.
+		self envFlushChanges ] repeat
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envIgnoresBehavior: aBehavior [
+	"Anonymous classes, such as those of tests and tools, are not part of the environment"
+
+	^ aBehavior instanceSide isAnonymous
+]
+
 { #category : 'pls - env' }
 PLSServer >> envKindOf: id [
 	"Answer the kind of the entity id, the part before its first colon"
@@ -341,11 +531,60 @@ PLSServer >> envKindOf: id [
 	^ kind
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envMaxChanges [
+
+	^ 1000
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envMaxDelay [
+	"Milliseconds"
+
+	^ 500
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envMethodAdded: anAnnouncement [
+
+	| method |
+	method := anAnnouncement method.
+	(self envIgnoresBehavior: method methodClass) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self envChange: 'added' id: (self envMethodIdOf: method))
+				at: #parent
+				put:
+					(self
+						 envProtocolIdIn: method methodClass
+						 named: method protocolName);
+				at: #version put: (self envVersionOfMethod: method);
+				yourself ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envMethodChanged: anAnnouncement [
+
+	| method |
+	method := anAnnouncement method.
+	(self envIgnoresBehavior: method methodClass) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self envChange: 'changed' id: (self envMethodIdOf: method))
+				at: #version put: (self envVersionOfMethod: method);
+				yourself ]
+]
+
 { #category : 'pls - env' }
 PLSServer >> envMethodChildren: aString [
 
 	self envMethodNamed: aString.
 	^ #(  )
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envMethodIdOf: aMethod [
+
+	^ 'method:' , (self envBehaviorPathOf: aMethod methodClass) , '>>'
+	  , aMethod selector
 ]
 
 { #category : 'pls - env' }
@@ -384,6 +623,42 @@ PLSServer >> envMethodNode: aString [
 		  yourself
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envMethodRecategorized: anAnnouncement [
+
+	| method |
+	method := anAnnouncement method.
+	(self envIgnoresBehavior: method methodClass) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self envChange: 'moved' id: (self envMethodIdOf: method))
+				at: #parent
+				put:
+					(self
+						 envProtocolIdIn: method methodClass
+						 named: method protocolName);
+				at: #oldParent put: (self
+						 envProtocolIdIn: method methodClass
+						 named: anAnnouncement oldProtocol name);
+				yourself ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envMethodRemoved: anAnnouncement [
+
+	| behavior |
+	behavior := anAnnouncement methodClass.
+	(self envIgnoresBehavior: behavior) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self
+				 envChange: 'removed'
+				 id: 'method:' , (self envBehaviorPathOf: behavior) , '>>'
+					 , anAnnouncement selector)
+				at: #parent
+				put: (anAnnouncement protocol ifNotNil: [ :protocol |
+							 self envProtocolIdIn: behavior named: protocol name ]);
+				yourself ]
+]
+
 { #category : 'pls - env' }
 PLSServer >> envNode: id [
 	"Answer the node of the entity id: its id, kind, name, parent, flags and whether it has children"
@@ -396,6 +671,19 @@ PLSServer >> envNode: id [
 		  at: #id put: id;
 		  at: #kind put: kind;
 		  yourself
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envPackageAdded: anAnnouncement [
+
+	self envRecord: [
+			(self
+				 envChange: 'added'
+				 id: 'package:' , anAnnouncement package name)
+				at: #parent
+				put:
+					(self envProjectIdOfPackageNamed: anAnnouncement package name);
+				yourself ]
 ]
 
 { #category : 'pls - env' }
@@ -482,6 +770,24 @@ PLSServer >> envPackageNode: aString [
 		  yourself
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envPackageRemoved: anAnnouncement [
+
+	self envRecord: [
+		self
+			envChange: 'removed'
+			id: 'package:' , anAnnouncement package name ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envPackageRenamed: anAnnouncement [
+
+	self envRecord: [
+			(self envChange: 'renamed' id: 'package:' , anAnnouncement newName)
+				at: #oldId put: 'package:' , anAnnouncement oldName;
+				yourself ]
+]
+
 { #category : 'pls - env' }
 PLSServer >> envPathOf: id [
 	"Answer the path of the entity id, the part after its first colon"
@@ -545,6 +851,23 @@ PLSServer >> envProjects [
 		  asArray , { 'project:*' } collect: [ :id | self envNode: id ]
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envProtocolAdded: anAnnouncement [
+
+	| behavior |
+	behavior := anAnnouncement classReorganized.
+	(self envIgnoresBehavior: behavior) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self
+				 envChange: 'added'
+				 id:
+					 (self
+						  envProtocolIdIn: behavior
+						  named: anAnnouncement protocol name))
+				at: #parent put: 'side:' , (self envBehaviorPathOf: behavior);
+				yourself ]
+]
+
 { #category : 'pls - env' }
 PLSServer >> envProtocolChildren: aString [
 
@@ -553,6 +876,12 @@ PLSServer >> envProtocolChildren: aString [
 	path := self envBehaviorPathOf: behaviorAndProtocol key.
 	^ (behaviorAndProtocol value methodSelectors collect: [ :selector |
 		   'method:' , path , '>>' , selector ]) asArray sort
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envProtocolIdIn: aBehavior named: aString [
+
+	^ 'protocol:' , (self envBehaviorPathOf: aBehavior) , '>>' , aString
 ]
 
 { #category : 'pls - env' }
@@ -588,6 +917,78 @@ PLSServer >> envProtocolNode: aString [
 		  yourself
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> envProtocolRemoved: anAnnouncement [
+
+	| behavior |
+	behavior := anAnnouncement classReorganized.
+	(self envIgnoresBehavior: behavior) ifTrue: [ ^ self ].
+	self envRecord: [
+			self
+				envChange: 'removed'
+				id:
+				(self
+					 envProtocolIdIn: behavior
+					 named: anAnnouncement protocol name) ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envProtocolRenamed: anAnnouncement [
+
+	| behavior |
+	behavior := anAnnouncement classReorganized.
+	(self envIgnoresBehavior: behavior) ifTrue: [ ^ self ].
+	self envRecord: [
+			(self
+				 envChange: 'renamed'
+				 id:
+					 (self
+						  envProtocolIdIn: behavior
+						  named: anAnnouncement newProtocol name))
+				at: #oldId
+				put:
+					(self
+						 envProtocolIdIn: behavior
+						 named: anAnnouncement oldProtocol name);
+				yourself ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envQuietDelay [
+	"Milliseconds"
+
+	^ 100
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envRecord: aBlock [
+	"Add the change built by aBlock to the pending ones. A change replaces a pending change of the same kind on the same entity.
+	 Past envMaxChanges pending changes, they are dropped and the client is told to reload everything.
+	 aBlock runs in the process that changed the system, so its errors are ignored rather than break that change"
+
+	| mutex change |
+	mutex := envChangesMutex ifNil: [ ^ self ].
+	envOverflow ifFalse: [
+			change := [ aBlock value ]
+				          on: Error
+				          do: [ ^ self ] ].
+	mutex critical: [
+			| now |
+			now := Time millisecondClockValue.
+			envLastChangeTime := now.
+			envFirstChangeTime ifNil: [
+					envFirstChangeTime := now.
+					envChangesReady signal ].
+			(envOverflow or: [ change isNil ]) ifFalse: [
+					| key |
+					key := (change at: #kind) , ' ' , (change at: #id).
+					envChanges removeKey: key ifAbsent: [ ].
+					envChanges at: key put: change.
+					envChanges size > self envMaxChanges ifTrue: [
+							envOverflow := true.
+							envChanges := OrderedDictionary new ] ] ]
+]
+
 { #category : 'pls - env' }
 PLSServer >> envSideChildren: aString [
 
@@ -608,6 +1009,46 @@ PLSServer >> envSideNode: aString [
 		  at: #hasChildren put: behavior protocols notEmpty;
 		  at: #flags put: Dictionary new;
 		  yourself
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envSubscribe [
+	"Listen to the changes of the system, and send them to the client in pls-env/didChange notifications.
+	 The changes are recorded in the process that made them, so recording one never signals an error into it"
+
+	self envUnsubscribe.
+	envChanges := OrderedDictionary new.
+	envChangesMutex := Mutex new.
+	envChangesReady := Semaphore new.
+	envOverflow := false.
+	envFirstChangeTime := nil.
+	self envAnnouncementSelectors keysAndValuesDo: [
+			:announcement
+			:selector |
+			SystemAnnouncer uniqueInstance
+				when: announcement
+				do: [ :each |
+						[ self perform: selector with: each ]
+							on: Error
+							do: [ :error | error return: nil ] ]
+				for: self ].
+	envFlushProcess := [ self envFlushLoop ]
+		                   forkAt: Processor userBackgroundPriority
+		                   named: 'PLS environment changes'
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envTagAdded: anAnnouncement [
+
+	anAnnouncement tag isRoot ifTrue: [ ^ self ].
+	self envRecord: [
+			(self
+				 envChange: 'added'
+				 id:
+					 'tag:' , anAnnouncement package name , '/'
+					 , anAnnouncement tag name)
+				at: #parent put: 'package:' , anAnnouncement package name;
+				yourself ]
 ]
 
 { #category : 'pls - env' }
@@ -640,6 +1081,61 @@ PLSServer >> envTagNode: aString [
 		  at: #hasChildren put: tag classes notEmpty;
 		  at: #flags put: Dictionary new;
 		  yourself
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envTagRemoved: anAnnouncement [
+
+	anAnnouncement tag isRoot ifTrue: [ ^ self ].
+	self envRecord: [
+			self
+				envChange: 'removed'
+				id:
+				'tag:' , anAnnouncement package name , '/'
+				, anAnnouncement tag name ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envTagRenamed: anAnnouncement [
+
+	self envRecord: [
+			(self
+				 envChange: 'renamed'
+				 id:
+					 'tag:' , anAnnouncement package name , '/'
+					 , anAnnouncement newName)
+				at: #oldId
+				put:
+					'tag:' , anAnnouncement package name , '/'
+					, anAnnouncement oldName;
+				yourself ]
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envUnsubscribe [
+
+	SystemAnnouncer uniqueInstance unsubscribe: self.
+	envFlushProcess ifNotNil: [ :flushProcess | flushProcess terminate ].
+	envFlushProcess := nil.
+	envChangesMutex := nil
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envVersionOfClass: aClass [
+	"Answer a hash of the definition and comment of the class, which changes whenever they do"
+
+	| class |
+	class := aClass instanceSide.
+	^ (SHA1 hashMessage:
+		   class definitionString , class classSide definitionString
+		   , class comment asString) hex
+]
+
+{ #category : 'pls - env changes' }
+PLSServer >> envVersionOfMethod: aMethod [
+	"Answer a hash of the source of the method, which changes whenever it does"
+
+	^ (SHA1 hashMessage: aMethod sourceCode) hex
 ]
 
 { #category : 'lsp - formatting' }
@@ -969,6 +1465,12 @@ PLSServer >> iceStatusForDiffLeaf: aDiffLeaf [
 	^ 'modified'
 ]
 
+{ #category : 'pls - env changes' }
+PLSServer >> isSubscribedToEnvironmentChanges [
+
+	^ envChangesMutex notNil
+]
+
 { #category : 'lsp - initialization' }
 PLSServer >> onInitializeTrace: trace processId: processId locale: locale clientInfo: clientInfo rootPath: rootPath workspaceFolders: workspaceFolders capabilities: capabilities rootUri: rootUri [
 
@@ -1227,12 +1729,27 @@ PLSServer >> publishDiagnosticsFor: document [
 		td diagnostic ifNil: [ self sendDiagnosticsforDocument: document ] ]
 ]
 
+{ #category : 'lsp - initialization' }
+PLSServer >> serverInitialized [
+	"The client is ready for notifications: start sending it the changes of the environment"
+
+	super serverInitialized.
+	self envSubscribe
+]
+
 { #category : 'dap' }
 PLSServer >> startDapServer [
 	<jrpc: #'dap:startServer'>
 	'Start DAP Server.' record.
 	^ DAPServer new
 		start.
+]
+
+{ #category : 'starting' }
+PLSServer >> stop [
+
+	self envUnsubscribe.
+	super stop
 ]
 
 { #category : 'lsp - completion' }

@@ -46,7 +46,7 @@ PLSServerCapabilities class >> forPharo [
 				   workspaceDiagnostics: false;
 				   yourself) asJRPCJSON;
 		  typeDefinitionOptions: PLSTypeDefinitionOptions new;
-		  experimental: { (#'pls-env' -> { (#version -> 1) } asDictionary) } asDictionary;
+		  experimental: { (#'pls-env' -> { (#version -> 1). (#didChange -> true) } asDictionary) } asDictionary;
 		  yourself
 ]
 
