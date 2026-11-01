@@ -20,6 +20,17 @@ PLSServerEnvironmentTest >> childrenIdsOf: id [
 ]
 
 { #category : 'running' }
+PLSServerEnvironmentTest >> plsRepository [
+	"Answer the Iceberg repository holding the PLS packages, nil when there is none, as when the CI loads them through Metacello alone"
+
+	^ IceRepository registry
+		  detect: [ :repository |
+				  repository workingCopy includesPackageNamed:
+					  'PharoLanguageServer-Tests' ]
+		  ifNone: [ nil ]
+]
+
+{ #category : 'running' }
 PLSServerEnvironmentTest >> setUp [
 
 	super setUp.
@@ -75,7 +86,10 @@ PLSServerEnvironmentTest >> testClassEntity [
 		assert: (entity at: #parent)
 		equals: 'package:PharoLanguageServer-Tests'.
 	self assert: (entity at: #superclass) equals: 'class:TestCase'.
-	self assert: (entity at: #repository) equals: 'Pharo-LanguageServer'.
+	self
+		assert: (entity at: #repository)
+		equals:
+		(self plsRepository ifNotNil: [ :repository | repository name ]).
 	self assert: (entity at: #flags at: #test).
 	self deny: (entity at: #flags at: #abstract)
 ]
@@ -193,14 +207,17 @@ PLSServerEnvironmentTest >> testPackageChildrenAreTagsThenRootClassesThenExtensi
 { #category : 'tests' }
 PLSServerEnvironmentTest >> testPackageEntityTellsWhetherItIsModified [
 
-	| entity |
+	| repository entity |
+	repository := self plsRepository.
 	entity := server envEntity: 'package:PharoLanguageServer-Tests'.
-	self assert: (entity at: #repository) equals: 'Pharo-LanguageServer'.
+	self
+		assert: (entity at: #repository)
+		equals: (repository ifNotNil: [ repository name ]).
 	self
 		assert: (entity at: #modified)
-		equals: ((IceRepository registry detect: [ :repository |
-				  repository name = 'Pharo-LanguageServer' ]) workingCopy
-				 packageNamed: 'PharoLanguageServer-Tests') isDirty.
+		equals: (repository ifNil: [ false ] ifNotNil: [
+					 (repository workingCopy packageNamed:
+						  'PharoLanguageServer-Tests') isDirty ]).
 	self deny:
 		((server envEntity: 'class:PLSServerEnvironmentTest') includesKey:
 			 #modified)
@@ -233,7 +250,10 @@ PLSServerEnvironmentTest >> testProjectEntityGivesTheRepositoryOfItsBaseline [
 
 	| entity |
 	entity := server envEntity: 'project:PharoLanguageServer'.
-	self assert: (entity at: #repository) equals: 'Pharo-LanguageServer'.
+	self
+		assert: (entity at: #repository)
+		equals:
+		(self plsRepository ifNotNil: [ :repository | repository name ]).
 	self assert: (entity at: #package) isNil.
 	self assert: ((entity at: #modified) isKindOf: Boolean)
 ]

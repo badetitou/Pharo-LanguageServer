@@ -18,7 +18,10 @@ Class {
 		'languageId',
 		'uri',
 		'binder',
-		'server'
+		'server',
+		'savedText',
+		'critiques',
+		'critiquesText'
 	],
 	#category : 'PharoLanguageServer-Document',
 	#package : 'PharoLanguageServer',
@@ -109,6 +112,56 @@ PLSDocument >> completionClass [
 	^ nil
 ]
 
+{ #category : 'critiques' }
+PLSDocument >> computeCritiques [
+
+	| stamp all |
+	stamp := PLSCritique nextStamp.
+	all := OrderedCollection new.
+	self critiqueSources do: [ :critiqueSource |
+			critiqueSource critiques do: [ :critique |
+					all add: (PLSCritique
+							 critique: critique
+							 source: critiqueSource
+							 index: all size + 1
+							 stamp: stamp) ] ].
+	critiques := all asArray.
+	critiquesText := text
+]
+
+{ #category : 'critiques' }
+PLSDocument >> critiqueAt: anIndex stamp: aStamp [
+	"Answer the critique at anIndex of the computation aStamp, or nil if my critiques were computed again since"
+
+	^ (critiques ifNil: [ #(  ) ])
+		  detect: [ :each |
+		  each index = anIndex and: [ each stamp = aStamp ] ]
+		  ifNone: [ nil ]
+]
+
+{ #category : 'critiques' }
+PLSDocument >> critiqueSources [
+	"Answer the PLSCritiqueSource of the methods and classes of my text that Renraku critiques"
+
+	^ #(  )
+]
+
+{ #category : 'critiques' }
+PLSDocument >> critiques [
+	"Answer my PLSCritique. They are computed again when my text changed and is at rest; until then, the former ones stay"
+
+	(critiquesText ~= text and: [ self isAtRest ]) ifTrue: [
+		self computeCritiques ].
+	^ critiques ifNil: [ #(  ) ]
+]
+
+{ #category : 'critiques' }
+PLSDocument >> critiquesAreCurrent [
+	"Answer whether my critiques were computed on my current text, so that their ranges are right"
+
+	^ critiques notNil and: [ critiquesText = text ]
+]
+
 { #category : 'diagnostics' }
 PLSDocument >> diagnostics [
 	"return a collection of diagnostic"
@@ -125,6 +178,13 @@ PLSDocument >> formattedText [
 { #category : 'initialization' }
 PLSDocument >> initialize [
 	binder := PLSBinder new
+]
+
+{ #category : 'critiques' }
+PLSDocument >> isAtRest [
+	"Answer whether my text is the one opened or saved. My critiques are computed only then, so that typing does not compute them"
+
+	^ text notNil and: [ text = savedText ]
 ]
 
 { #category : 'accessing' }
@@ -147,6 +207,26 @@ PLSDocument >> languageId: anObject [
 { #category : 'lsp - accessing' }
 PLSDocument >> nodeAt: aPosition [
 	self parsed
+]
+
+{ #category : 'critiques' }
+PLSDocument >> resetCritiques [
+	"Compute my critiques again the next time my text is at rest"
+
+	critiquesText := nil
+]
+
+{ #category : 'critiques' }
+PLSDocument >> savedText [
+	"Answer my text when the client opened or saved me last"
+
+	^ savedText
+]
+
+{ #category : 'critiques' }
+PLSDocument >> savedText: aString [
+
+	savedText := aString
 ]
 
 { #category : 'accessing' }

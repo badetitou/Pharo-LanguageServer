@@ -79,10 +79,12 @@ PLSUIManager >> plsServer: anObject [
 	plsServer := anObject
 ]
 
-{ #category : 'default actions' }
+{ #category : 'ui requests' }
 PLSUIManager >> unhandledErrorDefaultAction: anException [
+	"Stop the process for a debugger of the client, as the debugger of Pharo would"
 
 	(plsServer isNil or: [ plsServer debugMode ]) ifTrue: [
 		^ super unhandledErrorDefaultAction: anException ].
-	anException debug
+	plsServer debugHasClient ifFalse: [ ^ anException debug ].
+	^ plsServer debugSuspend: anException
 ]

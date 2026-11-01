@@ -18,11 +18,26 @@ Class {
 		'envFirstChangeTime',
 		'envLastChangeTime',
 		'envOverflow',
-		'mcpEndpoint'
+		'mcpEndpoint',
+		'transcriptSubscription',
+		'inspectorObjects',
+		'inspectorNextId',
+		'inspectorMutex',
+		'critiquesEnabled',
+		'debugSessions',
+		'debugNextId',
+		'debugMutex'
 	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
 }
+
+{ #category : 'accessing' }
+PLSServer class >> critiquesBanCommand [
+	"The command banning a rule, which the client runs from a code action"
+
+	^ 'pharo.critiques.ban'
+]
 
 { #category : 'lsp - navigation' }
 PLSServer >> callHierarchyIncomingCalls: item [
@@ -137,6 +152,43 @@ PLSServer >> childrenVariables: variableReference in: textDocument [
 			   yourself ]) asArray
 ]
 
+{ #category : 'lsp - diagnostics' }
+PLSServer >> clientPullsDiagnostics [
+
+	^ self context clientContext capabilities textDocument
+		  ifNil: [ false ]
+		  ifNotNil: [ :textDocument | textDocument diagnostic notNil ]
+]
+
+{ #category : 'lsp - diagnostics' }
+PLSServer >> clientRefreshesDiagnostics [
+
+	^ [
+		  ((self context clientContext capabilities workspace at:
+			    #diagnostics) at: #refreshSupport) == true ]
+		  on: Error
+		  do: [ false ]
+]
+
+{ #category : 'lsp - code action' }
+PLSServer >> codeActionForDocument: textDocument atRange: range withContext: context [
+	"Answer the code actions of the critiques among the diagnostics of context: the transformation of the rule, while the critique still matches the text, and the bans of the rule"
+
+	<jrpc: #'textDocument/codeAction'>
+	| uri document actions |
+	self critiquesEnabled ifFalse: [ ^ #(  ) ].
+	uri := textDocument at: #uri.
+	document := self context textItem: uri ifAbsent: [ ^ #(  ) ].
+	actions := OrderedCollection new.
+	(context at: #diagnostics ifAbsent: [ #(  ) ]) do: [ :diagnostic |
+			(self critiqueOf: diagnostic in: document) ifNotNil: [ :critique |
+					document critiquesAreCurrent ifTrue: [
+							(critique fixActionFor: uri) ifNotNil: [ :action |
+								actions add: action ] ].
+					actions addAll: (critique banActionsFor: uri) ] ].
+	^ (actions collect: [ :each | each asJRPCJSON ]) asArray
+]
+
 { #category : 'lsp - code lens' }
 PLSServer >> codeLenResolves: range command: command data: aData [
 	<jrpc: #'codeLens/resolve'>
@@ -166,11 +218,17 @@ PLSServer >> commandPharoLanguageServerVersion [
 
 { #category : 'commands' }
 PLSServer >> commandPharoPrintIt: line textDocument: textDocumentURI [
+	"This textDocumentURI from VSCode is strange.
+	 An exception the evaluation leaves unhandled opens the debugger of the client"
+
 	<jrpc: #'command:printIt'>
-	"This textDocumentURI from VSCode is strange"
-	| compiler answer2 | 
+	| compiler answer2 |
 	compiler := self compilerFor: (textDocumentURI at: #path).
-	answer2 := compiler evaluate: line.
+	answer2 := self
+		           debugEvaluate: [ compiler evaluate: line ]
+		           ifStopped: [ :exception |
+			           ^ Error signal:
+				             exception description , ' (opened in the debugger)' ].
 	^ answer2 plsPrintString
 ]
 
@@ -193,6 +251,171 @@ PLSServer >> compilerFor: fileURI [
 	^ compiler
 ]
 
+{ #category : 'lsp - code action' }
+PLSServer >> critiqueOf: aDiagnostic in: aDocument [
+	"Answer the PLSCritique that aDiagnostic, as the client sends it back, shows, or nil if it shows no critique"
+
+	| data |
+	(aDiagnostic at: #source ifAbsent: [ nil ]) = 'Renraku' ifFalse: [
+		^ nil ].
+	data := aDiagnostic at: #data ifAbsent: [ ^ nil ].
+	data isDictionary ifFalse: [ ^ nil ].
+	^ aDocument
+		  critiqueAt: (data at: #critique ifAbsent: [ ^ nil ])
+		  stamp: (data at: #stamp ifAbsent: [ ^ nil ])
+]
+
+{ #category : 'lsp - workspace' }
+PLSServer >> critiquesBan: arguments [
+	"arguments are the uri of a document, the stamp and index of one of its critiques, and the level of the ban among the entities that can ban it"
+
+	| critique |
+	critique := (self context textItem: arguments first)
+		            critiqueAt: arguments third
+		            stamp: arguments second.
+	critique ifNil: [
+			PLSUnknownEntity signal:
+				'The critique is no longer the one of the document. Save it, then try again' ].
+	critique banAt: arguments fourth.
+	self critiquesRefresh.
+	^ nil
+]
+
+{ #category : 'lsp - diagnostics' }
+PLSServer >> critiquesEnabled [
+	"Answer whether the Renraku critiques of the documents are shown, as the setting pharo.critiques.enabled of the client says"
+
+	^ critiquesEnabled ifNil: [ true ]
+]
+
+{ #category : 'lsp - diagnostics' }
+PLSServer >> critiquesRefresh [
+	"Compute again the critiques of the open documents, and have the client show them"
+
+	self context textItems valuesDo: [ :document |
+		document resetCritiques ].
+	self clientPullsDiagnostics
+		ifTrue: [
+				self clientRefreshesDiagnostics ifTrue: [
+					self sendRequest: 'workspace/diagnostic/refresh' params: nil ] ]
+		ifFalse: [
+				self context textItems valuesDo: [ :document |
+					self sendDiagnosticsforDocument: document ] ]
+]
+
+{ #category : 'pls - debug' }
+PLSServer >> debugEvaluate: aBlock ifStopped: stoppedBlock [
+	"Evaluate aBlock in a process of its own, outside of the execution environment of the caller, and answer its value.
+	 An exception it leaves unhandled, or a halt, suspends that process for a debugger of the client (see #debugSuspend:):
+	 answer then the value of stoppedBlock with the exception, without waiting for the debugger"
+
+	| done value stopped |
+	done := Semaphore new.
+	[
+		[
+			DefaultExecutionEnvironment beActiveDuring: [
+					value := [ aBlock value ]
+						         on: UnhandledException
+						         do: [ :exception |
+								         self debugHasClient ifFalse: [ exception pass ].
+								         stopped := exception.
+								         done signal.
+								         exception resumeUnchecked:
+									         (self debugSuspend: exception) ] ] ] ensure: [
+			stopped ifNil: [ done signal ] ] ]
+		forkAt: Processor activeProcess priority
+		named: 'PLS evaluation'.
+	done wait.
+	stopped ifNotNil: [
+			^ stoppedBlock cull: ((stopped isKindOf: UnhandledError)
+					   ifTrue: [ stopped exception ]
+					   ifFalse: [ stopped ]) ].
+	^ value
+]
+
+{ #category : 'pls - debug' }
+PLSServer >> debugHasClient [
+	"Answer whether a client can take the processes stopped on an exception"
+
+	^ clientOutStream notNil
+]
+
+{ #category : 'pls - debug' }
+PLSServer >> debugMutex [
+
+	^ debugMutex ifNil: [ debugMutex := Mutex new ]
+]
+
+{ #category : 'pls - debug' }
+PLSServer >> debugRegister: aDebugSession [
+	"Keep aDebugSession until a debugger of the client takes it, and tell the client in a pls-debug/stopped notification. Answer its id"
+
+	| id exception |
+	id := self debugMutex critical: [
+			      debugSessions ifNil: [ debugSessions := Dictionary new ].
+			      debugNextId := (debugNextId ifNil: [ 0 ]) + 1.
+			      debugSessions at: debugNextId put: aDebugSession.
+			      debugNextId ].
+	exception := aDebugSession exception.
+	self sendNotification: 'pls-debug/stopped' params: {
+			(#id -> id).
+			(#name -> aDebugSession name asString).
+			(#exception
+			 -> (exception ifNotNil: [ exception class name asString ])) }
+			asDictionary.
+	^ id
+]
+
+{ #category : 'pls - debug' }
+PLSServer >> debugSessionAt: id [
+	"Answer the debug session of the id, waiting for a debugger of the client, and forget it: a single debugger takes it.
+	 Its process tells the client before it suspends itself: wait a little for it to be suspended"
+
+	| session |
+	session := self debugMutex critical: [
+			           (debugSessions ifNil: [ Dictionary new ])
+				           removeKey: id
+				           ifAbsent: [
+				           PLSUnknownEntity signal:
+					           'Unknown debug session: ' , id printString ] ].
+	100 timesRepeat: [
+			session interruptedProcess isSuspended ifTrue: [ ^ session ].
+			10 milliSeconds wait ].
+	^ session
+]
+
+{ #category : 'pls - debug' }
+PLSServer >> debugSuspend: anException [
+	"Suspend the active process on anException, that nobody handled, until a debugger of the client resumes it, as the debugger of Pharo does. Answer the value to resume anException with.
+	 The exception of an UnhandledError is the one the debugger shows"
+
+	| exception session |
+	exception := (anException isKindOf: UnhandledError)
+		             ifTrue: [ anException exception ]
+		             ifFalse: [ anException ].
+	session := Processor activeProcess
+		           newDebugSessionNamed: exception description
+		           startedAt: exception signalerContext.
+	session exception: exception.
+	self debugRegister: session.
+	Processor activeProcess suspend.
+	^ nil
+]
+
+{ #category : 'lsp - diagnostics' }
+PLSServer >> diagnosticsOf: aDocument [
+	"Answer the diagnostics of aDocument: the errors of compilation, then its critiques"
+
+	| diagnostics |
+	diagnostics := aDocument diagnostics asArray collect: [ :each |
+		               each asJRPCJSON ].
+	self critiquesEnabled ifFalse: [ ^ diagnostics ].
+	^ diagnostics , ([
+	   aDocument critiques collect: [ :each | each diagnostic asJRPCJSON ] ]
+		   on: Error
+		   do: [ #(  ) ])
+]
+
 { #category : 'lsp - text synchronisation' }
 PLSServer >> didChange: textDocument contentChanges: contentChanges [
 
@@ -205,6 +428,21 @@ PLSServer >> didChange: textDocument contentChanges: contentChanges [
 	document text: (contentChanges anyOne at: #text).
 	"If diagnostic is not nil, we are in a pull diagnostic context. Else, we are in a push diagnostic context"
 	self publishDiagnosticsFor: document
+]
+
+{ #category : 'lsp - workspace' }
+PLSServer >> didChangeConfiguration: settings [
+	"Follow the settings of the client: pharo.critiques.enabled shows or hides the critiques"
+
+	<jrpc: #'workspace/didChangeConfiguration'>
+	| enabled |
+	enabled := [ ((settings at: #pharo) at: #critiques) at: #enabled ]
+		           on: Error
+		           do: [ true ].
+	enabled = self critiquesEnabled ifTrue: [ ^ nil ].
+	critiquesEnabled := enabled.
+	self critiquesRefresh.
+	^ nil
 ]
 
 { #category : 'lsp - text synchronisation' }
@@ -238,8 +476,21 @@ PLSServer >> didSave: textDocument text: text [
 	"Install the code in the image if the code is part of a tonel file"
 
 	<jrpc: #'textDocument/didSave'>
+	(self context textItem: (textDocument at: #uri) ifAbsent: [ nil ])
+		ifNotNil: [ :document | document savedText: text ].
 	(PLSDocument isTonelDocument: textDocument) ifTrue: [
 		(PLSTonelParser parseString: text asByteArray utf8Decoded) do: #load ]
+]
+
+{ #category : 'lsp - diagnostics' }
+PLSServer >> documentDiagnosticFor: textDocument withIdentifier: identifier andPreviousResult: previousResultId [
+
+	<jrpc: #'textDocument/diagnostic'>
+	^ (PLSFullDocumentDiagnosticsReport new
+		   items:
+			   (self diagnosticsOf:
+					    (self context textItem: (textDocument at: #uri)));
+		   yourself) asJRPCJSON
 ]
 
 { #category : 'lsp - document symbol' }
@@ -607,35 +858,16 @@ PLSServer >> envCompile: id source: source protocol: protocol expectedVersion: e
 	 id is the method or class to replace, or the side of a class to add a method to. A source that declares another selector
 	 or class name creates that entity and leaves the one named by id unchanged.
 	 The protocol of a method defaults to the one of the method it replaces.
-	 With expectedVersion, the compilation is refused with a conflict if the entity id is no longer at that version"
+	 With expectedVersion, the compilation is refused with a conflict if the entity id is no longer at that version.
+	 The editors of the client are not saved through the server: their critiques are computed again now"
 
 	<jrpc: #'pls-env:compile'>
-	| kind path |
-	kind := self envKindOf: id.
-	path := self envPathOf: id.
-	self envCheckVersionOf: id is: expectedVersion.
-	kind = 'class' ifTrue: [ ^ self envCompileClassFrom: source ].
-	kind = 'side' ifTrue: [
-			^ self
-				  envCompileMethodIn: (self envBehaviorNamed: path)
-				  from: source
-				  protocol: protocol
-				  replacing: nil ].
-	kind = 'method' ifTrue: [
-			| behavior |
-			behavior := self envBehaviorNamed:
-				            (path
-					             copyFrom: 1
-					             to: (path indexOfSubCollection: '>>') - 1).
-			^ self
-				  envCompileMethodIn: behavior
-				  from: source
-				  protocol: protocol
-				  replacing: ([ self envMethodNamed: path ]
-						   on: PLSUnknownEntity
-						   do: [ nil ]) ].
-	PLSUnknownEntity signal:
-		'Only classes and methods can be compiled: ' , id printString
+	^ [
+	  self
+		  envCompileEntity: id
+		  source: source
+		  protocol: protocol
+		  expectedVersion: expectedVersion ] ensure: [ self critiquesRefresh ]
 ]
 
 { #category : 'pls - env edition' }
@@ -687,6 +919,38 @@ PLSServer >> envCompileClassFrom: source [
 		  (#version -> (self envVersionOfClass:
 			    (self class environment classNamed: classDefinition className))).
 		  (#diagnostics -> diagnostics) } asDictionary
+]
+
+{ #category : 'pls - env edition' }
+PLSServer >> envCompileEntity: id source: source protocol: protocol expectedVersion: expectedVersion [
+	"Compile source into the image, as envCompile:source:protocol:expectedVersion: answers"
+
+	| kind path |
+	kind := self envKindOf: id.
+	path := self envPathOf: id.
+	self envCheckVersionOf: id is: expectedVersion.
+	kind = 'class' ifTrue: [ ^ self envCompileClassFrom: source ].
+	kind = 'side' ifTrue: [
+			^ self
+				  envCompileMethodIn: (self envBehaviorNamed: path)
+				  from: source
+				  protocol: protocol
+				  replacing: nil ].
+	kind = 'method' ifTrue: [
+			| behavior |
+			behavior := self envBehaviorNamed:
+				            (path
+					             copyFrom: 1
+					             to: (path indexOfSubCollection: '>>') - 1).
+			^ self
+				  envCompileMethodIn: behavior
+				  from: source
+				  protocol: protocol
+				  replacing: ([ self envMethodNamed: path ]
+						   on: PLSUnknownEntity
+						   do: [ nil ]) ].
+	PLSUnknownEntity signal:
+		'Only classes and methods can be compiled: ' , id printString
 ]
 
 { #category : 'pls - env edition' }
@@ -762,6 +1026,15 @@ PLSServer >> envDiagnostic: message in: source from: start to: stop severity: se
 			    start: (source toLineCharacter: (start - 1 max: 0))
 			    end: (source toLineCharacter: (stop max: start))) asJRPCJSON) }
 		  asDictionary
+]
+
+{ #category : 'pls - env history' }
+PLSServer >> envDismissLostChanges: refs [
+	"Forget the lost changes refs without applying them"
+
+	<jrpc: #'pls-env:dismissLostChanges'>
+	refs do: [ :ref | PLSLostChanges current handle: ref ].
+	^ { (#dismissed -> refs asArray) } asDictionary
 ]
 
 { #category : 'pls - env' }
@@ -852,6 +1125,58 @@ PLSServer >> envFlushLoop [
 		self envFlushChanges ] repeat
 ]
 
+{ #category : 'pls - env history' }
+PLSServer >> envHistory: id [
+	"Answer the versions of the method id that the changes file holds, newest first. The first is its current source"
+
+	<jrpc: #'pls-env:history'>
+	| method records items |
+	(self envKindOf: id) = 'method' ifFalse: [
+			PLSUnknownEntity signal:
+				'Only methods have a history: ' , id printString ].
+	method := self envMethodNamed: (self envPathOf: id).
+	records := method sourcePointer
+		           ifNil: [ #(  ) ]
+		           ifNotNil: [
+		           SourceFiles changeRecordsFor:
+			           method asRingDefinition asHistorical ].
+	items := records collect: [ :record |
+			         self
+				         envVersionWithSource: record sourceCode
+				         protocol: record protocol
+				         stamp: record stamp ].
+	(items isEmpty or: [ (items first at: #source) ~= method sourceCode ])
+		ifTrue: [
+				items := (OrderedCollection withAll: items)
+					         addFirst: (self
+							          envVersionWithSource: method sourceCode
+							          protocol: method protocolName
+							          stamp: nil);
+					         yourself ].
+	^ { (#items -> items asArray) } asDictionary
+]
+
+{ #category : 'pls - env history' }
+PLSServer >> envIdOfLostChange: anEvent [
+	"Answer the pls-env id of the entity anEvent changes, nil for an entity without one"
+
+	anEvent isEpMethodChange ifTrue: [
+			^ 'method:' , anEvent behaviorAffectedName , '>>'
+			  , anEvent methodAffectedSelector ].
+	anEvent isEpProtocolChange ifTrue: [
+			^ 'protocol:' , anEvent behaviorAffectedName , '>>'
+			  , (anEvent protocol isString
+					   ifTrue: [ anEvent protocol ]
+					   ifFalse: [ anEvent protocol name ]) ].
+	anEvent isEpBehaviorChange ifTrue: [
+		^ 'class:' , (anEvent behaviorAffectedName withoutSuffix: ' class') ].
+	anEvent isEpPackageTagChange ifTrue: [
+		^ 'tag:' , anEvent packageName , '/' , anEvent tagName ].
+	anEvent isEpPackageChange ifTrue: [
+		^ 'package:' , anEvent packageName ].
+	^ nil
+]
+
 { #category : 'pls - env changes' }
 PLSServer >> envIgnoresBehavior: aBehavior [
 	"Anonymous classes, such as those of tests and tools, are not part of the environment"
@@ -879,6 +1204,47 @@ PLSServer >> envKindOf: id [
 	    'method' ) includes: kind) ifFalse: [
 		PLSUnknownEntity signal: 'Unknown entity: ' , id printString ].
 	^ kind
+]
+
+{ #category : 'pls - env history' }
+PLSServer >> envLostChange: anEvent ref: ref time: aDateAndTime [
+	"The sources are the ones of the entity before and after anEvent, nil when there is none, as for an addition or a removal.
+	 Epicea gives class definitions with CR line endings: answer LF ones, as the other sources"
+
+	| id sources |
+	id := [ self envIdOfLostChange: anEvent ]
+		      on: Error
+		      do: [ nil ].
+	sources := [ self envSourcesOfLostChange: anEvent ]
+		           on: Error
+		           do: [ #( nil nil ) ].
+	sources := sources collect: [ :source |
+		           source ifNotNil: [ source asString withUnixLineEndings ] ].
+	^ {
+		  (#ref -> ref).
+		  (#kind -> (anEvent class name allButFirst: 2) uncapitalized).
+		  (#label
+		   ->
+		   (id
+			    ifNil: [ anEvent printString ]
+			    ifNotNil: [ self envPathOf: id ])).
+		  (#id -> id).
+		  (#time -> (aDateAndTime ifNotNil: [ aDateAndTime asString ])).
+		  (#oldSource -> sources first).
+		  (#source -> sources second) } asDictionary
+]
+
+{ #category : 'pls - env history' }
+PLSServer >> envLostChanges [
+	"Answer the code changes of the last session of the image that it did not save, oldest first, but the ones replayed or dismissed since"
+
+	<jrpc: #'pls-env:lostChanges'>
+	^ { (#items -> (PLSLostChanges current pending collect: [ :each |
+			    self
+				    envLostChange: each value content
+				    ref: each key
+				    time: (each value tags at: EpLog timeKey ifAbsent: [ nil ]) ])
+		   asArray) } asDictionary
 ]
 
 { #category : 'pls - env changes' }
@@ -1395,6 +1761,39 @@ PLSServer >> envRemove: id expectedVersion: expectedVersion [
 		'Only classes and methods can be removed: ' , id printString
 ]
 
+{ #category : 'pls - env history' }
+PLSServer >> envReplayLostChange: anEvent [
+	"Epicea silently skips a change of a method or a protocol of a class the image no longer holds: signal it instead"
+
+	(anEvent isEpMethodChange or: [ anEvent isEpProtocolChange ])
+		ifTrue: [ self envBehaviorNamed: anEvent behaviorAffectedName ].
+	anEvent applyCodeChange
+]
+
+{ #category : 'pls - env history' }
+PLSServer >> envReplayLostChanges: refs [
+	"Apply the lost changes refs to the image, in the order of the log. A change that fails stays pending"
+
+	<jrpc: #'pls-env:replayLostChanges'>
+	| lostChanges replayed failures |
+	lostChanges := PLSLostChanges current.
+	replayed := OrderedCollection new.
+	failures := OrderedCollection new.
+	(lostChanges pendingAmong: refs) do: [ :each |
+			[
+				self envReplayLostChange: each value content.
+				lostChanges handle: each key.
+				replayed add: each key ]
+				on: Error
+				do: [ :error |
+						failures add: {
+								(#ref -> each key).
+								(#message -> error messageText asString) } asDictionary ] ].
+	^ {
+		  (#replayed -> replayed asArray).
+		  (#failures -> failures asArray) } asDictionary
+]
+
 { #category : 'pls - env' }
 PLSServer >> envRepositoriesByPackageName [
 	"Answer the Iceberg repository of each package that one holds, by package name"
@@ -1676,6 +2075,55 @@ PLSServer >> envSideNode: aString [
 		  yourself
 ]
 
+{ #category : 'pls - env history' }
+PLSServer >> envSourcesOfLostChange: anEvent [
+	"Answer the source of the entity anEvent changes, before and after it"
+
+	| name |
+	name := anEvent class name.
+	name = #EpMethodAddition ifTrue: [
+			^ {
+				  nil.
+				  anEvent sourceCode } ].
+	name = #EpMethodModification ifTrue: [
+			^ {
+				  anEvent oldSourceCode.
+				  anEvent newSourceCode } ].
+	name = #EpMethodRemoval ifTrue: [
+			^ {
+				  anEvent sourceCode.
+				  nil } ].
+	name = #EpClassAddition ifTrue: [
+			^ {
+				  nil.
+				  anEvent classAdded definitionSource } ].
+	name = #EpClassModification ifTrue: [
+			^ {
+				  anEvent oldClass definitionSource.
+				  anEvent newClass definitionSource } ].
+	name = #EpClassRemoval ifTrue: [
+			^ {
+				  anEvent classRemoved definitionSource.
+				  nil } ].
+	name = #EpTraitAddition ifTrue: [
+			^ {
+				  nil.
+				  anEvent traitAdded definitionSource } ].
+	name = #EpTraitModification ifTrue: [
+			^ {
+				  anEvent oldTrait definitionSource.
+				  anEvent newTrait definitionSource } ].
+	name = #EpTraitRemoval ifTrue: [
+			^ {
+				  anEvent traitRemoved definitionSource.
+				  nil } ].
+	name = #EpBehaviorCommentChange ifTrue: [
+			^ {
+				  anEvent oldComment.
+				  anEvent newComment } ].
+	^ { nil. nil }
+]
+
 { #category : 'pls - env changes' }
 PLSServer >> envSubscribe [
 	"Listen to the changes of the system, and send them to the client in pls-env/didChange notifications.
@@ -1891,6 +2339,28 @@ PLSServer >> envVersionOfMethod: aMethod [
 	"Answer a hash of the source of the method, which changes whenever it does"
 
 	^ (SHA1 hashMessage: aMethod sourceCode) hex
+]
+
+{ #category : 'pls - env history' }
+PLSServer >> envVersionWithSource: source protocol: protocol stamp: stamp [
+	"stamp is when the version was compiled, nil when unknown"
+
+	^ {
+		  (#source -> source asString).
+		  (#protocol -> protocol asString).
+		  (#stamp -> (stamp isEmptyOrNil
+			    ifTrue: [ nil ]
+			    ifFalse: [ stamp asString ])) } asDictionary
+]
+
+{ #category : 'lsp - workspace' }
+PLSServer >> executeCommand: command arguments: arguments workDoneToken: workDoneToken [
+	"Execute a command that the server declares in its capabilities"
+
+	<jrpc: #'workspace/executeCommand'>
+	command = self class critiquesBanCommand ifTrue: [
+		^ self critiquesBan: arguments ].
+	^ nil
 ]
 
 { #category : 'lsp - formatting' }
@@ -2216,6 +2686,442 @@ PLSServer >> iceStatusForDiffLeaf: aDiffLeaf [
 		 className includesSubstring: 'delete' ]) ifTrue: [ ^ 'deleted' ].
 	(className includesSubstring: 'conflict') ifTrue: [ ^ 'conflicted' ].
 	^ 'modified'
+]
+
+{ #category : 'pls - playground' }
+PLSServer >> inspectIt: line textDocument: textDocumentURI [
+	"Evaluate line in a playground page and bind its result to the variable it of the page, so that the client shows it in the variables of the page"
+
+	<jrpc: #'pls:inspectIt'>
+	| document result |
+	document := self context textItem: (textDocumentURI at: #path).
+	result := (self compilerFor: (textDocumentURI at: #path)) evaluate:
+		          line.
+	(document binder bindingOf: #it) value: result.
+	^ result plsPrintString
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorCellOf: column for: row at: index [
+	"Answer the text of the cell of row, the index-th row of its table, in column"
+
+	^ [
+		  (column isKindOf: SpIndexTableColumn)
+			  ifTrue: [ index printString ]
+			  ifFalse: [
+					  (column isKindOf: SpCompositeTableColumn)
+						  ifTrue: [
+								  ' ' join:
+									  ((column columns reject: [ :each |
+										    each isKindOf: SpImageTableColumn ]) collect: [ :each |
+										   self inspectorCellOf: each for: row at: index ]) ]
+						  ifFalse: [ self inspectorStringOf: (column readObject: row) ] ] ]
+		  on: Error
+		  do: [ :error | error messageText asString ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorChildren: ref offset: offset limit: limit [
+	"Answer one page of the slots and indexed items of the object of the reference ref, with the total number of them"
+
+	<jrpc: #'pls-inspector:children'>
+	^ (self
+		   inspectorTreeOf:
+			   (self inspectorRawChildrenOf: (self inspectorObjectOf: ref))
+		   offset: offset
+		   limit: limit)
+		  removeKey: #kind;
+		  yourself
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorContextsOf: anObject [
+	"Answer the inspection contexts of anObject, one per inspection method of its class, in the order of the inspector"
+
+	^ [ (StInspectionCollector on: anObject) collectInspectionContexts ]
+		  on: Error
+		  do: [ #(  ) ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorDescriptionOf: anObject ref: ref [
+	"Answer the description of anObject, known by the reference ref: its class, its print string and the views the client can show of it"
+
+	^ {
+		  (#ref -> ref).
+		  (#className -> anObject class name asString).
+		  (#printString -> (self inspectorPrintStringOf: anObject)).
+		  (#hasChildren -> (self inspectorHasChildren: anObject)).
+		  (#views -> (self inspectorViewsOf: anObject)) } asDictionary
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorEvaluate: expression textDocumentURI: textDocumentURI receiver: receiver [
+	"Evaluate expression with self bound to the object of the reference receiver when given, else with the bindings of the document, and answer the description of its result.
+	 An error the evaluation signals is its result, and the description carries its message"
+
+	<jrpc: #'pls-inspector:evaluate'>
+	| compiler error result |
+	(self inspectorSyntaxErrorOf: expression) ifNotNil: [ :message |
+		^ JRPCInvalidParameters signal: message ].
+	compiler := receiver
+		            ifNil: [
+			            self compilerFor:
+				            (textDocumentURI ifNotNil: [ :uri | uri at: #path ]) ]
+		            ifNotNil: [
+				            SmalltalkImage current compiler
+					            receiver: (self inspectorObjectOf: receiver);
+					            yourself ].
+	result := [ compiler evaluate: expression ]
+		          on: Error
+		          do: [ :exception |
+				          error := exception.
+				          exception return: exception ].
+	^ (self
+		   inspectorDescriptionOf: result
+		   ref: (self inspectorRegister: result))
+		  at: #error put: (error ifNotNil: [ error description asString ]);
+		  yourself
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorExtensionView: viewId of: anObject offset: offset limit: limit [
+	"Answer the view viewId that an inspection method of the class of anObject builds"
+
+	| context presenter |
+	context := (self inspectorContextsOf: anObject)
+		           detect: [ :each | each methodSelector asString = viewId ]
+		           ifNone: [
+				           PLSUnknownEntity signal:
+					           'Unknown inspector view: ' , viewId printString ].
+	presenter := [
+		             context basicNewInspectionPresenter:
+			             (context newPresenterBuilderOnApplication:
+				              SpApplication new) ]
+		             on: Error , Warning
+		             do: [ :error |
+				             ^ self inspectorUnsupported:
+					               'This view failed: ' , error messageText asString ].
+	^ [
+	  self
+		  inspectorViewOfPresenter: presenter
+		  offset: offset
+		  limit: limit ]
+		  on: Error
+		  do: [ :error |
+				  self inspectorUnsupported:
+					  'This view failed: ' , error messageText asString ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorHasChildren: anObject [
+	"Answer whether anObject has slots or indexed items to show in its Raw view"
+
+	^ [
+		  anObject class instSize > 0 or: [
+			  anObject class isVariable and: [ anObject basicSize > 0 ] ] ]
+		  on: Error
+		  do: [ false ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorInspect: ref [
+	"Answer the description of the object of the reference ref"
+
+	<jrpc: #'pls-inspector:inspect'>
+	^ self inspectorDescriptionOf: (self inspectorObjectOf: ref) ref: ref
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorItemNamed: name of: anObject [
+	"Answer the item that shows anObject under name, with a new reference to it"
+
+	^ {
+		  (#name -> name).
+		  (#ref -> (self inspectorRegister: anObject)).
+		  (#className -> anObject class name asString).
+		  (#printString -> (self inspectorPrintStringOf: anObject)).
+		  (#hasChildren -> (self inspectorHasChildren: anObject)) }
+		  asDictionary
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorMetaOf: anObject offset: offset limit: limit [
+	"Answer the class of anObject and its superclasses up to the root of the hierarchy, as a table view"
+
+	^ self
+		  inspectorTableOf: anObject class withAllSuperclasses asArray
+		  columns: #( 'Class' 'Package' )
+		  cells: [ :class :index |
+				  {
+					  class name asString.
+					  (class package
+						   ifNil: [ '' ]
+						   ifNotNil: [ :package | package name asString ]) } ]
+		  objects: [ :class | class ]
+		  offset: offset
+		  limit: limit
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorMutex [
+
+	^ inspectorMutex ifNil: [ inspectorMutex := Mutex new ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorObjectOf: ref [
+	"Answer the object of the reference ref"
+
+	^ self inspectorMutex critical: [
+			  (inspectorObjects ifNil: [ Dictionary new ]) at: ref ifAbsent: [
+					  PLSUnknownEntity signal:
+						  'Unknown inspector reference: ' , ref printString ] ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorObjectOfRow: row [
+	"Answer the object a row of an inspection list shows: the value of an inspector node, else the row itself"
+
+	^ (row isKindOf: StInspectorNode)
+		  ifTrue: [ row rawValue ]
+		  ifFalse: [ row ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorPrintStringOf: anObject [
+
+	^ [ anObject printStringLimitedTo: 1000 ]
+		  on: Error
+		  do: [ :error |
+				  'Error printing a ' , anObject class name , ': '
+				  , error messageText asString ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorRawChildrenOf: anObject [
+	"Answer the slots and indexed items of anObject, as name -> value"
+
+	^ [
+		  (anObject allInspectorNodes reject: [ :node |
+			   node isKindOf: StInspectorSelfNode ]) collect: [ :node |
+			  node label asString -> node rawValue ] ]
+		  on: Error
+		  do: [ #(  ) ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorRegister: anObject [
+	"Answer a new reference to anObject, which keeps anObject alive until the client releases it"
+
+	^ self inspectorMutex critical: [
+			  inspectorObjects ifNil: [ inspectorObjects := Dictionary new ].
+			  inspectorNextId := (inspectorNextId ifNil: [ 0 ]) + 1.
+			  inspectorObjects at: inspectorNextId printString put: anObject.
+			  inspectorNextId printString ]
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorRelease: refs all: all [
+	"Forget the objects of the references refs, or of every reference when all is true, so that the image can collect them"
+
+	<jrpc: #'pls-inspector:release'>
+	self inspectorMutex critical: [
+			all = true
+				ifTrue: [ inspectorObjects := nil ]
+				ifFalse: [
+						inspectorObjects ifNotNil: [ :objects |
+								(refs ifNil: [ #(  ) ]) do: [ :ref |
+									objects removeKey: ref ifAbsent: [ ] ] ] ] ].
+	^ nil
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorStart: offset stop: limit size: size [
+	"Answer the interval of the indexes of a page of size elements that starts at the zero-based offset, which defaults to 0, and holds at most limit elements, all the remaining ones by default"
+
+	| start |
+	start := (offset ifNil: [ 0 ]) max: 0.
+	^ start + 1 to:
+	  (limit ifNil: [ size ] ifNotNil: [ start + limit min: size ])
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorStringOf: aValue [
+	"Answer the text a table cell shows for aValue"
+
+	aValue ifNil: [ ^ '' ].
+	(aValue isString or: [ aValue isText ]) ifTrue: [ ^ aValue asString ].
+	^ self inspectorPrintStringOf: aValue
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorSyntaxErrorOf: expression [
+	"Answer the message of the first syntax error of expression, or nil when it parses"
+
+	| ast |
+	ast := RBParser parseFaultyExpression: expression.
+	ast isFaulty ifFalse: [ ^ nil ].
+	^ (ast allChildren
+		   detect: [ :node | node isParseError ]
+		   ifNone: [ ^ 'Syntax error' ]) errorMessage
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorTableOf: rows columns: titles cells: cellsBlock objects: objectBlock offset: offset limit: limit [
+	"Answer one page of rows as a table view with the column titles, with the total number of rows.
+	 cellsBlock answers the texts of the cells of a row and its index, objectBlock the object a row shows"
+
+	^ {
+		  (#kind -> 'table').
+		  (#columns -> titles asArray).
+		  (#items
+		   -> ((self inspectorStart: offset stop: limit size: rows size)
+				    collect: [ :index |
+						    | row cells |
+						    row := rows at: index.
+						    cells := (cellsBlock value: row value: index) asArray.
+						    (self
+							     inspectorItemNamed:
+								     (cells ifEmpty: [ '' ] ifNotEmpty: [ cells first ])
+							     of: (objectBlock value: row))
+							    at: #cells put: cells;
+							    yourself ]
+				    as: Array)).
+		  (#total -> rows size) } asDictionary
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorTextOf: aString [
+
+	^ {
+		  (#kind -> 'text').
+		  (#text -> aString asString) } asDictionary
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorTreeOf: associations offset: offset limit: limit [
+	"Answer one page of the associations name -> value as a tree view, with the total number of them"
+
+	^ {
+		  (#kind -> 'tree').
+		  (#items
+		   ->
+			   ((self
+				     inspectorStart: offset
+				     stop: limit
+				     size: associations size)
+				    collect: [ :index |
+						    | association |
+						    association := associations at: index.
+						    self
+							    inspectorItemNamed: association key
+							    of: association value ]
+				    as: Array)).
+		  (#total -> associations size) } asDictionary
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorUnsupported: aString [
+
+	^ {
+		  (#kind -> 'unsupported').
+		  (#text -> aString) } asDictionary
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorView: ref view: view offset: offset limit: limit [
+	"Answer one page of the view view of the object of the reference ref: a tree of its slots for raw, a table of its class hierarchy for meta, else the view of an inspection method of its class, a text or a table"
+
+	<jrpc: #'pls-inspector:view'>
+	| object |
+	object := self inspectorObjectOf: ref.
+	view = 'raw' ifTrue: [
+			^ self
+				  inspectorTreeOf: (self inspectorRawChildrenOf: object)
+				  offset: offset
+				  limit: limit ].
+	view = 'meta' ifTrue: [
+		^ self inspectorMetaOf: object offset: offset limit: limit ].
+	^ self
+		  inspectorExtensionView: view
+		  of: object
+		  offset: offset
+		  limit: limit
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorViewIdOf: selector [
+	"Answer the id of the view of the inspection method selector, or nil for an inspection the client cannot show"
+
+	selector = #inspectionRaw: ifTrue: [ ^ 'raw' ].
+	selector = #inspectionMeta: ifTrue: [ ^ 'meta' ].
+	selector = #inspectionBreakpoints: ifTrue: [ ^ nil ].
+	^ selector asString
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorViewOfPresenter: presenter offset: offset limit: limit [
+	"Answer the view of the inspection presenter: its text when it shows a text, its rows when it shows a list, a table or a tree, of which the roots only"
+
+	| rows columns |
+	(presenter isKindOf: SpAbstractTextPresenter) ifTrue: [
+		^ self inspectorTextOf: presenter text ].
+	(presenter isKindOf: SpAbstractListPresenter) ifTrue: [
+		rows := presenter items asArray ].
+	(presenter isKindOf: SpAbstractTreePresenter) ifTrue: [
+		rows := presenter roots asArray ].
+	rows ifNil: [
+			^ self inspectorUnsupported:
+				  'This view is not available outside of Pharo.' ].
+	((presenter respondsTo: #columns) and: [
+		 presenter columns isNotEmpty ]) ifFalse: [
+			^ self
+				  inspectorTableOf: rows
+				  columns: #( 'Value' )
+				  cells: [ :row :index |
+						  { (self inspectorStringOf: ([ presenter display value: row ]
+								    on: Error
+								    do: [ row ])) } ]
+				  objects: [ :row | self inspectorObjectOfRow: row ]
+				  offset: offset
+				  limit: limit ].
+	columns := presenter columns reject: [ :column |
+		           column isKindOf: SpImageTableColumn ].
+	^ self
+		  inspectorTableOf: rows
+		  columns: (columns collect: [ :column |
+				   column title
+					   ifNil: [ '' ]
+					   ifNotNil: [ :title | title asString ] ])
+		  cells: [ :row :index |
+				  columns collect: [ :column |
+					  self inspectorCellOf: column for: row at: index ] ]
+		  objects: [ :row | self inspectorObjectOfRow: row ]
+		  offset: offset
+		  limit: limit
+]
+
+{ #category : 'pls - inspector' }
+PLSServer >> inspectorViewsOf: anObject [
+	"Answer the views of anObject, as id and title: Raw, Meta and the inspections its class adds to the inspector"
+
+	| views |
+	views := OrderedCollection new.
+	(self inspectorContextsOf: anObject) do: [ :context |
+			(self inspectorViewIdOf: context methodSelector) ifNotNil: [ :id |
+					views add: {
+							(#id -> id).
+							(#title -> context title asString) } asDictionary ] ].
+	(views anySatisfy: [ :view | (view at: #id) = 'raw' ]) ifFalse: [
+			views addFirst: {
+					(#id -> 'raw').
+					(#title -> 'Raw') } asDictionary ].
+	(views anySatisfy: [ :view | (view at: #id) = 'meta' ]) ifFalse: [
+			views addLast: {
+					(#id -> 'meta').
+					(#title -> 'Meta') } asDictionary ].
+	^ views asArray
 ]
 
 { #category : 'pls - env changes' }
@@ -2855,6 +3761,7 @@ PLSServer >> openDocument: textDocument [
 		            textItem: (textDocument at: #uri)
 		            put: (PLSDocument from: textDocument).
 	document server: self.
+	document savedText: document text.
 	^ document
 ]
 
@@ -3022,21 +3929,40 @@ PLSServer >> plsResetLog [
 	^ 'success'
 ]
 
-{ #category : 'pls - tests' }
+{ #category : 'pls' }
+PLSServer >> plsTestCaseOf: aTestURI [
+	"Answer the test case of the method of a test: pharoImage://<package>/<class>.class.st#<selector>"
+
+	| className |
+	className := ((aTestURI at: #path) substrings: '/') last
+		             withoutSuffix: '.class.st'.
+	^ (self class environment at: className asSymbol) selector:
+		  (aTestURI at: #fragment) asSymbol
+]
+
+{ #category : 'pls' }
+PLSServer >> plsTestDebugTest: aTestURI [
+	"Run a test so that its failure or error opens the debugger of the client, which can fix it and restart it.
+	 Answer the result of the test, or the failure or error that opened the debugger"
+
+	<jrpc: #'pls:test-debug-test'>
+	^ self
+		  debugEvaluate: [
+		  self plsTestResultOf: (self plsTestCaseOf: aTestURI) debug ]
+		  ifStopped: [ :exception |
+				  | description |
+				  description := exception description
+				                 , ' (opened in the debugger)'.
+				  (exception isKindOf: TestFailure)
+					  ifTrue: [ { (#failures -> { description }) } asDictionary ]
+					  ifFalse: [ { (#errors -> { description }) } asDictionary ] ]
+]
+
+{ #category : 'pls' }
 PLSServer >> plsTestExecuteTest: aTestURI [
 
 	<jrpc: #'pls:test-execute-test'>
-	| className result |
-	className := ((aTestURI at: #path) substrings: '/') last
-		             withoutSuffix: '.class.st'.
-	result := (self class environment at: className asSymbol) run:
-		          (aTestURI at: #fragment) asSymbol.
-	^ {
-		  (#failures -> (result failures collect: #printString as: Array)).
-		  (#errors -> (result errors collect: #printString as: Array)).
-		  (#skipped -> (result skipped collect: #printString as: Array)).
-		  (#passed -> (result passed collect: #printString as: Array)) }
-		  asDictionary
+	^ self plsTestResultOf: (self plsTestCaseOf: aTestURI) run
 ]
 
 { #category : 'pls - tests' }
@@ -3079,6 +4005,18 @@ PLSServer >> plsTestPackages [
 			   , '.class.st'"
 ]
 
+{ #category : 'pls' }
+PLSServer >> plsTestResultOf: result [
+	"Answer the failures, errors, skipped and passed tests of a TestResult as the client reads them"
+
+	^ {
+		  (#failures -> (result failures collect: #printString as: Array)).
+		  (#errors -> (result errors collect: #printString as: Array)).
+		  (#skipped -> (result skipped collect: #printString as: Array)).
+		  (#passed -> (result passed collect: #printString as: Array)) }
+		  asDictionary
+]
+
 { #category : 'lsp - text synchronisation' }
 PLSServer >> publishDiagnosticsFor: document [
 
@@ -3086,26 +4024,53 @@ PLSServer >> publishDiagnosticsFor: document [
 		td diagnostic ifNil: [ self sendDiagnosticsforDocument: document ] ]
 ]
 
+{ #category : 'pls - playground' }
+PLSServer >> resetBindings: textDocument [
+	"Forget the variables of a playground page, so that its next evaluation starts afresh"
+
+	<jrpc: #'pls:resetBindings'>
+	(self context textItem: (textDocument at: #uri at: #path)) binder
+		bindings removeAll.
+	^ nil
+]
+
+{ #category : 'lsp - diagnostics' }
+PLSServer >> sendDiagnosticsforDocument: document [
+
+	self
+		sendNotification: 'textDocument/publishDiagnostics'
+		params: (PLSPublishDiagnosticsParams new
+				 diagnostics: (self diagnosticsOf: document);
+				 uri: document uri;
+				 version: document version;
+				 yourself)
+]
+
 { #category : 'lsp - initialization' }
 PLSServer >> serverInitialized [
-	"The client is ready for notifications: start sending it the changes of the environment"
+	"The client is ready for notifications: start sending it the changes of the environment and the Transcript"
 
 	super serverInitialized.
-	self envSubscribe
+	self envSubscribe.
+	self transcriptSubscribe
 ]
 
 { #category : 'dap' }
 PLSServer >> startDapServer [
+
 	<jrpc: #'dap:startServer'>
 	'Start DAP Server.' record.
 	^ DAPServer new
-		start.
+		  plsServer: self;
+		  debugMode: self debugMode;
+		  start
 ]
 
 { #category : 'starting' }
 PLSServer >> stop [
 
 	self envUnsubscribe.
+	self transcriptUnsubscribe.
 	self mcpStop.
 	super stop
 ]
@@ -3251,6 +4216,39 @@ PLSServer >> textDocumentSignatureHelpWithPosition: position textDocument: textD
 						yourself ]
 				as: Array);
 		yourself
+]
+
+{ #category : 'pls - playground' }
+PLSServer >> transcriptShow: aString [
+
+	clientOutStream ifNil: [ ^ self ].
+	self
+		sendNotification: 'pls/transcript'
+		params: { (#text -> aString asString) } asDictionary
+]
+
+{ #category : 'pls - playground' }
+PLSServer >> transcriptSubscribe [
+	"Send what is shown on the Transcript to the client in pls/transcript notifications.
+	 The entries are announced in the process of the Transcript, so sending one never signals an error into the process that shows it"
+
+	self transcriptUnsubscribe.
+	transcriptSubscription := SystemAnnouncer uniqueInstance
+		                          when: NewEntryToTranscript
+		                          do: [ :announcement |
+				                          [
+				                          self transcriptShow: announcement entry ]
+					                          on: Error
+					                          do: [ :error | error return: nil ] ]
+		                          for: Transcript
+]
+
+{ #category : 'pls - playground' }
+PLSServer >> transcriptUnsubscribe [
+
+	transcriptSubscription ifNotNil: [ :subscription |
+		SystemAnnouncer uniqueInstance removeSubscription: subscription ].
+	transcriptSubscription := nil
 ]
 
 { #category : 'lsp - type definition' }

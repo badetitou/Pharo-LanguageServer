@@ -27,7 +27,11 @@ Class {
 		'lineOffset',
 		'numberOfStacks',
 		'justMyCode',
-		'shouldStop'
+		'shouldStop',
+		'plsServer',
+		'attachedSessionId',
+		'variablesObjects',
+		'currentVariablesObjects'
 	],
 	#category : 'PharoDAP',
 	#package : 'PharoDAP'
@@ -72,6 +76,34 @@ DAPServer >> context [
 	^ serverContext
 ]
 
+{ #category : 'debugger support' }
+DAPServer >> contextAt: frameId [
+	"Answer the context of the stack of the debug session whose frame has the id frameId"
+
+	^ debugSession interruptedContext stack
+		  detect: [ :each | each hash = frameId ]
+		  ifNone: [ DAPInvalidParameters signal: 'Unknown frame: ' , frameId printString ]
+]
+
+{ #category : 'debugger support' }
+DAPServer >> contextVariablesOf: aContext [
+	"Answer the variables of the Context scope of aContext: thisContext, its arguments and its temporaries"
+
+	^ (OrderedCollection with:
+			   (self
+				    variableNamed: 'thisContext'
+				    value: aContext
+				    evaluateName: nil))
+		  addAll: (aContext tempNames collect: [ :name |
+						   self
+							   variableNamed: name
+							   value: ([ aContext tempNamed: name ]
+									    on: Error
+									    do: [ :error | error ])
+							   evaluateName: name ]);
+		  yourself
+]
+
 { #category : 'handlers management' }
 DAPServer >> convertDAPJsonableObjectToJSON: aDAPJsonableObject [
 	^ String streamContents: [ :stream |
@@ -85,16 +117,28 @@ DAPServer >> convertDAPJsonableObjectToJSON: aDAPJsonableObject on: stream [
 
 { #category : 'dap' }
 DAPServer >> dapAttach: aDAPRequest [
-
-	"Send that I receive  the initialize"
+	"Attach to a process that the image stopped on an exception: the debug session of the id that a pls-debug/stopped notification gave to the client"
 
 	<dap: #attach>
-	self sendMessage: (DAPAttachResponse new
-			 seq: self nextSeq;
-			 request_seq: aDAPRequest seq;
-			 command: aDAPRequest command;
-			 body: DAPCapabilities new).
-	self sendMessage: DAPAttachEvent new
+	| id |
+	id := aDAPRequest arguments at: #debugSessionId ifAbsent: [ nil ].
+	(plsServer isNil or: [ id isNil ]) ifTrue: [
+			^ self
+				  respondTo: aDAPRequest
+				  failure:
+				  'Attach to a Pharo debug session: debugSessionId is missing.' ].
+	debugSession := [ plsServer debugSessionAt: id ]
+		                on: PLSUnknownEntity
+		                do: [
+				                ^ self
+					                  respondTo: aDAPRequest
+					                  failure:
+					                  'This Pharo debug session is no longer waiting for a debugger.' ].
+	attachedSessionId := id.
+	self shouldStop: true.
+	self threads at: id put: debugSession name asString.
+	self respondTo: aDAPRequest body: nil.
+	self sendStopped: 'exception'
 ]
 
 { #category : 'dap' }
@@ -109,9 +153,18 @@ DAPServer >> dapConfigurationDone: aDAPConfigurationDoneRequest [
 
 { #category : 'dap' }
 DAPServer >> dapContinue: aDAPContinueRequest [
+	"Resume the process. An attached process goes on without the debugger, which ends: a new exception opens a new one"
 
 	<dap: #continue>
-
+	attachedSessionId ifNotNil: [
+			| session |
+			session := debugSession.
+			debugSession := nil.
+			self
+				respondTo: aDAPContinueRequest
+				body: { (#allThreadsContinued -> true) } asDictionary.
+			session resume.
+			^ self sendEvent: 'terminated' body: Dictionary new ].
 	self
 		sendMessage: (DAPContinuedEvent new
 				 seq: self nextSeq;
@@ -127,47 +180,69 @@ DAPServer >> dapContinue: aDAPContinueRequest [
 
 { #category : 'dap' }
 DAPServer >> dapDisconnect: aDAPDisconnectRequest [
+	"An attached process that the debugger did not resume ends with it, as when the debugger of Pharo closes"
 
 	<dap: #disconnect>
+	attachedSessionId ifNotNil: [
+			debugSession ifNotNil: [ :session | session terminate ].
+			debugSession := nil ].
 	initialized := false.
 	self resetContext.
 	self resetCache.
 	self sendMessage: DAPDisconnectResponse new.
-
 	aDAPDisconnectRequest arguments
 		at: #terminateDebuggee
-		ifPresent: [ :terminate | 
-			('terminate: ' , terminate printString) record.
-			terminate ifTrue: [ 
-				OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
-					OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
-				self stop ] ].
-	self shouldStop ifTrue: [ 
-		OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
-			OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
-		self stop ]
+		ifPresent: [ :terminate |
+				('terminate: ' , terminate printString) record.
+				terminate ifTrue: [
+						OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
+							OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
+						^ self stop ] ].
+	self shouldStop ifTrue: [
+			OupsDebuggerSelectionStrategy debuggerSelectionStrategy:
+				OupsDebuggerSelectionStrategy defaultDebuggerSelectionStrategy.
+			self stop ]
 ]
 
 { #category : 'dap' }
 DAPServer >> dapEvaluate: aDAPEvaluateRequest [
+	"Evaluate an expression of the debug console, of the watches or of a hover in the frame, and answer its result as a variable the client can expand"
+
 	<dap: #evaluate>
-	| localContext expression localCompiler |
-	localContext := self getStacks
-		detect:
-			[ :aStack | aStack hash = (aDAPEvaluateRequest arguments at: #frameId) ]
-		ifNone: [ nil ].
-	expression := '^ ' , (aDAPEvaluateRequest arguments at: #expression).
-	localCompiler := (self compilerFor: nil)
-		context: localContext;
-		yourself.
-	self
-		sendMessage:
-			(DAPEvaluateResponse new
-				seq: self nextSeq;
-				request_seq: aDAPEvaluateRequest seq;
-				command: aDAPEvaluateRequest command;
-				result: ([(localCompiler evaluate: expression)] on: Exception do: [ :err | err printString ]) printString;
-				variablesReference: 0)
+	| arguments frame result variable |
+	attachedSessionId ifNil: [
+		^ self dapLaunchedEvaluate: aDAPEvaluateRequest ].
+	arguments := aDAPEvaluateRequest arguments.
+	frame := (arguments at: #frameId ifAbsent: [ nil ]) ifNotNil: [ :id |
+		         self contextAt: id ].
+	result := [ self evaluate: (arguments at: #expression) in: frame ]
+		          on: Error , Halt , Warning
+		          do: [ :exception |
+			          ^ self
+				            respondTo: aDAPEvaluateRequest
+				            failure: exception description ].
+	variable := self variableNamed: '' value: result evaluateName: nil.
+	self respondTo: aDAPEvaluateRequest body: {
+			(#result -> (variable at: #value)).
+			(#type -> (variable at: #type)).
+			(#variablesReference -> (variable at: #variablesReference)) }
+			asDictionary
+]
+
+{ #category : 'dap' }
+DAPServer >> dapExceptionInfo: aDAPExceptionInfoRequest [
+
+	<dap: #exceptionInfo>
+	| exception |
+	exception := debugSession exception.
+	self respondTo: aDAPExceptionInfoRequest body: {
+			(#exceptionId -> exception class name asString).
+			(#description -> exception description asString).
+			(#breakMode -> 'unhandled').
+			(#details -> {
+				 (#typeName -> exception class name asString).
+				 (#message -> exception messageText asString) } asDictionary) }
+			asDictionary
 ]
 
 { #category : 'dap' }
@@ -223,6 +298,122 @@ DAPServer >> dapLaunch: aDAPLaunchRequest [
 	self sendMessage: DAPTerminatedEvent new
 ]
 
+{ #category : 'dap - launch' }
+DAPServer >> dapLaunchedEvaluate: aDAPEvaluateRequest [
+	"Evaluate in a frame of a launched program"
+
+	| localContext expression localCompiler |
+	localContext := self getStacks
+		                detect: [ :aStack |
+			                aStack hash
+			                = (aDAPEvaluateRequest arguments at: #frameId) ]
+		                ifNone: [ nil ].
+	expression := '^ ' , (aDAPEvaluateRequest arguments at: #expression).
+	localCompiler := (self compilerFor: nil)
+		                 context: localContext;
+		                 yourself.
+	self sendMessage: (DAPEvaluateResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPEvaluateRequest seq;
+			 command: aDAPEvaluateRequest command;
+			 result: ([ localCompiler evaluate: expression ]
+					  on: Exception
+					  do: [ :err | err printString ]) printString;
+			 variablesReference: 0)
+]
+
+{ #category : 'dap - launch' }
+DAPServer >> dapLaunchedScopes: aDAPScopesRequest [
+	"Answer the scope of a frame of a launched program"
+
+	| stack scope dapScope response |
+	stack := self getStacks detect: [ :aStack |
+		         aStack hash = (aDAPScopesRequest arguments at: #frameId) ].
+	scope := stack sourceNodeExecuted scope.
+	sourcesReferenceCache
+		at: 0
+		ifPresent: [ :sourceRef |
+		sourceRef sourceCode: stack method sourceCode ].
+	dapScope := DAPScope new
+		            name: scope printString;
+		            variablesReference: scope hash;
+		            yourself.
+	variablesReferenceCache at: scope hash put: {
+			(#scope -> (DAPTScope new
+				  scope: scope;
+				  inCache: variablesReferenceCache;
+				  yourself)).
+			(#context -> stack) } asDictionary.
+	response := DAPScopesResponse new
+		            seq: self nextSeq;
+		            request_seq: aDAPScopesRequest seq;
+		            command: aDAPScopesRequest command;
+		            scopes: { dapScope };
+		            yourself.
+	self sendMessage: response
+]
+
+{ #category : 'dap - launch' }
+DAPServer >> dapLaunchedStackTrace: aDAPStackTraceRequest [
+	"Answer the stack of a launched program"
+
+	| response stacks sourceNode dapStacks |
+	response := DAPStackTraceResponse new
+		            seq: self nextSeq;
+		            request_seq: aDAPStackTraceRequest seq;
+		            command: aDAPStackTraceRequest command;
+		            yourself.
+	stacks := self getStacks.
+	sourcesReferenceCache
+		at: 0
+		ifPresent: [ :sourceRef |
+		sourceRef sourceCode: stacks first method sourceCode ].
+	dapStacks := stacks collect: [ :stack |
+			             | positions |
+			             "put reference to source in the cache"
+			             sourcesReferenceCache
+				             at: stack method hash
+				             put: stack method.
+			             positions := stack sourceCode toLineColumn:
+				                          stack sourceNodeExecuted start.
+			             "create the stack frame with its source"
+			             sourceNode := DAPSource new
+				                           name: stack method printString;
+				                           sourceReference: stack method hash;
+				                           yourself.
+			             DAPStackFrame new
+				             id: stack hash;
+				             name: stack printString;
+				             source: sourceNode;
+				             line: (positions at: #line) + self lineOffset;
+				             column: (positions at: #column);
+				             yourself ].
+	self isJustMyCode
+		ifTrue: [
+				response stackFrames addAll:
+					(dapStacks select: [ :aStack | aStack source sourceReference = 0 ]) ]
+		ifFalse: [ response stackFrames addAll: dapStacks ].
+	self sendMessage: response
+]
+
+{ #category : 'dap - launch' }
+DAPServer >> dapLaunchedVariables: aDAPVariablesRequest [
+	"Answer the variables of a frame of a launched program"
+
+	| variablesReference scope context2 |
+	variablesReference := aDAPVariablesRequest arguments at:
+		                      #variablesReference.
+	scope := (variablesReferenceCache at: variablesReference) at: #scope.
+	context2 := (variablesReferenceCache at: variablesReference) at:
+		            #context.
+	self sendMessage: (DAPVariablesResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPVariablesRequest seq;
+			 command: aDAPVariablesRequest command;
+			 variables: (scope getDAPVariablesInContent: context2);
+			 yourself)
+]
+
 { #category : 'dap' }
 DAPServer >> dapNext: aDAPNextRequest [
 	"Send that I receive  the initialize"
@@ -255,34 +446,103 @@ DAPServer >> dapNext: aDAPNextRequest [
 ]
 
 { #category : 'dap' }
+DAPServer >> dapPharoCreateMissingMethod: aDAPRequest [
+	"Implement the message that the process did not understand in the class of its receiver, and go on in the new method, as the Create button of the debugger of Pharo does.
+	 Answer the URI of the editor of the new method"
+
+	<dap: #pharoCreateMissingMethod>
+	| exception class |
+	exception := debugSession exception.
+	(exception isKindOf: MessageNotUnderstood) ifFalse: [
+			^ self
+				  respondTo: aDAPRequest
+				  failure: 'The process did not stop on a message not understood.' ].
+	class := thisContext objectClass: exception receiver.
+	debugSession
+		implement: exception message
+		classified: Protocol unclassified
+		inClass: class
+		forContext: debugSession interruptedContext.
+	self respondTo: aDAPRequest body: { (#uri
+		 -> (plsServer navUriOfMethod: class >> exception message selector)) }
+			asDictionary.
+	self sendStopped: 'goto'
+]
+
+{ #category : 'dap' }
+DAPServer >> dapPharoInspectVariable: aDAPRequest [
+	"Register the object of a variable of the Variables view in the inspector of the language server, and answer its reference there: { ref }"
+
+	<dap: #pharoInspectVariable>
+	| arguments object |
+	arguments := aDAPRequest arguments.
+	object := ((variablesObjects ifNil: [ Dictionary new ])
+		           at: (arguments at: #variablesReference)
+		           ifAbsent: [ Dictionary new ])
+		          at: (arguments at: #name)
+		          ifAbsent: [
+				          ^ self
+					            respondTo: aDAPRequest
+					            failure:
+					            'This variable is no longer shown by the debugger.' ].
+	(plsServer respondsTo: #inspectorRegister:) ifFalse: [
+			^ self
+				  respondTo: aDAPRequest
+				  failure: 'The language server has no inspector.' ].
+	self
+		respondTo: aDAPRequest
+		body:
+		{ (#ref -> (plsServer inspectorRegister: object)) } asDictionary
+]
+
+{ #category : 'dap' }
+DAPServer >> dapRestartFrame: aDAPRestartFrameRequest [
+	"Restart the frame, in the method as it is now when it changed since the frame started, as the debugger of Pharo does when a method of the stack is saved"
+
+	<dap: #restartFrame>
+	| frame method |
+	frame := self contextAt:
+		         (aDAPRestartFrameRequest arguments at: #frameId).
+	(frame isBlockContext and: [
+			 (self installedMethodOf: frame method method)
+			 ~~ frame method method and: [
+				 debugSession interruptedContext stack includes: frame home ] ])
+		ifTrue: [ frame := frame home ].
+	method := self installedMethodOf: frame method.
+	(frame isBlockContext not and: [
+		 method notNil and: [ method ~~ frame method ] ])
+		ifTrue: [
+		debugSession rewindContextToMethod: method fromContext: frame ]
+		ifFalse: [ debugSession restart: frame ].
+	self respondTo: aDAPRestartFrameRequest body: nil.
+	self sendStopped: 'restart'
+]
+
+{ #category : 'dap' }
 DAPServer >> dapScopes: aDAPScopesRequest [
+	"Answer the Context scope of the frame, with its arguments and temporaries, and its Receiver scope, as the debugger of Pharo shows them side by side"
 
 	<dap: #scopes>
-	| stack scope dapScope response |
-	stack := self getStacks detect: [ :aStack | 
-		         aStack hash = (aDAPScopesRequest arguments at: #frameId) ].
-	scope := stack sourceNodeExecuted scope.
-	sourcesReferenceCache
-		at: 0
-		ifPresent: [ :sourceRef | 
-		sourceRef sourceCode: stack method sourceCode ].
-	dapScope := DAPScope new
-		            name: scope printString;
-		            variablesReference: scope hash;
-		            yourself.
-	variablesReferenceCache at: scope hash put: { 
-			(#scope -> (DAPTScope new
-				  scope: scope;
-				  inCache: variablesReferenceCache;
-				  yourself)).
-			(#context -> stack) } asDictionary.
-	response := DAPScopesResponse new
-		            seq: self nextSeq;
-		            request_seq: aDAPScopesRequest seq;
-		            command: aDAPScopesRequest command;
-		            scopes: { dapScope };
-		            yourself.
-	self sendMessage: response
+	| frame |
+	attachedSessionId ifNil: [
+		^ self dapLaunchedScopes: aDAPScopesRequest ].
+	frame := self contextAt: (aDAPScopesRequest arguments at: #frameId).
+	self respondTo: aDAPScopesRequest body: { (#scopes -> {
+			 {
+				 (#name -> 'Context').
+				 (#presentationHint -> 'locals').
+				 (#expensive -> false).
+				 (#variablesReference
+				  ->
+				  (self referenceForVariables: [ self contextVariablesOf: frame ])) }
+				 asDictionary.
+			 {
+				 (#name -> 'Receiver').
+				 (#expensive -> false).
+				 (#variablesReference
+				  ->
+				  (self referenceForVariables: [ self receiverVariablesOf: frame ])) }
+				 asDictionary }) } asDictionary
 ]
 
 { #category : 'dap' }
@@ -340,66 +600,90 @@ DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [
 DAPServer >> dapSource: aDAPSourceRequest [
 
 	<dap: #source>
-
 	self sendMessage: (DAPSourceResponse new
 			 seq: self nextSeq;
 			 request_seq: aDAPSourceRequest seq;
 			 command: aDAPSourceRequest command;
 			 content: (sourcesReferenceCache
 					  at: (aDAPSourceRequest arguments at: #sourceReference)
-					  ifPresent: [ :code | 
-						  (code sourceCode copyReplaceAll: String cr with: String lf)
-							  copyReplaceAll: String tab
-							  with: '    ' ]
+					  ifPresent: [ :code |
+							  | source |
+							  source := code sourceCode
+								            copyReplaceAll: String cr
+								            with: String lf.
+							  "The columns of the frames of an attached process count the tabs"
+							  attachedSessionId
+								  ifNil: [ source copyReplaceAll: String tab with: '    ' ]
+								  ifNotNil: [ source ] ]
 					  ifAbsent: [ 'Debugger cannot get block source code yet' ]);
 			 mimeType: 'pharo';
 			 yourself)
+]
+
+{ #category : 'debugger support' }
+DAPServer >> dapSourceOf: aMethod [
+	"Answer the source of a frame of aMethod: the editor of the method when it is installed, so that the client can change it, else its source code as the server keeps it"
+
+	(self isEditable: aMethod) ifTrue: [
+			^ DAPSource new
+				  name: aMethod printString;
+				  path: (plsServer navUriOfMethod: aMethod);
+				  sourceReference: 0;
+				  yourself ].
+	sourcesReferenceCache at: aMethod hash put: aMethod.
+	^ DAPSource new
+		  name: aMethod printString;
+		  sourceReference: aMethod hash;
+		  yourself
+]
+
+{ #category : 'debugger support' }
+DAPServer >> dapStackFrameOf: aContext [
+	"Answer the frame of aContext, on the range of the node it executes in the source of its method"
+
+	| frame method start stop |
+	method := aContext method method.
+	frame := DAPStackFrame new
+		         id: aContext hash;
+		         name: aContext printString;
+		         source: (self dapSourceOf: method);
+		         yourself.
+	[
+		| node |
+		node := aContext sourceNodeExecuted.
+		start := self lineColumnOf: node start in: method sourceCode.
+		stop := self lineColumnOf: node stop + 1 in: method sourceCode ]
+		on: Error
+		do: [ start := stop := 1 @ 1 ].
+	^ frame
+		  line: start x;
+		  column: start y;
+		  endLine: stop x;
+		  endColumn: stop y;
+		  yourself
 ]
 
 { #category : 'dap' }
 DAPServer >> dapStackTrace: aDAPStackTraceRequest [
 
 	<dap: #stackTrace>
-	| response stacks sourceNode dapStacks |
-	response := DAPStackTraceResponse new
-		            seq: self nextSeq;
-		            request_seq: aDAPStackTraceRequest seq;
-		            command: aDAPStackTraceRequest command;
-		            yourself.
-	stacks := self getStacks.
-	sourcesReferenceCache
-		at: 0
-		ifPresent: [ :sourceRef | 
-		sourceRef sourceCode: stacks first method sourceCode ].
-
-	dapStacks := stacks collect: [ :stack | 
-		             | positions |
-		             "put reference to source in the cache"
-		             sourcesReferenceCache
-			             at: stack method hash
-			             put: stack method.
-		             positions := stack sourceCode toLineColumn:
-			                          stack sourceNodeExecuted start.
-		             "create the stack frame with its source"
-		             sourceNode := DAPSource new
-			                           name: stack method printString;
-			                           sourceReference: stack method hash;
-			                           yourself.
-
-		             DAPStackFrame new
-			             id: stack hash;
-			             name: stack printString;
-			             source: sourceNode;
-			             line: (positions at: #line) + self lineOffset;
-			             column: (positions at: #column);
-			             yourself ].
-	self isJustMyCode
-		ifTrue: [ 
-			response stackFrames addAll:
-				(dapStacks select: [ :aStack | aStack source sourceReference = 0 ]) ]
-		ifFalse: [ response stackFrames addAll: dapStacks ].
-
-	self sendMessage: response
+	| stack arguments start levels contexts |
+	attachedSessionId ifNil: [
+		^ self dapLaunchedStackTrace: aDAPStackTraceRequest ].
+	stack := debugSession interruptedContext stack.
+	arguments := aDAPStackTraceRequest arguments ifNil: [ Dictionary new ].
+	start := (arguments at: #startFrame ifAbsent: [ 0 ]) min: stack size.
+	levels := arguments at: #levels ifAbsent: [ 0 ].
+	contexts := stack copyFrom: start + 1 to: (levels = 0
+			             ifTrue: [ stack size ]
+			             ifFalse: [ start + levels min: stack size ]).
+	self respondTo: aDAPStackTraceRequest body: {
+			(#stackFrames
+			 ->
+			 (contexts
+				  collect: [ :each | self dapStackFrameOf: each ]
+				  as: Array)).
+			(#totalFrames -> stack size) } asDictionary
 ]
 
 { #category : 'dap' }
@@ -484,18 +768,13 @@ DAPServer >> dapThreads: aDAPThreadsRequest [
 DAPServer >> dapVariables: aDAPVariablesRequest [
 
 	<dap: #variables>
-	| variablesReference scope context2 |
-	variablesReference := aDAPVariablesRequest arguments at:
-		                      #variablesReference.
-	scope := (variablesReferenceCache at: variablesReference) at: #scope.
-	context2 := (variablesReferenceCache at: variablesReference) at:
-		            #context.
-	self sendMessage: (DAPVariablesResponse new
-			 seq: self nextSeq;
-			 request_seq: aDAPVariablesRequest seq;
-			 command: aDAPVariablesRequest command;
-			 variables: (scope getDAPVariablesInContent: context2);
-			 yourself)
+	attachedSessionId ifNil: [
+		^ self dapLaunchedVariables: aDAPVariablesRequest ].
+	self
+		respondTo: aDAPVariablesRequest
+		body: { (#variables -> (self variablesAt:
+				  (aDAPVariablesRequest arguments at: #variablesReference))) }
+				asDictionary
 ]
 
 { #category : 'accessing' }
@@ -520,6 +799,18 @@ DAPServer >> debugSession: aDebugSession [
 			 threadId: self threads associations anyOne key;
 			 reason: 'exception';
 			 yourself)
+]
+
+{ #category : 'debugger support' }
+DAPServer >> evaluate: aString in: aContext [
+	"Evaluate aString as if it were in the method of aContext, with its receiver, arguments and temporaries, or as a doit without a context"
+
+	aContext ifNil: [ ^ (self compilerFor: nil) evaluate: aString ].
+	^ aContext receiver class compiler
+		  source: aString;
+		  context: aContext;
+		  receiver: aContext receiver;
+		  evaluate
 ]
 
 { #category : 'starting' }
@@ -648,6 +939,20 @@ DAPServer >> handlerFor: aDAPRequest [
 		ifNone: [ DAPNonExistentHandler signal: aDAPRequest command ]
 ]
 
+{ #category : 'debugger support' }
+DAPServer >> hasVariables: anObject [
+	"Answer whether the client can expand anObject into its slots and indexed items"
+
+	(anObject isNil or: [
+			 anObject isNumber or: [
+					 anObject isString or: [
+						 anObject isCharacter or: [
+							 anObject == true or: [ anObject == false ] ] ] ] ]) ifTrue: [
+		^ false ].
+	^ (thisContext objectClass: anObject) instSize > 0 or: [
+		  (thisContext objectSize: anObject) > 0 ]
+]
+
 { #category : 'initialize' }
 DAPServer >> initialize [
 	serverContext := DAPContext new.
@@ -695,6 +1000,23 @@ DAPServer >> insertHaltsIn: source using:breakpointList [
 	^ stream contents
 ]
 
+{ #category : 'debugger support' }
+DAPServer >> installedMethodOf: aMethod [
+	"Answer the method that the class of aMethod has now under its selector, or nil when it has none"
+
+	^ aMethod methodClass
+		  compiledMethodAt: aMethod selector
+		  ifAbsent: [ nil ]
+]
+
+{ #category : 'debugger support' }
+DAPServer >> isEditable: aMethod [
+	"Answer whether the client can open aMethod in its editor: an installed method, not a doit"
+
+	^ plsServer notNil and: [
+		  aMethod isDoIt not and: [ aMethod isInstalled ] ]
+]
+
 { #category : 'accessing' }
 DAPServer >> isJustMyCode [
 	^ justMyCode ifNil:[ justMyCode:= false ]
@@ -713,6 +1035,25 @@ DAPServer >> isRunning [
 { #category : 'accessing' }
 DAPServer >> justMyCode [
 	justMyCode := true
+]
+
+{ #category : 'debugger support' }
+DAPServer >> lineColumnOf: index in: aString [
+	"Answer the one-based line and column of the character at index in aString"
+
+	| line lineStart |
+	line := 1.
+	lineStart := 1.
+	1 to: (index - 1 min: aString size) do: [ :i |
+			| character |
+			character := aString at: i.
+			(character = Character lf or: [
+					 character = Character cr and: [
+						 (i < aString size and: [ (aString at: i + 1) = Character lf ])
+							 not ] ]) ifTrue: [
+					line := line + 1.
+					lineStart := i + 1 ] ].
+	^ line @ (index - lineStart + 1)
 ]
 
 { #category : 'accessing' }
@@ -772,6 +1113,19 @@ DAPServer >> parseJSON: aJSONString [
 	^ DAPRequest newFromJSON: jsonObject
 ]
 
+{ #category : 'debugger support' }
+DAPServer >> plsServer [
+
+	^ plsServer
+]
+
+{ #category : 'debugger support' }
+DAPServer >> plsServer: aPLSServer [
+	"The language server that keeps the processes stopped on an exception, which this server attaches to"
+
+	plsServer := aPLSServer
+]
+
 { #category : 'accessing' }
 DAPServer >> pluggableCompilationBlock [
 
@@ -786,6 +1140,45 @@ DAPServer >> pluggableCompilationBlock [
 DAPServer >> pluggableCompilationBlock: aOneArgBlock [
 	pluggableEvaluationBlockSender := thisContext sender. 
 	pluggableEvaluationBlock := aOneArgBlock
+]
+
+{ #category : 'debugger support' }
+DAPServer >> printStringOf: anObject [
+
+	^ [ anObject printStringLimitedTo: 1000 ]
+		  on: Error
+		  do: [ :error |
+				  'Error printing a ' , (thisContext objectClass: anObject) name
+				  , ': ' , error messageText asString ]
+]
+
+{ #category : 'debugger support' }
+DAPServer >> receiverVariablesOf: aContext [
+	"Answer the variables of the Receiver scope of aContext: self and its slots, which an expression of the frame reads by their names"
+
+	| receiver |
+	receiver := aContext receiver.
+	^ (OrderedCollection with:
+			   (self variableNamed: 'self' value: receiver evaluateName: 'self'))
+		  addAll: ((thisContext objectClass: receiver) allInstVarNames
+				   withIndexCollect: [ :name :index |
+						   self
+							   variableNamed: name
+							   value: (thisContext object: receiver instVarAt: index)
+							   evaluateName: name ]);
+		  yourself
+]
+
+{ #category : 'debugger support' }
+DAPServer >> referenceForVariables: aBlock [
+	"Answer a new reference to the variables that aBlock answers, valid until the process stops again"
+
+	| reference |
+	variablesReferenceCache ifNil: [
+		variablesReferenceCache := Dictionary new ].
+	reference := variablesReferenceCache size + 1.
+	variablesReferenceCache at: reference put: aBlock.
+	^ reference
 ]
 
 { #category : 'context' }
@@ -804,6 +1197,29 @@ DAPServer >> resetContext [
 	serverContext := DAPContext new
 ]
 
+{ #category : 'debugger support' }
+DAPServer >> respondTo: aDAPRequest body: aBody [
+
+	self sendMessage: (DAPResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPRequest seq;
+			 command: aDAPRequest command;
+			 body: aBody;
+			 yourself)
+]
+
+{ #category : 'debugger support' }
+DAPServer >> respondTo: aDAPRequest failure: aString [
+
+	self sendMessage: (DAPResponse new
+			 seq: self nextSeq;
+			 request_seq: aDAPRequest seq;
+			 command: aDAPRequest command;
+			 success: false;
+			 message: aString;
+			 yourself)
+]
+
 { #category : 'starting' }
 DAPServer >> sendData: answer toClient: clientSocket [
 	answer
@@ -815,9 +1231,34 @@ DAPServer >> sendData: answer toClient: clientSocket [
 							contentStream << answer ]) ]
 ]
 
+{ #category : 'debugger support' }
+DAPServer >> sendEvent: aString body: aDictionary [
+
+	self sendMessage: (DAPEvent new
+			 seq: self nextSeq;
+			 event: aString;
+			 body: aDictionary;
+			 yourself)
+]
+
 { #category : 'starting' }
 DAPServer >> sendMessage: aDAPMessage [
 	self sendData: (aDAPMessage beConvertedBy: self) toClient: socketClient
+]
+
+{ #category : 'debugger support' }
+DAPServer >> sendStopped: reason [
+	"Tell the client that the debugged process stopped. The references to its variables of the previous stop are no longer valid"
+
+	variablesReferenceCache := Dictionary new.
+	variablesObjects := Dictionary new.
+	self sendEvent: 'stopped' body: {
+			(#reason -> reason).
+			(#description -> (debugSession exception
+				  ifNil: [ debugSession name asString ]
+				  ifNotNil: [ :exception | exception description ])).
+			(#threadId -> self threads associations anyOne key).
+			(#allThreadsStopped -> true) } asDictionary
 ]
 
 { #category : 'debugger support' }
@@ -886,4 +1327,71 @@ DAPServer >> threads [
 { #category : 'accessing' }
 DAPServer >> threads: anObject [
 	threads := anObject
+]
+
+{ #category : 'debugger support' }
+DAPServer >> variableNamed: aString value: anObject evaluateName: anExpression [
+	"Answer the DAP variable that shows anObject under aString. The client evaluates anExpression, when not nil, to get anObject again"
+
+	| variable |
+	currentVariablesObjects ifNotNil: [ :objects |
+		objects at: aString asString put: anObject ].
+	variable := Dictionary new
+		            at: #name put: aString asString;
+		            at: #value put: (self printStringOf: anObject);
+		            at: #type
+		            put: (thisContext objectClass: anObject) name asString;
+		            at: #variablesReference
+		            put: ((self hasVariables: anObject)
+				             ifTrue: [
+					             self referenceForVariables: [
+							             self variablesOf: anObject ] ]
+				             ifFalse: [ 0 ]);
+		            yourself.
+	anExpression ifNotNil: [
+		variable at: #evaluateName put: anExpression ].
+	^ variable
+]
+
+{ #category : 'debugger support' }
+DAPServer >> variablesAt: reference [
+	"Answer the variables of the reference, and remember the objects they show by their names, for the inspector"
+
+	| variables |
+	currentVariablesObjects := Dictionary new.
+	[
+		variables := (variablesReferenceCache
+			              at: reference
+			              ifAbsent: [ [ #(  ) ] ]) value asArray ] ensure: [
+			(variablesObjects ifNil: [ variablesObjects := Dictionary new ])
+				at: reference
+				put: currentVariablesObjects.
+			currentVariablesObjects := nil ].
+	^ variables
+]
+
+{ #category : 'debugger support' }
+DAPServer >> variablesOf: anObject [
+	"Answer the variables of the slots and indexed items of anObject, as the Raw view of the inspector shows them"
+
+	| nodes |
+	nodes := [
+		         anObject allInspectorNodes reject: [ :node |
+			         node isKindOf: StInspectorSelfNode ] ]
+		         on: Error
+		         do: [
+				         ^ (thisContext objectClass: anObject) allInstVarNames
+					           withIndexCollect: [ :name :index |
+							           self
+								           variableNamed: name
+								           value:
+								           (thisContext object: anObject instVarAt: index)
+								           evaluateName: nil ] ].
+	^ nodes
+		  collect: [ :node |
+			  self
+				  variableNamed: node label
+				  value: node rawValue
+				  evaluateName: nil ]
+		  as: Array
 ]

@@ -18,7 +18,8 @@ Class {
 		'referencesProvider',
 		'implementationProvider',
 		'callHierarchyProvider',
-		'typeHierarchyProvider'
+		'typeHierarchyProvider',
+		'executeCommandProvider'
 	],
 	#category : 'PharoLanguageServer-Structure-Capabilities',
 	#package : 'PharoLanguageServer',
@@ -34,6 +35,11 @@ PLSServerCapabilities class >> forPharo [
 		  documentFormattingProvider: PLSDocumentFormattingOptions new;
 		  documentSymbolProvider: PLSDocumentSymbolOptions new;
 		  hoverProvider: PLSHoverOptions new;
+		  codeActionProvider: (PLSCodeActionOptions new
+				   codeActionKinds: { PLSCodeActionKind quickfix };
+				   yourself);
+		  executeCommandProvider:
+			  { (#commands -> { PLSServer critiquesBanCommand }) } asDictionary;
 		  signatureHelp: (PLSSignatureHelpClientCapabilities new
 				   triggerCharacters: ':';
 				   retriggerCharacters: ':';
@@ -56,11 +62,19 @@ PLSServerCapabilities class >> forPharo [
 		  implementationProvider: true;
 		  callHierarchyProvider: true;
 		  typeHierarchyProvider: true;
-		  experimental: { (#'pls-env' -> {
-				   (#version -> 1).
-				   (#didChange -> true).
-				   (#edit -> true).
-				   (#search -> true) } asDictionary) } asDictionary;
+		  experimental: {
+				  (#'pls-env' -> {
+					   (#version -> 1).
+					   (#didChange -> true).
+					   (#edit -> true).
+					   (#search -> true).
+					   (#history -> true) } asDictionary).
+				  (#'pls-playground' -> {
+					   (#version -> 1).
+					   (#transcript -> true).
+					   (#resetBindings -> true).
+					   (#inspectIt -> true) } asDictionary).
+				  (#'pls-inspector' -> { (#version -> 1) } asDictionary) } asDictionary;
 		  yourself
 ]
 
@@ -117,6 +131,10 @@ PLSServerCapabilities >> asJRPCJSON [
 			dic
 				at: #typeHierarchyProvider
 				put: self typeHierarchyProvider asJRPCJSON ].
+	self executeCommandProvider ifNotNil: [
+			dic
+				at: #executeCommandProvider
+				put: self executeCommandProvider asJRPCJSON ].
 	self experimental ifNotNil: [
 		dic at: #experimental put: self experimental asJRPCJSON ].
 	^ dic
@@ -204,6 +222,19 @@ PLSServerCapabilities >> documentSymbolProvider [
 PLSServerCapabilities >> documentSymbolProvider: anObject [
 
 	documentSymbolProvider := anObject
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> executeCommandProvider [
+
+	^ executeCommandProvider
+]
+
+{ #category : 'accessing' }
+PLSServerCapabilities >> executeCommandProvider: aDictionary [
+	"The commands that the client runs through workspace/executeCommand, as { #commands -> anArray }"
+
+	executeCommandProvider := aDictionary
 ]
 
 { #category : 'accessing' }
