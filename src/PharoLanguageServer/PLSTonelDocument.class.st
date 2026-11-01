@@ -63,6 +63,74 @@ PLSTonelDocument >> codeLens [
 				     arguments: { className })) }) asArray
 ]
 
+{ #category : 'critiques' }
+PLSTonelDocument >> critiqueSourceOfClass: aClassDefinition [
+	"Its critiques are shown on the line naming the class"
+
+	| class start |
+	class := (self class environment classOrTraitNamed:
+		          aClassDefinition className) ifNil: [ ^ nil ].
+	start := text indexOfSubCollection: '#name'.
+	start = 0 ifTrue: [ start := 1 ].
+	^ PLSCritiqueSource
+		  document: self
+		  behavior: class
+		  source: nil
+		  headerSize: ((text allButFirst: start - 1) lines
+				   ifEmpty: [ 0 ]
+				   ifNotEmpty: [ :lines | lines first size ])
+		  headerStart: start
+		  bodyStart: nil
+]
+
+{ #category : 'critiques' }
+PLSTonelDocument >> critiqueSourceOfMethod: aMethodDefinition [
+	"The source critiqued is the selector line of aMethodDefinition followed by its body, between the brackets, as my text holds them.
+	 The selector line ends my text before its bodyStartPos"
+
+	| class header bodyStart bodyStop |
+	class := (self class environment classOrTraitNamed:
+		          aMethodDefinition className) ifNil: [ ^ nil ].
+	aMethodDefinition classIsMeta ifTrue: [ class := class classSide ].
+	header := aMethodDefinition source lines first.
+	bodyStart := (text
+		              indexOf: $[
+		              startingAt: aMethodDefinition bodyStartPos) + 1.
+	bodyStop := aMethodDefinition endPos - 1.
+	(bodyStart = 1 or: [ bodyStop > text size ]) ifTrue: [ ^ nil ].
+	[
+		bodyStop >= bodyStart and: [
+			String crlf includes: (text at: bodyStop) ] ] whileTrue: [
+		bodyStop := bodyStop - 1 ].
+	^ PLSCritiqueSource
+		  document: self
+		  behavior: class
+		  source: header , (text copyFrom: bodyStart to: bodyStop)
+		  headerSize: header size
+		  headerStart: aMethodDefinition bodyStartPos - header size
+		  bodyStart: bodyStart
+]
+
+{ #category : 'critiques' }
+PLSTonelDocument >> critiqueSources [
+	"Answer the critique sources of the definition of my class and of my methods, whose class is in the image"
+
+	| parsed |
+	parsed := [ self parsed ]
+		          on: Error
+		          do: [ ^ #(  ) ].
+	^ (parsed
+		   collect: [ :definition |
+				   definition isClassDefinition
+					   ifTrue: [ self critiqueSourceOfClass: definition ]
+					   ifFalse: [
+							   (definition isMethodDefinition and: [
+								    definition isErrorDefinition not ])
+								   ifTrue: [ self critiqueSourceOfMethod: definition ]
+								   ifFalse: [ nil ] ] ]
+		   thenSelect: [ :each | each notNil ]) asArray
+]
+
 { #category : 'diagnostics' }
 PLSTonelDocument >> diagnostics [
 

@@ -64,6 +64,16 @@ PLSMethodDocument >> completionClass [
 	^ self behavior
 ]
 
+{ #category : 'critiques' }
+PLSMethodDocument >> critiqueSources [
+
+	^ self behavior ifNil: [ #(  ) ] ifNotNil: [ :behavior |
+		  { (PLSCritiqueSource
+			   document: self
+			   behavior: behavior
+			   source: text) } ]
+]
+
 { #category : 'accessing' }
 PLSMethodDocument >> diagnostics [
 
@@ -81,6 +91,20 @@ PLSMethodDocument >> diagnostics [
 PLSMethodDocument >> formattedText [
 
 	^ (RBParser parseMethod: self text) formattedCode
+]
+
+{ #category : 'critiques' }
+PLSMethodDocument >> isAtRest [
+	"A method editor is not saved through the language server, which compiles it in the image instead: my text is also at rest when it is the source of the method in the image"
+
+	| selector |
+	super isAtRest ifTrue: [ ^ true ].
+	(text isNil or: [ self behavior isNil ]) ifTrue: [ ^ false ].
+	selector := [ RBParser parseMethodPattern: text ]
+		            on: Error
+		            do: [ ^ false ].
+	^ (self behavior compiledMethodAt: selector ifAbsent: [ ^ false ])
+		  sourceCode lines = text lines
 ]
 
 { #category : 'accessing' }

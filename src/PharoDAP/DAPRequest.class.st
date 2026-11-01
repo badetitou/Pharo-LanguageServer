@@ -42,9 +42,15 @@ DAPRequest >> command: anObject [
 	command := anObject
 ]
 
-{ #category : 'initialization' }
+{ #category : 'converting' }
 DAPRequest >> convertErrorToResponse: anError [
-	^ DAPErrorResponse new 
+
+	^ DAPErrorResponse new
+		  request_seq: self seq;
+		  command: self command;
+		  success: false;
+		  message: anError description;
+		  yourself
 ]
 
 { #category : 'initialization' }

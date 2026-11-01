@@ -49,11 +49,15 @@ DAPCapabilities >> asDAPJSON [
 
 	| dic |
 	dic := super asDAPJSON.
-	self supportsDelayedStackTraceLoading ifNotNil: [ 
-		dic
-			at: #supportsDelayedStackTraceLoading
-			put: self supportsDelayedStackTraceLoading ].
+	self supportsDelayedStackTraceLoading ifNotNil: [
+			dic
+				at: #supportsDelayedStackTraceLoading
+				put: self supportsDelayedStackTraceLoading ].
 	dic at: #supportTerminateDebuggee put: true.
+	"What the debugger of a process stopped on an exception does"
+	dic at: #supportsRestartFrame put: true.
+	dic at: #supportsExceptionInfoRequest put: true.
+	dic at: #supportsEvaluateForHovers put: true.
 	^ dic
 ]
 
