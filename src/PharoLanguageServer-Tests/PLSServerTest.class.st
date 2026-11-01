@@ -243,6 +243,23 @@ PLSServerTest >> testDocumentSymbol [
 		equals: PLSSymbolKind method
 ]
 
+{ #category : 'tests' }
+PLSServerTest >> testDocumentSymbolSelectionRangeInsideRangeForShortClass [
+
+	| document symbol |
+	document := PLSTonelDocument new.
+	document text: 'Class {
+	#name : #Foo,
+	#superclass : #Object,
+	#category : #Bar
+}
+'.
+	symbol := document symbols anyOne.
+	self
+		assert: (symbol selectionRange asJRPCJSON at: #end)
+		equals: (symbol range asJRPCJSON at: #end)
+]
+
 { #category : 'test' }
 PLSServerTest >> testDocumentVariables [
 

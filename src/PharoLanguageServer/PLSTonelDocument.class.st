@@ -208,37 +208,53 @@ PLSTonelDocument >> parsed [
 
 { #category : 'lsp - accessing' }
 PLSTonelDocument >> symbols [
-	| parsed classDef children |
+
+	| parsed classDef children documentEnd definitionEndLine selectionEnd |
 	[ parsed := self parsed ]
 		on: Error
-		do: [ ^ {} ].
-	classDef := parsed detect: #isClassDefinition ifNone: [ ^ {} ].
+		do: [ ^ {  } ].
+	classDef := parsed detect: #isClassDefinition ifNone: [ ^ {  } ].
 	children := (parsed
-		select: [ :el | el isMethodDefinition and: [ el isErrorDefinition not ] ]
-		thenCollect: [ :methodDef | 
-			PLSDocumentSymbol new
-				name: methodDef selector;
-				kind: PLSSymbolKind method;
-				range:
-					(PLSRange
-						start: (self text toLineCharacter: methodDef startPos + 1)
-						end: (self text toLineCharacter: methodDef endPos + 1));
-				selectionRange:
-					(PLSRange
-						start: (self text toLineCharacter: methodDef startPos + 1)
-						end: (self text toLineCharacter: methodDef endPos + 1));
-				yourself ]) asArray.
-	^ {(PLSDocumentSymbol new
-		name: classDef className;
-		kind: PLSSymbolKind classID;
-		range:
-			(PLSRange
-				start: (PLSPosition line: 0 character: 0)
-				end: (self text toLineCharacter: self text size) );
-		selectionRange:
-			(PLSRange
-				start: (PLSPosition line: 0 character: 0)
-				end: (PLSPosition line: 6 character: 1));
-		children: children;
-		yourself)}
+		             select: [ :el |
+		             el isMethodDefinition and: [ el isErrorDefinition not ] ]
+		             thenCollect: [ :methodDef |
+				             PLSDocumentSymbol new
+					             name: methodDef selector;
+					             kind: PLSSymbolKind method;
+					             range: (PLSRange
+							              start:
+								              (self text toLineCharacter:
+										               methodDef startPos + 1)
+							              end:
+								              (self text toLineCharacter: methodDef endPos + 1));
+					             selectionRange: (PLSRange
+							              start:
+								              (self text toLineCharacter:
+										               methodDef startPos + 1)
+							              end:
+								              (self text toLineCharacter: methodDef endPos + 1));
+					             yourself ]) asArray.
+	documentEnd := self text toLineCharacter: self text size.
+	"The class definition ends on the first line holding only the closing brace.
+	The selection range must stay inside the document range, so a short document caps it"
+	definitionEndLine := (self text lines findFirst: [ :line |
+		                      line = '}' ]) - 1.
+	selectionEnd := (definitionEndLine < 0 or: [
+		                 definitionEndLine >= (documentEnd at: #line) ])
+		                ifTrue: [ documentEnd ]
+		                ifFalse: [
+		                PLSPosition line: definitionEndLine character: 1 ].
+	^ { (PLSDocumentSymbol new
+		   name: classDef className;
+		   kind: PLSSymbolKind classID;
+		   range:
+			   (PLSRange
+				    start: (PLSPosition line: 0 character: 0)
+				    end: documentEnd);
+		   selectionRange:
+			   (PLSRange
+				    start: (PLSPosition line: 0 character: 0)
+				    end: selectionEnd);
+		   children: children;
+		   yourself) }
 ]
