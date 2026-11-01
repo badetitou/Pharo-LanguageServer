@@ -307,10 +307,13 @@ PLSServer >> critiquesRefresh [
 PLSServer >> debugEvaluate: aBlock ifStopped: stoppedBlock [
 	"Evaluate aBlock in a process of its own, outside of the execution environment of the caller, and answer its value.
 	 An exception it leaves unhandled, or a halt, suspends that process for a debugger of the client (see #debugSuspend:):
-	 answer then the value of stoppedBlock with the exception, without waiting for the debugger"
+	 answer then the value of stoppedBlock with the exception, once the client knows the debug session, without waiting for the debugger"
 
-	| done value stopped |
+	| done release value stopped |
 	done := Semaphore new.
+	release := [
+		           release := [ ].
+		           done signal ].
 	[
 		[
 			DefaultExecutionEnvironment beActiveDuring: [
@@ -319,10 +322,11 @@ PLSServer >> debugEvaluate: aBlock ifStopped: stoppedBlock [
 						         do: [ :exception |
 								         self debugHasClient ifFalse: [ exception pass ].
 								         stopped := exception.
-								         done signal.
 								         exception resumeUnchecked:
-									         (self debugSuspend: exception) ] ] ] ensure: [
-			stopped ifNil: [ done signal ] ] ]
+									         (self
+										          debugSuspend: exception
+										          registered: [ release value ]) ] ] ] ensure: [
+			release value ] ]
 		forkAt: Processor activeProcess priority
 		named: 'PLS evaluation'.
 	done wait.
@@ -389,6 +393,13 @@ PLSServer >> debugSuspend: anException [
 	"Suspend the active process on anException, that nobody handled, until a debugger of the client resumes it, as the debugger of Pharo does. Answer the value to resume anException with.
 	 The exception of an UnhandledError is the one the debugger shows"
 
+	^ self debugSuspend: anException registered: [ ]
+]
+
+{ #category : 'pls - debug' }
+PLSServer >> debugSuspend: anException registered: aBlock [
+	"As #debugSuspend:, and evaluate aBlock once the client knows the debug session, just before the process suspends"
+
 	| exception session |
 	exception := (anException isKindOf: UnhandledError)
 		             ifTrue: [ anException exception ]
@@ -398,6 +409,7 @@ PLSServer >> debugSuspend: anException [
 		           startedAt: exception signalerContext.
 	session exception: exception.
 	self debugRegister: session.
+	aBlock value.
 	Processor activeProcess suspend.
 	^ nil
 ]

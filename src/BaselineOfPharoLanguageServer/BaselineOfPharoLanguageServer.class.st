@@ -91,7 +91,8 @@ BaselineOfPharoLanguageServer >> definePackages: spec [
 						#( 'JRPC' 'PLSDAP-Helpers' 'MoreLogger' 'PharoLanguageProtocol'
 						   'LLMAPI' ) ];
 		package: 'PharoLanguageServer-Tests'
-		with: [ spec requires: #( 'PharoLanguageServer' ) ];
+		with: [ spec requires: #( 'PharoLanguageServer'
+				   'PharoDAP' ) ];
 		package: 'PharoLanguageServer-MCP'
 		with: [ spec requires: #( 'PharoLanguageServer'
 				   'MCP' ) ];
