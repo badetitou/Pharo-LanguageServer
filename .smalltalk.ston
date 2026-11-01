@@ -5,7 +5,8 @@ SmalltalkCISpec {
       #directory : 'src',
       #ignoreImage : true,
       #onConflict : #useIncoming,
-      #onUpgrade : #useIncoming
+      #onUpgrade : #useIncoming,
+      #registerInIceberg : true
     }
   ],
   #testing : {
