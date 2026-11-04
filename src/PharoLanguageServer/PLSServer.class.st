@@ -1627,6 +1627,38 @@ PLSServer >> envKindOf: id [
 	^ kind
 ]
 
+{ #category : 'pls - env' }
+PLSServer >> envLoadProject: path baseline: baseline groups: groups [
+	"Load the baseline from the git working copy at path, with Metacello and a gitlocal:// repository so that Iceberg works in that working copy, and answer the node of its project.
+	 baseline is named with or without its BaselineOf prefix; groups, when given, are loaded instead of the default group.
+	 A project already loaded from another repository is replaced by this working copy"
+
+	<jrpc: #'pls-env:loadProject'>
+	| name sources |
+	name := baseline withoutPrefix: 'BaselineOf'.
+	sources := self envSourceDirectoryOf: path asFileReference.
+	(sources / ('BaselineOf' , name)) isDirectory ifFalse: [
+			PLSProjectLoadFailed signal:
+				'No BaselineOf' , name , ' in ' , sources fullName ].
+	[
+		| metacello |
+		metacello := Metacello new
+			             baseline: name;
+			             repository: 'gitlocal://' , sources fullName;
+			             onConflictUseIncoming;
+			             onWarningLog;
+			             yourself.
+		groups isEmptyOrNil
+			ifTrue: [ metacello load ]
+			ifFalse: [ metacello load: groups asArray ] ]
+		on: Error
+		do: [ :error |
+				PLSProjectLoadFailed signal:
+					'Loading BaselineOf' , name , ' failed: '
+					, error messageText asString ].
+	^ self envNode: 'project:' , name
+]
+
 { #category : 'pls - env history' }
 PLSServer >> envLostChange: anEvent ref: ref time: aDateAndTime [
 	"The sources are the ones of the entity before and after anEvent, nil when there is none, as for an addition or a removal.
@@ -2494,6 +2526,26 @@ PLSServer >> envSideNode: aString [
 		  at: #hasChildren put: behavior protocols notEmpty;
 		  at: #flags put: Dictionary new;
 		  yourself
+]
+
+{ #category : 'pls - env' }
+PLSServer >> envSourceDirectoryOf: aDirectory [
+	"Answer the directory of the sources of the working copy aDirectory: the srcDirectory of its .project file, as Iceberg reads it, else the working copy itself"
+
+	| project sources |
+	aDirectory isDirectory ifFalse: [
+		PLSProjectLoadFailed signal: 'Not a folder: ' , aDirectory fullName ].
+	project := aDirectory / '.project'.
+	project exists ifFalse: [ ^ aDirectory ].
+	sources := [
+		           (STON fromString: project contents)
+			           at: 'srcDirectory'
+			           ifAbsent: [ '' ] ]
+		           on: Error
+		           do: [ '' ].
+	^ sources isEmptyOrNil
+		  ifTrue: [ aDirectory ]
+		  ifFalse: [ aDirectory / sources ]
 ]
 
 { #category : 'pls - env history' }

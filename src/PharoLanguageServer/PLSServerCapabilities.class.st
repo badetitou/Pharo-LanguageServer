@@ -68,7 +68,8 @@ PLSServerCapabilities class >> forPharo [
 					   (#didChange -> true).
 					   (#edit -> true).
 					   (#search -> true).
-					   (#history -> true) } asDictionary).
+					   (#history -> true).
+					   (#loadProject -> true) } asDictionary).
 				  (#'pls-playground' -> {
 					   (#version -> 1).
 					   (#transcript -> true).
