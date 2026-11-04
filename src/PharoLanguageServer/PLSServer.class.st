@@ -135,6 +135,117 @@ PLSServer >> callHierarchyPrepareWithPosition: position textDocument: textDocume
 		  ifNotNil: [ { (self navCallItemOf: method) } ]
 ]
 
+{ #category : 'pls - chest' }
+PLSServer >> chestClass [
+	"Answer the class Chest, or nil when Chest (github://pharo-spec/Chest) is not loaded"
+
+	^ Smalltalk globals at: #Chest ifAbsent: [ nil ]
+]
+
+{ #category : 'pls - chest' }
+PLSServer >> chestCodeOf: aKey in: aChest [
+	"Answer the code that answers the object of aChest named aKey, as Paste object from chest writes it"
+
+	^ String streamContents: [ :stream |
+			  stream
+				  nextPutAll: '(Chest named: ';
+				  print: aChest name asString;
+				  nextPutAll: ') at: ';
+				  print: aKey asString ]
+]
+
+{ #category : 'pls - chest' }
+PLSServer >> chestInspect: chest key: key [
+	"Answer the description of the object of the chest named chest (the default chest when nil) named key, under a new reference of the inspector"
+
+	<jrpc: #'pls-chest:inspect'>
+	| object |
+	object := [ (self chestNamed: chest) at: key ]
+		          on: KeyNotFound
+		          do: [ :error |
+				          PLSUnknownEntity signal:
+					          'Nothing named ' , key printString , ' in the chest' ].
+	^ self
+		  inspectorDescriptionOf: object
+		  ref: (self inspectorRegister: object)
+]
+
+{ #category : 'pls - chest' }
+PLSServer >> chestList [
+	"Answer whether Chest is loaded, and its chests, the default one first, with the objects each holds by name and the code that answers them"
+
+	<jrpc: #'pls-chest:list'>
+	| chestClass chests |
+	chestClass := self chestClass ifNil: [
+			              ^ {
+				                (#available -> false).
+				                (#chests -> #(  )) } asDictionary ].
+	chestClass defaultInstance.
+	chests := chestClass allChests asArray sort: [ :a :b |
+			          a == chestClass defaultInstance or: [
+				          b ~~ chestClass defaultInstance and: [ a name <= b name ] ] ].
+	^ {
+		  (#available -> true).
+		  (#chests -> (chests collect: [ :chest |
+				    {
+					    (#name -> chest name asString).
+					    (#items -> (chest contents associations asArray
+						      sort: [ :a :b | a key <= b key ];
+						      collect: [ :association |
+								      {
+									      (#key -> association key asString).
+									      (#className
+									       ->
+										       (thisContext objectClass: association value) name
+											       asString).
+									      (#printString
+									       -> (self inspectorStringOf: association value)).
+									      (#code -> (self chestCodeOf: association key in: chest)) }
+									      asDictionary ])) } asDictionary ])) } asDictionary
+]
+
+{ #category : 'pls - chest' }
+PLSServer >> chestNamed: aString [
+	"Answer the chest named aString, the default chest when aString is nil"
+
+	| chestClass |
+	chestClass := self chestClass ifNil: [
+		              ^ PLSUnknownEntity signal:
+			                'Chest is not loaded in the image' ].
+	aString ifNil: [ ^ chestClass defaultInstance ].
+	^ [ chestClass named: aString ]
+		  on: KeyNotFound
+		  do: [ :error |
+		  PLSUnknownEntity signal: 'Unknown chest: ' , aString ]
+]
+
+{ #category : 'pls - chest' }
+PLSServer >> chestRemove: chest key: key [
+	"Remove the object named key from the chest named chest (the default chest when nil)"
+
+	<jrpc: #'pls-chest:remove'>
+	(self chestNamed: chest) removeObjectNamed: key.
+	^ nil
+]
+
+{ #category : 'pls - chest' }
+PLSServer >> chestStore: ref chest: chest key: key [
+	"Store the object of the reference ref of the inspector in the chest named chest (the default chest when nil) under key, or under a new name when key is nil. Answer the name"
+
+	<jrpc: #'pls-chest:store'>
+	| target object |
+	target := self chestNamed: chest.
+	object := self inspectorObjectOf: ref.
+	^ { (#key -> ([
+		    (key isNil or: [ key isEmpty ])
+			    ifTrue: [ target add: object ]
+			    ifFalse: [ target at: key put: object ] ]
+		    on: Error
+		    do: [ :error |
+		    JRPCInvalidParameters signal: error messageText asString ])
+		   asString) } asDictionary
+]
+
 { #category : 'pls - variables' }
 PLSServer >> childrenVariables: variableReference in: textDocument [
 
@@ -525,29 +636,43 @@ PLSServer >> debugPointsAt: aKey put: someDebugPoints [
 
 { #category : 'debug' }
 PLSServer >> debugRegister: aDebugSession [
-	"Keep aDebugSession until a debugger of the client takes it or dismisses it, and tell the client in a pls-debug/stopped notification, with the exception, the class of its receiver and the top frames of the stack. Answer its id"
+	"Keep aDebugSession until a debugger of the client takes it or dismisses it, and tell the client in a pls-debug/stopped notification (see #debugRegister:atOnce:). Answer its id"
+
+	^ self debugRegister: aDebugSession atOnce: false
+]
+
+{ #category : 'debug' }
+PLSServer >> debugRegister: aDebugSession atOnce: atOnce [
+	"Keep aDebugSession until a debugger of the client takes it or dismisses it, and tell the client in a pls-debug/stopped notification, with the exception, the class of its receiver and the top frames of the stack. The client opens its debugger at once on a breakpoint, or when atOnce, and offers it otherwise. Answer its id"
 
 	| id exception frames |
 	id := self debugMutex critical: [
-		      debugSessions ifNil: [ debugSessions := Dictionary new ].
-		      debugNextId := (debugNextId ifNil: [ 0 ]) + 1.
-		      debugSessions at: debugNextId put: aDebugSession.
-		      debugNextId ].
+			      debugSessions ifNil: [ debugSessions := Dictionary new ].
+			      debugNextId := (debugNextId ifNil: [ 0 ]) + 1.
+			      debugSessions at: debugNextId put: aDebugSession.
+			      debugNextId ].
 	exception := aDebugSession exception.
-	frames := [ (aDebugSession interruptedContext stackOfSize: 5) collect: [ :each | each printString ] ]
+	frames := [
+		          (aDebugSession interruptedContext stackOfSize: 5)
+			          collect: [ :each | each printString ] ]
 		          on: Error
 		          do: [ :error | #(  ) ].
 	self sendNotification: 'pls-debug/stopped' params: {
 			(#id -> id).
 			(#name -> aDebugSession name asString).
-			(#exception -> (exception ifNotNil: [ exception class name asString ])).
-			(#description -> (exception ifNotNil: [ exception description asString ])).
-			(#receiverClass -> ([ (thisContext objectClass: aDebugSession interruptedContext receiver) name asString ]
+			(#exception
+			 -> (exception ifNotNil: [ exception class name asString ])).
+			(#description
+			 -> (exception ifNotNil: [ exception description asString ])).
+			(#receiverClass -> ([
+				  (thisContext objectClass:
+					   aDebugSession interruptedContext receiver) name asString ]
 				  on: Error
 				  do: [ :error | nil ])).
 			(#doesNotUnderstand -> (exception isKindOf: MessageNotUnderstood)).
-			(#subclassResponsibility -> (exception isKindOf: SubclassResponsibility)).
-			(#breakpoint -> (exception isKindOf: Break)).
+			(#subclassResponsibility
+			 -> (exception isKindOf: SubclassResponsibility)).
+			(#breakpoint -> (atOnce or: [ exception isKindOf: Break ])).
 			(#frames -> frames asArray) } asDictionary.
 	^ id
 ]
@@ -4436,6 +4561,256 @@ PLSServer >> stop [
 	self transcriptUnsubscribe.
 	self mcpStop.
 	super stop
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemContextOf: aProcess [
+	"Answer the context aProcess runs, the context of the sender for the process that answers"
+
+	^ aProcess == Processor activeProcess
+		  ifTrue: [ thisContext sender ]
+		  ifFalse: [ aProcess suspendedContext ]
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemDebug: id [
+	"Suspend the process of the id and give it to a debugger of the client, which opens at once (see #debugRegister:atOnce:). Answer the id of the debug session"
+
+	<jrpc: #'pls-system:debug'>
+	| target session |
+	target := self systemProcessAt: id.
+	target == Processor activeProcess ifTrue: [
+			^ JRPCInvalidParameters signal:
+				  'The process answering the client cannot be debugged' ].
+	target isSuspended ifFalse: [ target suspend ].
+	session := target
+		           newDebugSessionNamed: target name asString
+		           startedAt: target suspendedContext.
+	^ { (#debugSessionId -> (self debugRegister: session atOnce: true)) }
+		  asDictionary
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemDescriptionOfProcess: aProcess ui: uiProcess [
+	"Answer the description of aProcess: its id, name, priority, state, the method it runs and whether it is the UI process or the one answering"
+
+	| context |
+	context := self systemContextOf: aProcess.
+	^ {
+		  (#id -> aProcess identityHash).
+		  (#name -> (aProcess name ifNil: [ 'a Process' ]) asString).
+		  (#priority -> aProcess priority).
+		  (#state -> (self systemStateOf: aProcess)).
+		  (#method
+		   -> (context ifNotNil: [ self systemLabelOfContext: context ])).
+		  (#uri -> (context ifNotNil: [ self systemUriOfContext: context ])).
+		  (#ui -> (aProcess == uiProcess)).
+		  (#current -> (aProcess == Processor activeProcess)) } asDictionary
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemLabelOfContext: aContext [
+	"Answer Class>>selector for the method aContext runs, [] in Class>>selector for a block, with the class of the receiver when it inherits the method"
+
+	^ self
+		  systemLabelOfMethod: aContext method
+		  receiverClass: ([ thisContext objectClass: aContext receiver ]
+				   on: Error
+				   do: [ :error | nil ])
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemLabelOfMethod: aCompiledCode receiverClass: aClass [
+	"Answer Class>>selector for aCompiledCode, [] in Class>>selector for a block, with aClass when it inherits the method"
+
+	| method label |
+	method := aCompiledCode method.
+	label := (aClass isNil or: [ aClass == method methodClass ])
+		         ifTrue: [ method methodClass name , '>>' , method selector ]
+		         ifFalse: [
+			         aClass name , '(' , method methodClass name , ')>>'
+			         , method selector ].
+	^ aCompiledCode isCompiledBlock
+		  ifTrue: [ '[] in ' , label ]
+		  ifFalse: [ label asString ]
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemLabelOfTally: aTally [
+	"Answer the label of the method of aTally, as the profiler of Pharo shows it (see #systemLabelOfMethod:receiverClass:)"
+
+	^ aTally method ifNil: [ '?' ] ifNotNil: [ :method |
+		  self systemLabelOfMethod: method receiverClass: aTally theClass ]
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemProcessAt: id [
+	"Answer the process of the id, which is not terminated"
+
+	^ Process allSubInstances
+		  detect: [ :each |
+		  each identityHash = id and: [ each isTerminated not ] ]
+		  ifNone: [
+		  PLSUnknownEntity signal: 'Unknown process: ' , id printString ]
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemProcesses [
+	"Answer the processes of the image that are not terminated, the highest priority first, with their name, priority, state and the method they run"
+
+	<jrpc: #'pls-system:processes'>
+	| ui items |
+	ui := [ UIManager default uiProcess ]
+		      on: Error
+		      do: [ :error | nil ].
+	items := (Process allSubInstances reject: [ :each |
+		          each isTerminated ]) collect: [ :each |
+		         self systemDescriptionOfProcess: each ui: ui ].
+	^ { (#items -> (items asArray sort: [ :a :b |
+			    (a at: #priority) > (b at: #priority) or: [
+					    (a at: #priority) = (b at: #priority) and: [
+						    (a at: #name) <= (b at: #name) ] ] ])) } asDictionary
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemProfile: expression textDocumentURI: textDocumentURI [
+	"Evaluate expression with the bindings of the document, as the playground does, while MessageTally samples its process every millisecond. Answer the time it took, the number of samples, the error it signalled if any, and the tree of the calls sampled from the do it, each with its samples and the samples of the method itself"
+
+	<jrpc: #'pls-system:profile'>
+	| compiler error tally milliseconds root |
+	(self inspectorSyntaxErrorOf: expression) ifNotNil: [ :message |
+		^ JRPCInvalidParameters signal: message ].
+	compiler := self compilerFor:
+		            (textDocumentURI ifNotNil: [ :uri | uri at: #path ]).
+	tally := MessageTally new.
+	milliseconds := Time millisecondsToRun: [
+			                tally spyEvery: 1 on: [
+					                [ compiler evaluate: expression ]
+						                on: Error
+						                do: [ :exception |
+								                error := exception.
+								                exception return: nil ] ] ].
+	root := self systemProfileRootOf: tally.
+	^ {
+		  (#milliseconds -> milliseconds).
+		  (#samples -> root tally).
+		  (#error -> (error ifNotNil: [ error description asString ])).
+		  (#root -> (self
+			    systemProfileNodeOf: root
+			    label: expression lines first
+			    threshold: (root tally * self systemProfileThreshold) ceiling
+			    depth: 0)) } asDictionary
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemProfileNodeOf: aTally label: aString threshold: threshold depth: depth [
+	"Answer the node of a profile for aTally, with the calls it made that were sampled at least threshold times. Under the root, a node shows its method"
+
+	| children method |
+	children := depth >= 200
+		            ifTrue: [ #(  ) ]
+		            ifFalse: [
+				            ((aTally receivers select: [ :each |
+					              each tally >= threshold ]) sort: [ :a :b |
+					             a tally > b tally ]) collect: [ :each |
+						            self
+							            systemProfileNodeOf: each
+							            label: nil
+							            threshold: threshold
+							            depth: depth + 1 ] ].
+	method := aTally method ifNotNil: [ :compiledCode |
+		          compiledCode method ].
+	^ {
+		  (#label -> (aString ifNil: [ self systemLabelOfTally: aTally ])).
+		  (#uri -> ((aString isNil and: [
+			     method notNil and: [
+				     method isInstalled and: [ method isDoIt not ] ] ]) ifTrue: [
+				    [ self navUriOfMethod: method ]
+					    on: Error
+					    do: [ :e | nil ] ])).
+		  (#samples -> aTally tally).
+		  (#selfSamples -> (aTally tally
+		    -
+		    (aTally receivers
+			     inject: 0
+			     into: [ :sum :each | sum + each tally ]))).
+		  (#children -> children asArray) } asDictionary
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemProfileRootOf: aTally [
+	"Answer the tally of the do it evaluated under aTally, the root of a profile, or aTally when there is none"
+
+	| pending |
+	pending := OrderedCollection with: aTally.
+	[ pending isEmpty ] whileFalse: [
+			| tally |
+			tally := pending removeFirst.
+			(tally method notNil and: [ tally method method isDoIt ]) ifTrue: [
+				^ tally ].
+			pending addAll: tally receivers ].
+	^ aTally
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemProfileThreshold [
+	"Calls sampled less than this part of all the samples are left out of a profile"
+
+	^ 0.002
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemStack: id limit: limit [
+	"Answer the frames of the stack of the process of the id, the top first, at most limit of them (50 by default)"
+
+	<jrpc: #'pls-system:stack'>
+	| context frames |
+	context := self systemContextOf: (self systemProcessAt: id).
+	frames := context
+		          ifNil: [ #(  ) ]
+		          ifNotNil: [ context stackOfSize: (limit ifNil: [ 50 ]) ].
+	^ { (#items -> (frames collect: [ :frame |
+			    {
+				    (#label -> (self systemLabelOfContext: frame)).
+				    (#uri -> (self systemUriOfContext: frame)) } asDictionary ])
+		   asArray) } asDictionary
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemStateOf: aProcess [
+	"Answer the state of aProcess: running, ready, waiting (on a semaphore), suspended or terminated"
+
+	aProcess isTerminated ifTrue: [ ^ 'terminated' ].
+	aProcess == Processor activeProcess ifTrue: [ ^ 'running' ].
+	aProcess suspendingList ifNil: [ ^ 'suspended' ].
+	(aProcess suspendingList isKindOf: Semaphore) ifTrue: [ ^ 'waiting' ].
+	^ 'ready'
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemTerminate: id [
+	"Terminate the process of the id. The process that answers cannot be terminated"
+
+	<jrpc: #'pls-system:terminate'>
+	| target |
+	target := self systemProcessAt: id.
+	target == Processor activeProcess ifTrue: [
+			^ JRPCInvalidParameters signal:
+				  'The process answering the client cannot be terminated' ].
+	target terminate.
+	^ nil
+]
+
+{ #category : 'pls - system' }
+PLSServer >> systemUriOfContext: aContext [
+	"Answer the URI of the editor of the method aContext runs, or nil when the method is not installed (a do it)"
+
+	| method |
+	method := aContext method method.
+	(method isInstalled and: [ method isDoIt not ]) ifFalse: [ ^ nil ].
+	^ [ self navUriOfMethod: method ]
+		  on: Error
+		  do: [ :error | nil ]
 ]
 
 { #category : 'lsp - completion' }

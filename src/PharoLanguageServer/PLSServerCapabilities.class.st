@@ -74,7 +74,12 @@ PLSServerCapabilities class >> forPharo [
 					   (#transcript -> true).
 					   (#resetBindings -> true).
 					   (#inspectIt -> true) } asDictionary).
-				  (#'pls-inspector' -> { (#version -> 1) } asDictionary) } asDictionary;
+				  (#'pls-inspector' -> { (#version -> 1) } asDictionary).
+				  (#'pls-system' -> {
+					   (#version -> 1).
+					   (#processes -> true).
+					   (#profile -> true).
+					   (#chest -> true) } asDictionary) } asDictionary;
 		  yourself
 ]
 
