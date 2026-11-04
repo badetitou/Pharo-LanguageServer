@@ -447,24 +447,44 @@ DAPServer >> dapNext: aDAPNextRequest [
 
 { #category : 'dap' }
 DAPServer >> dapPharoCreateMissingMethod: aDAPRequest [
-	"Implement the message that the process did not understand in the class of its receiver, and go on in the new method, as the Create button of the debugger of Pharo does.
+	"Implement the message that the process did not find in the class of its receiver, or in the class and the protocol that the client chose, and go on in the new method, as the Create button of the debugger of Pharo does. A subclassResponsibility is implemented in the class of the receiver as well.
 	 Answer the URI of the editor of the new method"
-
 	<dap: #pharoCreateMissingMethod>
-	| exception class |
-	exception := debugSession exception.
-	(exception isKindOf: MessageNotUnderstood) ifFalse: [
-			^ self
-				  respondTo: aDAPRequest
-				  failure: 'The process did not stop on a message not understood.' ].
-	class := thisContext objectClass: exception receiver.
-	debugSession
-		implement: exception message
-		classified: Protocol unclassified
-		inClass: class
-		forContext: debugSession interruptedContext.
+
+	| missing class protocol arguments |
+	missing := self missingMethod ifNil: [
+		           ^ self
+			             respondTo: aDAPRequest
+			             failure: 'The process did not stop on a message not understood or a subclassResponsibility.' ].
+	arguments := aDAPRequest arguments.
+	class := (arguments at: #className ifAbsent: [ nil ])
+		         ifNil: [ self missingMethodReceiverClass ]
+		         ifNotNil: [ :name |
+			         Smalltalk globals
+				         at: name asSymbol
+				         ifAbsent: [
+					         ^ self
+						           respondTo: aDAPRequest
+						           failure: 'Unknown class ' , name ] ].
+	protocol := (arguments at: #protocol ifAbsent: [ nil ])
+		            ifNil: [ Protocol unclassified ]
+		            ifNotNil: [ :name | name asSymbol ].
+	(debugSession exception isKindOf: MessageNotUnderstood)
+		ifTrue: [
+			debugSession
+				implement: missing key
+				classified: protocol
+				inClass: class
+				forContext: missing value ]
+		ifFalse: [
+			class
+				compile: (DynamicMessageImplementor for: missing key in: class) value
+				classified: protocol.
+			debugSession
+				rewindContextToMethod: (class >> missing key selector)
+				fromContext: missing value ].
 	self respondTo: aDAPRequest body: { (#uri
-		 -> (plsServer navUriOfMethod: class >> exception message selector)) }
+		 -> (plsServer navUriOfMethod: class >> missing key selector)) }
 			asDictionary.
 	self sendStopped: 'goto'
 ]
@@ -493,6 +513,85 @@ DAPServer >> dapPharoInspectVariable: aDAPRequest [
 		respondTo: aDAPRequest
 		body:
 		{ (#ref -> (plsServer inspectorRegister: object)) } asDictionary
+]
+
+{ #category : 'dap' }
+DAPServer >> dapPharoMissingMethod: aDAPRequest [
+	"Describe the method that the stopped process misses, to let the client choose the class and the protocol of the new method"
+	<dap: #pharoMissingMethod>
+
+	| missing class |
+	missing := self missingMethod ifNil: [
+		           ^ self
+			             respondTo: aDAPRequest
+			             failure: 'The process did not stop on a message not understood or a subclassResponsibility.' ].
+	class := self missingMethodReceiverClass.
+	self respondTo: aDAPRequest body: {
+			(#kind -> ((debugSession exception isKindOf: MessageNotUnderstood)
+				  ifTrue: [ 'doesNotUnderstand' ]
+				  ifFalse: [ 'subclassResponsibility' ])).
+			(#selector -> missing key selector asString).
+			(#className -> class name asString).
+			(#classes -> (class withAllSuperclasses
+				  reject: [ :each | each == ProtoObject ]
+				  thenCollect: [ :each | each name asString ])).
+			(#protocols -> ((class withAllSuperclasses
+				  flatCollect: [ :each | each protocols collect: [ :protocol | protocol name asString ] ]
+				  as: Set) reject: [ :name | name beginsWith: '*' ]) asSortedCollection asArray) } asDictionary
+]
+
+{ #category : 'dap' }
+DAPServer >> dapPharoRestart: aDAPRequest [
+	"Run a restart of the stopped exception, with the value of the expression of the client when it needs one"
+	<dap: #pharoRestart>
+
+	| arguments id value frame |
+	arguments := aDAPRequest arguments.
+	id := arguments at: #id.
+	frame := debugSession interruptedContext.
+	(#(#returnValue #resumeWith) includes: id asSymbol) ifTrue: [
+		value := [ self evaluate: (arguments at: #expression) in: frame ]
+			         on: Error , Halt , Warning
+			         do: [ :exception |
+				         ^ self respondTo: aDAPRequest failure: exception description ] ].
+	id = 'proceed' ifTrue: [
+		self respondTo: aDAPRequest body: nil.
+		self sendEvent: 'continued' body: {
+				(#threadId -> self threads associations anyOne key).
+				(#allThreadsContinued -> true) } asDictionary.
+		^ debugSession resume ].
+	id = 'retry' ifTrue: [
+		debugSession restart: frame.
+		self respondTo: aDAPRequest body: nil.
+		^ self sendStopped: 'restart' ].
+	id = 'returnValue' ifTrue: [
+		debugSession returnValue: value from: frame.
+		self respondTo: aDAPRequest body: nil.
+		^ self sendStopped: 'step' ].
+	id = 'resumeWith' ifTrue: [
+		self respondTo: aDAPRequest body: nil.
+		self sendEvent: 'continued' body: {
+				(#threadId -> self threads associations anyOne key).
+				(#allThreadsContinued -> true) } asDictionary.
+		^ debugSession resume: value ].
+	^ self respondTo: aDAPRequest failure: 'Unknown restart ' , id asString
+]
+
+{ #category : 'dap' }
+DAPServer >> dapPharoRestarts: aDAPRequest [
+	"The restarts of the stopped exception, like the restarts of the debuggers of Lisp"
+	<dap: #pharoRestarts>
+
+	| restarts |
+	restarts := OrderedCollection new.
+	restarts
+		add: { (#id -> 'proceed'). (#label -> 'Proceed'). (#detail -> 'Resume the process after the exception') . (#needsValue -> false)} asDictionary;
+		add: { (#id -> 'retry'). (#label -> 'Retry'). (#detail -> 'Restart the method that raised the exception'). (#needsValue -> false) } asDictionary;
+		add: { (#id -> 'returnValue'). (#label -> 'Return value…'). (#detail -> 'Return an expression from the method that raised the exception'). (#needsValue -> true) } asDictionary;
+		add: { (#id -> 'resumeWith'). (#label -> 'Resume with…'). (#detail -> 'Resume the exception with an expression as the value of the signal'). (#needsValue -> true) } asDictionary.
+	self missingMethod ifNotNil: [
+		restarts add: { (#id -> 'create'). (#label -> 'Create'). (#detail -> 'Implement the missing method and go on in it'). (#needsValue -> false) } asDictionary ].
+	self respondTo: aDAPRequest body: { (#restarts -> restarts asArray) } asDictionary
 ]
 
 { #category : 'dap' }
@@ -1076,6 +1175,33 @@ DAPServer >> messageProcess: anId [
 { #category : 'context' }
 DAPServer >> messageProcess: anId	put: aProcess [
 	self context messageProcessesAt: anId put: aProcess
+]
+
+{ #category : 'dap-helpers' }
+DAPServer >> missingMethod [
+	"Answer an association, the message that the stopped process cannot find and the context to restart once it is implemented, or nil when the process did not stop on a missing method"
+
+	| exception frame |
+	exception := debugSession exception.
+	(exception isKindOf: MessageNotUnderstood) ifTrue: [
+		^ exception message -> debugSession interruptedContext ].
+	(exception isKindOf: SubclassResponsibility) ifTrue: [
+		frame := debugSession interruptedContext stack
+			         detect: [ :each | each selector ~~ #subclassResponsibility ]
+			         ifNone: [ ^ nil ].
+		^ (Message selector: frame selector arguments: frame arguments) -> frame ].
+	^ nil
+]
+
+{ #category : 'dap-helpers' }
+DAPServer >> missingMethodReceiverClass [
+	"The class where the missing method is implemented by default: the class of the receiver of the message"
+
+	| missing |
+	missing := self missingMethod.
+	^ thisContext objectClass: ((debugSession exception isKindOf: MessageNotUnderstood)
+			   ifTrue: [ debugSession exception receiver ]
+			   ifFalse: [ missing value receiver ])
 ]
 
 { #category : 'accessing' }

@@ -257,6 +257,18 @@ PLSServerDebugTest >> testDisconnectTerminatesTheProcess [
 	self assert: value isNil
 ]
 
+{ #category : 'tests' }
+PLSServerDebugTest >> testDismissEndsTheStoppedProcess [
+	| id process |
+	server debugEvaluate: [ 1 / 0 ] ifStopped: [  ].
+	id := (self stoppedNotifications first at: #params) at: #id.
+	process := (server instVarNamed: 'debugSessions') at: id.
+	process := process interruptedProcess.
+	self assert: (server plsDebugDismiss: id).
+	self assert: process isTerminated.
+	self deny: (server plsDebugDismiss: id)
+]
+
 { #category : 'tests - dap' }
 PLSServerDebugTest >> testEvaluateInTheFrame [
 
@@ -382,6 +394,19 @@ PLSServerDebugTest >> testInspectVariableRegistersItsObject [
 	self deny: ((adapter request: 'pharoInspectVariable' arguments: {
 				  (#variablesReference -> (scope at: #variablesReference)).
 				  (#name -> 'nothing') }) at: #success)
+]
+
+{ #category : 'tests' }
+PLSServerDebugTest >> testNotificationDescribesTheStoppedProcess [
+	| params |
+	server debugEvaluate: [ Object new foo: 1 ] ifStopped: [  ].
+	params := (self stoppedNotifications first at: #params).
+	sessions add: (server debugSessionAt: (params at: #id)).
+	self assert: (params at: #exception) equals: 'MessageNotUnderstood'.
+	self assert: (params at: #receiverClass) equals: 'Object'.
+	self assert: (params at: #doesNotUnderstand).
+	self deny: (params at: #subclassResponsibility).
+	self assert: (params at: #frames) notEmpty
 ]
 
 { #category : 'tests' }

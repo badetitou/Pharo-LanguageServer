@@ -350,23 +350,31 @@ PLSServer >> debugMutex [
 	^ debugMutex ifNil: [ debugMutex := Mutex new ]
 ]
 
-{ #category : 'pls - debug' }
+{ #category : 'debug' }
 PLSServer >> debugRegister: aDebugSession [
-	"Keep aDebugSession until a debugger of the client takes it, and tell the client in a pls-debug/stopped notification. Answer its id"
+	"Keep aDebugSession until a debugger of the client takes it or dismisses it, and tell the client in a pls-debug/stopped notification, with the exception, the class of its receiver and the top frames of the stack. Answer its id"
 
-	| id exception |
+	| id exception frames |
 	id := self debugMutex critical: [
-			      debugSessions ifNil: [ debugSessions := Dictionary new ].
-			      debugNextId := (debugNextId ifNil: [ 0 ]) + 1.
-			      debugSessions at: debugNextId put: aDebugSession.
-			      debugNextId ].
+		      debugSessions ifNil: [ debugSessions := Dictionary new ].
+		      debugNextId := (debugNextId ifNil: [ 0 ]) + 1.
+		      debugSessions at: debugNextId put: aDebugSession.
+		      debugNextId ].
 	exception := aDebugSession exception.
+	frames := [ (aDebugSession interruptedContext stackOfSize: 5) collect: [ :each | each printString ] ]
+		          on: Error
+		          do: [ :error | #(  ) ].
 	self sendNotification: 'pls-debug/stopped' params: {
 			(#id -> id).
 			(#name -> aDebugSession name asString).
-			(#exception
-			 -> (exception ifNotNil: [ exception class name asString ])) }
-			asDictionary.
+			(#exception -> (exception ifNotNil: [ exception class name asString ])).
+			(#description -> (exception ifNotNil: [ exception description asString ])).
+			(#receiverClass -> ([ (thisContext objectClass: aDebugSession interruptedContext receiver) name asString ]
+				  on: Error
+				  do: [ :error | nil ])).
+			(#doesNotUnderstand -> (exception isKindOf: MessageNotUnderstood)).
+			(#subclassResponsibility -> (exception isKindOf: SubclassResponsibility)).
+			(#frames -> frames asArray) } asDictionary.
 	^ id
 ]
 
@@ -3839,6 +3847,19 @@ PLSServer >> plsCreatePackage: packageName [
 	^ wasExisting
 		  ifTrue: [ 'Package ' , normalizedPackageName , ' already exists.' ]
 		  ifFalse: [ 'Package ' , normalizedPackageName , ' created.' ]
+]
+
+{ #category : 'debug' }
+PLSServer >> plsDebugDismiss: aDebugSessionId [
+	"Forget the process that stopped on an exception and end it, when the client does not debug it"
+
+	<jrpc: #'pls-debug:dismiss'>
+	| session |
+	session := [ self debugSessionAt: aDebugSessionId ]
+		           on: PLSUnknownEntity
+		           do: [ :error | ^ false ].
+	session terminate.
+	^ true
 ]
 
 { #category : 'pls' }
