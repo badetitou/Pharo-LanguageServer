@@ -28,7 +28,11 @@ Class {
 		'debugNextId',
 		'debugMutex',
 		'debugPoints',
-		'debugExceptionFilters'
+		'debugExceptionFilters',
+		'uiEnabled',
+		'uiPreviousTools',
+		'uiProgressTokens',
+		'uiProgressMutex'
 	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
@@ -4041,6 +4045,8 @@ PLSServer >> onInitializeTrace: trace processId: processId locale: locale client
 	result := PLSInitializeResult new.
 	(self mcpStartWith: initializationOptions) ifNotNil: [ :endpoint |
 		result capabilities experimental at: #mcp put: endpoint asJRPCJSON ].
+	(self uiStartWith: initializationOptions) ifNotNil: [ :ui |
+		result capabilities experimental at: #'pls-ui' put: ui ].
 	^ result
 ]
 
@@ -4667,6 +4673,261 @@ PLSServer >> typeHierarchySupertypes: item [
 	supertypes addAll:
 		(class traits asArray sort: [ :a :b | a name <= b name ]).
 	^ (supertypes collect: [ :each | self navTypeItemOf: each ]) asArray
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiBrowseClass: aClass selector: aSelectorOrNil [
+	"Open the editor of aClass, or of its method aSelectorOrNil when it has one, in the client"
+
+	| uri |
+	uri := (aSelectorOrNil notNil and: [
+		        aClass includesSelector: aSelectorOrNil ])
+		       ifTrue: [ self navUriOfMethod: aClass >> aSelectorOrNil ]
+		       ifFalse: [ self navUriOfClass: aClass ].
+	self
+		showDocument: uri
+		external: false
+		withFocus: true
+		atRange: nil
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiEnabledIn: initializationOptions [
+	"The client shows the tools and the questions of the image only when it says so (initializationOptions.ui.version), since an older client would not answer them"
+
+	| options |
+	initializationOptions isDictionary ifFalse: [ ^ false ].
+	options := initializationOptions at: #ui ifAbsent: [ ^ false ].
+	options isDictionary ifFalse: [ ^ false ].
+	^ (options at: #version ifAbsent: [ 0 ]) isInteger and: [
+		  (options at: #version) >= 1 ]
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiForwards [
+	"Whether the tools and the questions of the image go to the client"
+
+	^ uiEnabled == true and: [ self debugMode not ]
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiInspect: anObject label: aStringOrNil [
+	"Open the Inspector view of the client on anObject. The client releases the reference when it closes the page"
+
+	self sendNotification: 'pls-ui/inspect' params: {
+			(#ref -> (self inspectorRegister: anObject)).
+			(#label -> (aStringOrNil ifNotNil: [ :label | label asString ])) }
+			asDictionary
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiInstallTools [
+	"Register the tools that open the views of the client, keeping the original ones to restore them"
+
+	| registry |
+	registry := Smalltalk tools.
+	uiPreviousTools := Dictionary new.
+	self uiToolClasses keysAndValuesDo: [ :role :toolClass |
+			| original |
+			original := [ registry toolNamed: role ]
+				            on: Error
+				            do: [ :error | error return: nil ].
+			(original isKindOf: PLSClientTool) ifTrue: [
+				original := original originalTool ].
+			uiPreviousTools at: role put: original.
+			registry
+				register: (toolClass on: self replacing: original)
+				as: role ]
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiJobChanged: aJobChange [
+	"Report the job to the client when its percentage or its title changed, so that a job counting fast sends a hundred reports at most"
+
+	| job state percentage |
+	job := aJobChange job.
+	state := self uiProgressAt: job ifAbsent: [ ^ self ].
+	percentage := self uiPercentageOf: job.
+	(percentage = (state at: 2) and: [ job title = (state at: 3) ])
+		ifTrue: [ ^ self ].
+	state
+		at: 2 put: percentage;
+		at: 3 put: job title.
+	self uiSendProgress: (state at: 1) value: {
+			(#kind -> 'report').
+			(#message -> (job title ifNil: [ '' ]) asString).
+			(#percentage -> percentage) } asDictionary
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiJobEnded: aJobEnd [
+
+	| state |
+	state := self uiProgressRemove: aJobEnd job ifAbsent: [ ^ self ].
+	self
+		uiSendProgress: (state at: 1)
+		value: { (#kind -> 'end') } asDictionary
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiJobStarted: aJobStart [
+	"Create a progress in the client for the job; the job waits for the client to create it"
+
+	| job token created |
+	job := aJobStart job.
+	token := 'pls-job-' , job identityHash printString.
+	created := [
+		           self
+			           sendRequestAndWait: 'window/workDoneProgress/create'
+			           params: { (#token -> token) } asDictionary
+		           timeout: 2 seconds.
+		           true ]
+		           on: PLSClientRequestFailed
+		           do: [ :error | error return: false ].
+	created ifFalse: [ ^ self ].
+	(self
+		 uiProgressAt: job
+		 put:
+		 (Array with: token with: (self uiPercentageOf: job) with: job title))
+		ifFalse: [ ^ self ].
+	self uiSendProgress: token value: {
+			(#kind -> 'begin').
+			(#title -> (job title ifNil: [ '' ]) asString).
+			(#percentage -> (self uiPercentageOf: job)) } asDictionary
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiPercentageOf: aJob [
+	"The percentage of aJob done, from 0 to 100, or nil when it has no range"
+
+	| min max current |
+	min := aJob min.
+	max := aJob max.
+	current := aJob currentValue.
+	(min isNumber and: [ max isNumber and: [ current isNumber and: [ max > min ] ] ])
+		ifFalse: [ ^ nil ].
+	^ (((current - min) / (max - min) * 100) rounded max: 0) min: 100
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiProgressAt: aJob ifAbsent: aBlock [
+
+	| mutex |
+	mutex := uiProgressMutex ifNil: [ ^ aBlock value ].
+	^ mutex critical: [
+			  (uiProgressTokens ifNil: [ ^ aBlock value ])
+				  at: aJob
+				  ifAbsent: [ ^ aBlock value ] ]
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiProgressAt: aJob put: aState [
+	"Answer false when the progress stopped meanwhile"
+
+	| mutex |
+	mutex := uiProgressMutex ifNil: [ ^ false ].
+	^ mutex critical: [
+			  uiProgressTokens ifNil: [ false ] ifNotNil: [ :tokens |
+					  tokens at: aJob put: aState.
+					  true ] ]
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiProgressRemove: aJob ifAbsent: aBlock [
+
+	| mutex |
+	mutex := uiProgressMutex ifNil: [ ^ aBlock value ].
+	^ mutex critical: [
+			  (uiProgressTokens ifNil: [ ^ aBlock value ])
+				  removeKey: aJob
+				  ifAbsent: [ ^ aBlock value ] ]
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiRequest: aMethodString params: aDictionary [
+	"Ask the client aMethodString and answer its answer, or nil when the user cancelled or the client could not answer"
+
+	^ [ self sendRequestAndWait: aMethodString params: aDictionary ]
+		  on: PLSClientRequestFailed
+		  do: [ :error |
+				  self record: aMethodString , ' failed: ' , error messageText.
+				  error return: nil ]
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiRestoreTools [
+	"Put back the tools that were registered before #uiInstallTools, when ours are still registered"
+
+	| registry |
+	uiPreviousTools ifNil: [ ^ self ].
+	registry := Smalltalk tools.
+	uiPreviousTools keysAndValuesDo: [ :role :original |
+			| current |
+			current := [ registry toolNamed: role ]
+				           on: Error
+				           do: [ :error | error return: nil ].
+			((current isKindOf: PLSClientTool) and: [ original notNil ])
+				ifTrue: [ registry register: original as: role ] ].
+	uiPreviousTools := nil
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiSendProgress: aToken value: aDictionary [
+
+	self sendNotification: '$/progress' params: {
+			(#token -> aToken).
+			(#value -> aDictionary) } asDictionary
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiStartProgress [
+	"Report the jobs of the image (Job, displayProgress:from:to:during:) as work done progress of the client"
+
+	self uiStopProgress.
+	uiProgressMutex := Mutex new.
+	uiProgressTokens := IdentityDictionary new.
+	Job jobAnnouncer
+		when: JobStart send: #uiJobStarted: to: self;
+		when: JobChange send: #uiJobChanged: to: self;
+		when: JobEnd send: #uiJobEnded: to: self
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiStartWith: initializationOptions [
+	"Let the client show the tools, the questions and the progress of the image when it asked for it and the server is not in debug mode, where they stay in Pharo. Answer the capability to announce, or nil"
+
+	self uiStop.
+	uiEnabled := (self uiEnabledIn: initializationOptions) and: [
+		             self debugMode not ].
+	uiEnabled ifFalse: [ ^ nil ].
+	self uiInstallTools.
+	self uiStartProgress.
+	^ { (#version -> 1) } asDictionary
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiStop [
+	"Give the tools back to Pharo and stop reporting the progress"
+
+	self uiRestoreTools.
+	self uiStopProgress.
+	uiEnabled := false
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiStopProgress [
+
+	Job jobAnnouncer unsubscribe: self.
+	uiProgressTokens := nil
+]
+
+{ #category : 'pls - ui' }
+PLSServer >> uiToolClasses [
+	"The tools of the image (Smalltalk tools) the client shows, by role"
+
+	^ {
+		  (#inspector -> PLSInspectorTool).
+		  (#browser -> PLSBrowserTool) } asDictionary
 ]
 
 { #category : 'lsp - workspace symbol' }

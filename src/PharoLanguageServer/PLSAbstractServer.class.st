@@ -20,7 +20,9 @@ Class {
 		'messagesProcesses',
 		'clientInStream',
 		'clientOutStream',
-		'outputMutex'
+		'outputMutex',
+		'pendingClientRequests',
+		'pendingClientRequestsMutex'
 	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
@@ -38,6 +40,9 @@ PLSAbstractServer class >> reset [
 
 	<script>
 	PLSServer allInstancesDo: [ :inst |
+			[ inst uiStop ]
+				on: Error
+				do: [ ].
 			[ inst stop ]
 				on: Error
 				do: [ ] ].
@@ -55,6 +60,16 @@ PLSAbstractServer >> applyWorkspaceEdit: workspaceEdit withLabel: aLabel [
 				 label: aLabel;
 				 edit: workspaceEdit;
 				 yourself)
+]
+
+{ #category : 'messaging' }
+PLSAbstractServer >> cancelPendingClientRequests [
+	"Release the processes waiting for an answer of the client, which will not come"
+
+	| pendings |
+	pendings := self pendingClientRequestsMutex critical: [
+		            self pendingClientRequests values ].
+	pendings do: [ :each | each cancel ]
 ]
 
 { #category : 'lsp - initialization' }
@@ -135,6 +150,25 @@ PLSAbstractServer >> getHeaderFor: answer into: aStream [
 		<< String crlf << String crlf
 ]
 
+{ #category : 'messaging' }
+PLSAbstractServer >> handleClientResponse: aJRPCMessage [
+	"Hand aJRPCMessage to the request that waits for it, when it is the response of one (#sendRequestAndWait:params:). Answer whether it was"
+
+	| pending |
+	(aJRPCMessage isKindOf: JRPCResponseObject) ifFalse: [ ^ false ].
+	pending := self pendingClientRequestsMutex critical: [
+		           self pendingClientRequests
+			           at: aJRPCMessage id
+			           ifAbsent: [ ^ false ] ].
+	(aJRPCMessage isKindOf: JRPCErrorResponseObject)
+		ifTrue: [
+				pending fail: (aJRPCMessage error isDictionary
+						 ifTrue: [ aJRPCMessage error ]
+						 ifFalse: [ Dictionary new ]) ]
+		ifFalse: [ pending answer: aJRPCMessage result ].
+	^ true
+]
+
 { #category : 'starting' }
 PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 
@@ -145,6 +179,8 @@ PLSAbstractServer >> handleRequest: request toClient: clientSocket [
 			               self debugMode
 				               ifTrue: [ err pass ]
 				               ifFalse: [ err return: err asJRPCResponse ] ].
+	"The answer of a request of the server that a process waits for"
+	(self handleClientResponse: jrpcMessage) ifTrue: [ ^ self ].
 	jrpcMessage id ifNotNil: [
 		currentId := currentId max: jrpcMessage id asInteger ].
 	^ self messageProcess: jrpcMessage id put: ([
@@ -248,6 +284,21 @@ PLSAbstractServer >> parseJSON: aJSONString [
 	
 ]
 
+{ #category : 'private' }
+PLSAbstractServer >> pendingClientRequests [
+	"The requests sent to the client whose answer a process waits for, by id"
+
+	^ pendingClientRequests ifNil: [
+		  pendingClientRequests := Dictionary new ]
+]
+
+{ #category : 'private' }
+PLSAbstractServer >> pendingClientRequestsMutex [
+
+	^ pendingClientRequestsMutex ifNil: [
+		  pendingClientRequestsMutex := Mutex new ]
+]
+
 { #category : 'stopping' }
 PLSAbstractServer >> port [
 	^ port ifNil: [ port := self defaultPort ]
@@ -340,6 +391,36 @@ PLSAbstractServer >> sendRequest: aMethodString params: params [
 	^ id
 ]
 
+{ #category : 'messaging' }
+PLSAbstractServer >> sendRequestAndWait: aMethodString params: params [
+	"Send a request to the client and answer its result once the client answered it. Signal PLSClientRequestFailed when the client answers an error, or when the request is cancelled (#cancelPendingClientRequests).
+	 The process that reads the messages of the client must not call me: it is the one that hands me the answer"
+
+	^ self sendRequestAndWait: aMethodString params: params timeout: nil
+]
+
+{ #category : 'messaging' }
+PLSAbstractServer >> sendRequestAndWait: aMethodString params: params timeout: aDurationOrNil [
+	"Send a request to the client and answer its result once the client answered it, waiting at most aDurationOrNil when it is not nil. Signal PLSClientRequestFailed when the client answers an error, does not answer in time, or when the request is cancelled (#cancelPendingClientRequests).
+	 The process that reads the messages of the client must not call me: it is the one that hands me the answer"
+
+	| pending id |
+	pending := PLSPendingClientRequest new.
+	id := self pendingClientRequestsMutex critical: [
+		      | newId |
+		      newId := self nextId.
+		      self pendingClientRequests at: newId put: pending.
+		      newId ].
+	^ [
+	  self sendMessage:
+		  ((JRPCRequestObject id: id method: aMethodString) params: params).
+	  aDurationOrNil
+		  ifNil: [ pending wait ]
+		  ifNotNil: [ pending waitAtMost: aDurationOrNil ] ] ensure: [
+		  self pendingClientRequestsMutex critical: [
+			  self pendingClientRequests removeKey: id ifAbsent: [  ] ] ]
+]
+
 { #category : 'lsp - telemetry' }
 PLSAbstractServer >> sendTelemetry: anObject [
 	"anObject must be an array or a dictionary (after asJRPCJSON)"
@@ -401,6 +482,7 @@ PLSAbstractServer >> showMessage: aString ofType: messageType [
 PLSAbstractServer >> start [
 
 	self debugMode ifFalse: [ PLSUIManager withPLSServer: self ].
+	pendingClientRequestsMutex := Mutex new.
 	self initializeStreams.
 	currentId := 0.
 	self startAnswerLoop
