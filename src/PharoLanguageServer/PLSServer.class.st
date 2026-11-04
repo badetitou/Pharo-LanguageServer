@@ -34,6 +34,9 @@ Class {
 		'uiProgressTokens',
 		'uiProgressMutex'
 	],
+	#classInstVars : [
+		'version'
+	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
 }
@@ -43,6 +46,27 @@ PLSServer class >> critiquesBanCommand [
 	"The command banning a rule, which the client runs from a code action"
 
 	^ 'pharo.critiques.ban'
+]
+
+{ #category : 'accessing' }
+PLSServer class >> releaseVersion [
+	"The release this source belongs to. The Release workflow writes the tag of the release here before building its images; between releases it stays 'development'"
+
+	^ 'development'
+]
+
+{ #category : 'accessing' }
+PLSServer class >> version [
+	"The version of the language server: the one given by #version:, the release loaded by the start script of the client, else the release of this source"
+
+	^ version ifNil: [ self releaseVersion ]
+]
+
+{ #category : 'accessing' }
+PLSServer class >> version: aString [
+	"Remember the release loaded in the image, for an image that loads it with Metacello rather than a release image"
+
+	version := aString
 ]
 
 { #category : 'lsp - navigation' }
@@ -329,8 +353,9 @@ PLSServer >> commandNotebookPrintIt: line textDocument: textDocumentURI [
 
 { #category : 'commands' }
 PLSServer >> commandPharoLanguageServerVersion [
+
 	<jrpc: #'command:version'>
-	^ '1.0.0'
+	^ self class version
 ]
 
 { #category : 'commands' }

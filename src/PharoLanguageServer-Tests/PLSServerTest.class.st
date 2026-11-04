@@ -340,3 +340,28 @@ PLSServerTest >> testTypeDefinitionAtIn [
 	self assert: result range end character equals: 0.
 	self assert: result range end line equals: 0
 ]
+
+{ #category : 'tests - version' }
+PLSServerTest >> testVersionDefaultsToTheReleaseOfTheSource [
+
+	| previous |
+	previous := PLSServer instVarNamed: #version.
+	[
+		PLSServer version: nil.
+		self
+			assert: PLSServer new commandPharoLanguageServerVersion
+			equals: PLSServer releaseVersion ] ensure: [
+		PLSServer version: previous ]
+]
+
+{ #category : 'tests - version' }
+PLSServerTest >> testVersionIsTheLoadedRelease [
+
+	| previous |
+	previous := PLSServer instVarNamed: #version.
+	[
+		PLSServer version: '6.0.0-alpha.2'.
+		self
+			assert: PLSServer new commandPharoLanguageServerVersion
+			equals: '6.0.0-alpha.2' ] ensure: [ PLSServer version: previous ]
+]
