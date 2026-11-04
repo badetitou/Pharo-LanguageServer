@@ -138,7 +138,9 @@ DAPServer >> dapAttach: aDAPRequest [
 	self shouldStop: true.
 	self threads at: id put: debugSession name asString.
 	self respondTo: aDAPRequest body: nil.
-	self sendStopped: 'exception'
+	self sendStopped: ((debugSession exception isKindOf: Break)
+			 ifTrue: [ 'breakpoint' ]
+			 ifFalse: [ 'exception' ])
 ]
 
 { #category : 'dap' }
@@ -433,7 +435,7 @@ DAPServer >> dapNext: aDAPNextRequest [
 				threadId: self threads associations anyOne key;
 				yourself).
 				
-	debugSession stepThrough.
+	self skipDebugPointCode ifFalse: [ debugSession stepThrough ].
 
 	self
 		sendMessage:
@@ -646,8 +648,61 @@ DAPServer >> dapScopes: aDAPScopesRequest [
 
 { #category : 'dap' }
 DAPServer >> dapSetBreakpoints: aDAPSetBreakpointsRequest [
+	"The breakpoints of an editor of a method are debug points of the image, that the client installs with pls-debug:setBreakpoints whether it debugs or not: answer where they stop. The other ones are breakpoints of a launched program"
 
 	<dap: #setBreakpoints>
+	| arguments path |
+	arguments := aDAPSetBreakpointsRequest arguments.
+	path := (arguments at: #source) at: #path ifAbsent: [ nil ].
+	(plsServer notNil and: [
+		 path notNil and: [ path beginsWith: 'pharo:' ] ]) ifFalse: [
+		^ self dapSetLaunchedBreakpoints: aDAPSetBreakpointsRequest ].
+	self
+		respondTo: aDAPSetBreakpointsRequest
+		body: { (#breakpoints -> (plsServer
+				  debugVerificationsAt: path
+				  of: (arguments at: #breakpoints ifAbsent: [ #(  ) ])) asArray) }
+				asDictionary
+]
+
+{ #category : 'dap' }
+DAPServer >> dapSetExceptionBreakpoints: aDAPRequest [
+	"Keep the exception filters the client enabled: they decide which unhandled exceptions of the image stop for its debugger, during a debug session and after it"
+
+	<dap: #setExceptionBreakpoints>
+	| arguments filters options |
+	arguments := aDAPRequest arguments ifNil: [ Dictionary new ].
+	filters := arguments at: #filters ifAbsent: [ #(  ) ].
+	options := arguments at: #filterOptions ifAbsent: [ #(  ) ].
+	plsServer ifNotNil: [
+		plsServer debugExceptionFilters: filters options: options ].
+	self
+		respondTo: aDAPRequest
+		body: { (#breakpoints -> (filters , options collect: [ :each |
+				  { (#verified -> true) } asDictionary ]) asArray) } asDictionary
+]
+
+{ #category : 'dap' }
+DAPServer >> dapSetFunctionBreakpoints: aDAPRequest [
+	"Install the function breakpoints, debug points of the image on the first statement of their method"
+
+	<dap: #setFunctionBreakpoints>
+	plsServer ifNil: [
+			^ self
+				  respondTo: aDAPRequest
+				  failure: 'Function breakpoints need the language server.' ].
+	self
+		respondTo: aDAPRequest
+		body: { (#breakpoints -> (plsServer plsDebugSetFunctionBreakpoints:
+				  (aDAPRequest arguments at: #breakpoints ifAbsent: [ #(  ) ]))
+				 asArray) } asDictionary
+]
+
+{ #category : 'dap' }
+DAPServer >> dapSetLaunchedBreakpoints: aDAPSetBreakpointsRequest [
+	"The breakpoints of a program the client launches: halts inserted in its source when it runs"
+
+	
 	| breakpointsList sourcePath bl |
 	breakpointsList := aDAPSetBreakpointsRequest arguments
 		                   at: 'breakpoints'
@@ -681,18 +736,6 @@ DAPServer >> dapSetBreakpoints: aDAPSetBreakpointsRequest [
 				 seq: self nextSeq) ] ]
 		forkAt: Processor timingPriority - 1
 		named: #transaction
-]
-
-{ #category : 'dap' }
-DAPServer >> dapSetExceptionBreakpoints: aDAPSetExceptionBreakpointsRequest [ 
-	<dap: #setExceptionBreakpoints>
-	self
-		sendMessage:
-			(DAPResponse new
-				seq: self nextSeq;
-				request_seq: aDAPSetExceptionBreakpointsRequest  seq;
-				command: aDAPSetExceptionBreakpointsRequest  command;
-				body: DAPSetExceptionBreakpointsResponse new).
 ]
 
 { #category : 'dap' }
@@ -749,7 +792,7 @@ DAPServer >> dapStackFrameOf: aContext [
 		         yourself.
 	[
 		| node |
-		node := aContext sourceNodeExecuted.
+		node := self sourceNodeExecutedIn: aContext.
 		start := self lineColumnOf: node start in: method sourceCode.
 		stop := self lineColumnOf: node stop + 1 in: method sourceCode ]
 		on: Error
@@ -804,7 +847,7 @@ DAPServer >> dapStepIn: aDAPStepInRequest [
 				threadId: self threads associations anyOne key;
 				yourself).
 				
-	debugSession stepInto.
+	self skipDebugPointCode ifFalse: [ debugSession stepInto ].
 	self
 		sendMessage:
 			(DAPStoppedEvent new
@@ -1435,6 +1478,37 @@ DAPServer >> shouldStop [
 DAPServer >> shouldStop: anObject [
 
 	shouldStop := anObject
+]
+
+{ #category : 'debugger support' }
+DAPServer >> skipDebugPointCode [
+	"When the process is about to run the call that a debug point adds to its method, step over it to the code of the method, without entering the debug point. Answer whether it did"
+
+	| skipped |
+	skipped := false.
+	10 timesRepeat: [
+			| node |
+			node := [ debugSession interruptedContext sourceNodeExecuted ]
+				        on: Error
+				        do: [ :error | nil ].
+			(node isNotNil and: [ node class name beginsWith: 'RF' ]) ifFalse: [
+				^ skipped ].
+			debugSession stepOver.
+			skipped := true ].
+	^ skipped
+]
+
+{ #category : 'debugger support' }
+DAPServer >> sourceNodeExecutedIn: aContext [
+	"The node aContext executes. A context stopped by a breakpoint executes the call of its debug point, that the source of the method does not hold: answer the node of the debug point, where the breakpoint stops"
+
+	| node |
+	node := aContext sourceNodeExecuted.
+	(node isMessage and: [
+			 node receiver isLiteralNode and: [
+				 node receiver value isKindOf: DebugPoint ] ]) ifTrue: [
+		^ node receiver value nodes anyOne ].
+	^ node
 ]
 
 { #category : 'starting' }

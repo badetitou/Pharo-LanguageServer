@@ -26,7 +26,9 @@ Class {
 		'critiquesEnabled',
 		'debugSessions',
 		'debugNextId',
-		'debugMutex'
+		'debugMutex',
+		'debugPoints',
+		'debugExceptionFilters'
 	],
 	#category : 'PharoLanguageServer',
 	#package : 'PharoLanguageServer'
@@ -303,6 +305,41 @@ PLSServer >> critiquesRefresh [
 					self sendDiagnosticsforDocument: document ] ]
 ]
 
+{ #category : 'debug' }
+PLSServer >> debugClassesIn: aString [
+	"The classes named in aString, separated by commas or spaces"
+
+	^ ((aString substrings: ', ') collect: [ :each |
+		   self class environment at: each asSymbol ifAbsent: [ nil ] ])
+		  reject: [ :each | each isNil ]
+]
+
+{ #category : 'debug' }
+PLSServer >> debugDescriptionOf: aDebugPoint [
+	"The breakpoint of the client that stands for aDebugPoint: the entity and editor of its method, the line where it stops, and its condition, hit condition and log message. Nil when it is not on a method of the image"
+
+	^ [
+		  | node method description |
+		  node := aDebugPoint nodes anyOne.
+		  method := node methodNode compiledMethod.
+		  description := Dictionary new.
+		  description
+			  at: #entity put: (self envMethodIdOf: method);
+			  at: #uri put: (self navUriOfMethod: method);
+			  at: #line
+			  put: (self debugLineOf: node start in: method sourceCode).
+		  (aDebugPoint getBehavior: ConditionBehavior) ifNotNil: [ :behavior |
+			  description at: #condition put: behavior condition ].
+		  (aDebugPoint getBehavior: PLSHitConditionBehavior) ifNotNil: [
+			  :behavior |
+			  description at: #hitCondition put: behavior condition ].
+		  (aDebugPoint getBehavior: PLSLogPointBehavior) ifNotNil: [
+			  :behavior | description at: #logMessage put: behavior message ].
+		  description ]
+		  on: Error
+		  do: [ :error | nil ]
+]
+
 { #category : 'pls - debug' }
 PLSServer >> debugEvaluate: aBlock ifStopped: stoppedBlock [
 	"Evaluate aBlock in a process of its own, outside of the execution environment of the caller, and answer its value.
@@ -337,6 +374,33 @@ PLSServer >> debugEvaluate: aBlock ifStopped: stoppedBlock [
 	^ value
 ]
 
+{ #category : 'debug' }
+PLSServer >> debugExceptionFilters [
+	"The exception filters of the client, by id, each with its condition ('' for none): the unhandled exceptions of the image that stop for its debugger. Until the client sets them, unhandled errors and halts stop, as in Pharo"
+
+	^ debugExceptionFilters ifNil: [
+			  Dictionary new
+				  at: 'error' put: '';
+				  at: 'halt' put: '';
+				  yourself ]
+]
+
+{ #category : 'debug' }
+PLSServer >> debugExceptionFilters: someFilterIds options: someFilterOptions [
+	"Keep the exception filters the client enabled, the filters of a DAP setExceptionBreakpoints request: someFilterIds without condition, and someFilterOptions with one ({filterId, condition}). The deprecation filter makes deprecations signal a warning"
+
+	| filters |
+	filters := Dictionary new.
+	someFilterIds do: [ :each | filters at: each put: '' ].
+	someFilterOptions do: [ :each |
+			filters
+				at: (each at: #filterId)
+				put:
+				((each at: #condition ifAbsent: [ '' ]) ifNil: [ '' ]) trimBoth ].
+	debugExceptionFilters := filters.
+	Deprecation raiseWarning: (filters includesKey: 'deprecation')
+]
+
 { #category : 'pls - debug' }
 PLSServer >> debugHasClient [
 	"Answer whether a client can take the processes stopped on an exception"
@@ -344,10 +408,115 @@ PLSServer >> debugHasClient [
 	^ clientOutStream notNil
 ]
 
+{ #category : 'debug' }
+PLSServer >> debugInstall: someBreakpointsAndNodes at: aKey [
+	"Install a debug point for each association of a breakpoint of the client with the node where it stops (a String saying why there is none) and keep them at aKey, instead of the ones there. Answer what the client shows of each"
+
+	| installed answers |
+	self debugPointsAt: aKey put: #(  ).
+	installed := OrderedCollection new.
+	answers := someBreakpointsAndNodes collect: [ :each |
+			           each value isString
+				           ifTrue: [ self debugUnverified: each value ]
+				           ifFalse: [
+						           [
+							           | point |
+							           point := self debugPointFor: each key on: each value.
+							           installed add: point.
+							           self debugVerified: point ]
+							           on: Error
+							           do: [ :error |
+							           self debugUnverified: error messageText ] ] ].
+	self debugPointsAt: aKey put: installed.
+	^ answers asArray
+]
+
+{ #category : 'debug' }
+PLSServer >> debugLineOf: anIndex in: aString [
+	"The line of aString, from 1, that holds the character at anIndex"
+
+	^ (aString first: (anIndex max: 1)) lines size max: 1
+]
+
 { #category : 'pls - debug' }
 PLSServer >> debugMutex [
 
 	^ debugMutex ifNil: [ debugMutex := Mutex new ]
+]
+
+{ #category : 'debug' }
+PLSServer >> debugNodeIn: aMethod atLine: aLine [
+	"The first statement of aMethod, or of a block in it, that starts on aLine of its source, or after it. Answer a String saying why when there is none"
+
+	| source statements |
+	source := aMethod sourceCode.
+	statements := ((aMethod ast allChildren select: [ :each |
+		                each isSequence ]) flatCollect: [ :each |
+		               each statements ]) asSortedCollection: [ :a :b |
+		              a start <= b start ].
+	^ statements
+		  detect: [ :each |
+		  (self debugLineOf: each start in: source) >= aLine ]
+		  ifNone: [ 'No statement on this line or after it' ]
+]
+
+{ #category : 'debug' }
+PLSServer >> debugPointFor: aBreakpoint on: aNode [
+	"A debug point of Pharo stopping before aNode, with the condition, the hit condition and the log message of aBreakpoint of the client"
+
+	| point |
+	point := DebugPointManager
+		         installNew: BreakDebugPoint
+		         on: aNode
+		         withBehaviors: #(  ).
+	aBreakpoint at: #condition ifPresent: [ :condition |
+			(condition isString and: [ condition trimBoth isNotEmpty ])
+				ifTrue: [
+						point addBehavior: (ConditionBehavior new
+								 condition: condition;
+								 priority: 30;
+								 yourself) ] ].
+	aBreakpoint at: #hitCondition ifPresent: [ :condition |
+			(condition isString and: [ condition trimBoth isNotEmpty ])
+				ifTrue: [
+						point addBehavior: (PLSHitConditionBehavior new
+								 condition: condition;
+								 yourself) ] ].
+	aBreakpoint at: #logMessage ifPresent: [ :message |
+			(message isString and: [ message isNotEmpty ]) ifTrue: [
+					point addBehavior: (PLSLogPointBehavior new
+							 message: message;
+							 yourself) ] ].
+	^ point
+]
+
+{ #category : 'debug' }
+PLSServer >> debugPoints [
+	"The debug points the client installed, by pls-env id of their method, or #function for the function breakpoints"
+
+	^ self debugMutex critical: [
+		  debugPoints ifNil: [ debugPoints := Dictionary new ] ]
+]
+
+{ #category : 'debug' }
+PLSServer >> debugPointsAt: aKey put: someDebugPoints [
+	"Remove the debug points installed at aKey, and keep someDebugPoints instead"
+
+	| previous |
+	previous := self debugMutex critical: [
+			            | points old |
+			            points := debugPoints ifNil: [
+				                      debugPoints := Dictionary new ].
+			            old := points at: aKey ifAbsent: [ #(  ) ].
+			            someDebugPoints
+				            ifEmpty: [ points removeKey: aKey ifAbsent: [ ] ]
+				            ifNotEmpty: [
+				            points at: aKey put: someDebugPoints asArray ].
+			            old ].
+	previous do: [ :each |
+			[ each remove ]
+				on: Error
+				do: [ :error |  ] ]
 ]
 
 { #category : 'debug' }
@@ -374,6 +543,7 @@ PLSServer >> debugRegister: aDebugSession [
 				  do: [ :error | nil ])).
 			(#doesNotUnderstand -> (exception isKindOf: MessageNotUnderstood)).
 			(#subclassResponsibility -> (exception isKindOf: SubclassResponsibility)).
+			(#breakpoint -> (exception isKindOf: Break)).
 			(#frames -> frames asArray) } asDictionary.
 	^ id
 ]
@@ -396,6 +566,49 @@ PLSServer >> debugSessionAt: id [
 	^ session
 ]
 
+{ #category : 'debug' }
+PLSServer >> debugShouldStopOn: anException [
+	"Answer whether anException, that nobody handled, stops for the debugger of the client, as its exception filters say. A breakpoint always stops"
+
+	| exception filters |
+	exception := (anException isKindOf: UnhandledError)
+		             ifTrue: [ anException exception ]
+		             ifFalse: [ anException ].
+	(exception isKindOf: Break) ifTrue: [ ^ true ].
+	filters := self debugExceptionFilters.
+	(exception isKindOf: Halt) ifTrue: [ ^ filters includesKey: 'halt' ].
+	(exception isKindOf: Deprecation) ifTrue: [
+		^ filters includesKey: 'deprecation' ].
+	((exception isKindOf: MessageNotUnderstood) and: [
+		 filters includesKey: 'messageNotUnderstood' ]) ifTrue: [ ^ true ].
+	^ filters
+		  at: 'error'
+		  ifPresent: [ :condition |
+				  condition isEmpty or: [
+						  (self debugClassesIn: condition) anySatisfy: [ :each |
+							  exception isKindOf: each ] ] ]
+		  ifAbsent: [ false ]
+]
+
+{ #category : 'debug' }
+PLSServer >> debugSkip: anException [
+	"anException, that nobody handled, does not stop for the debugger of the client. A resumable one resumes; another one ends its active, as dismissing its debugger would, and is written on the Transcript. Answer the value to resume anException with"
+
+	| exception active |
+	exception := (anException isKindOf: UnhandledError)
+		             ifTrue: [ anException exception ]
+		             ifFalse: [ anException ].
+	exception isResumable ifTrue: [ ^ nil ].
+	Transcript
+		show: exception description , ' (not debugged: exception filters)';
+		cr.
+	active := Processor activeProcess.
+	UIManager default uiProcess == active ifTrue: [
+		UIManager default spawnNewProcess ].
+	active terminate.
+	^ nil
+]
+
 { #category : 'pls - debug' }
 PLSServer >> debugSuspend: anException [
 	"Suspend the active process on anException, that nobody handled, until a debugger of the client resumes it, as the debugger of Pharo does. Answer the value to resume anException with.
@@ -406,7 +619,7 @@ PLSServer >> debugSuspend: anException [
 
 { #category : 'pls - debug' }
 PLSServer >> debugSuspend: anException registered: aBlock [
-	"As #debugSuspend:, and evaluate aBlock once the client knows the debug session, just before the process suspends"
+	"As #debugSuspend:, and evaluate aBlock once the client knows the debug session, just before the process suspends. A halt or a breakpoint stops in the method that halts, not in the methods of the halt"
 
 	| exception session |
 	exception := (anException isKindOf: UnhandledError)
@@ -414,12 +627,71 @@ PLSServer >> debugSuspend: anException registered: aBlock [
 		             ifFalse: [ anException ].
 	session := Processor activeProcess
 		           newDebugSessionNamed: exception description
-		           startedAt: exception signalerContext.
+		           startedAt: ((exception isKindOf: Halt)
+				            ifTrue: [
+				            exception signalerContext filterDebuggerStack ]
+				            ifFalse: [ exception signalerContext ]).
 	session exception: exception.
 	self debugRegister: session.
 	aBlock value.
 	Processor activeProcess suspend.
 	^ nil
+]
+
+{ #category : 'debug' }
+PLSServer >> debugUnverified: aString [
+
+	^ {
+		  (#verified -> false).
+		  (#message -> aString) } asDictionary
+]
+
+{ #category : 'debug' }
+PLSServer >> debugVerificationsAt: aUri of: someBreakpoints [
+	"What the client shows of someBreakpoints of the editor aUri, the breakpoints of a DAP setBreakpoints request: the debug points the client installed with pls-debug:setBreakpoints, on the statements of their lines"
+
+	| uri entry |
+	uri := aUri urlDecoded.
+	entry := (self debugMutex critical: [
+		          (debugPoints ifNil: [ Dictionary new ]) associations ])
+		         detect: [ :each |
+				         each key ~= #function and: [
+						         ([
+							          (self navUriOfMethod:
+								           (self envMethodNamed: (self envPathOf: each key)))
+								          urlDecoded ]
+							          on: PLSUnknownEntity
+							          do: [ :error | nil ]) = uri ] ]
+		         ifNone: [ nil ].
+	^ someBreakpoints collect: [ :each |
+			  | node point |
+			  point := entry ifNotNil: [
+					           node := self
+						                   debugNodeIn:
+						                   (self envMethodNamed:
+							                    (self envPathOf: entry key))
+						                   atLine: (each at: #line).
+					           node isString ifFalse: [
+							           entry value
+								           detect: [ :candidate |
+								           candidate nodes anyOne start = node start ]
+								           ifNone: [ nil ] ] ].
+			  point
+				  ifNil: [ self debugUnverified: 'Not installed in the image' ]
+				  ifNotNil: [ self debugVerified: point ] ]
+]
+
+{ #category : 'debug' }
+PLSServer >> debugVerified: aDebugPoint [
+	"What the client shows of a breakpoint installed as aDebugPoint: the line of its method where it stops"
+
+	| node |
+	node := aDebugPoint nodes anyOne.
+	^ {
+		  (#verified -> true).
+		  (#line
+		   -> (self debugLineOf: node start in: node methodNode sourceCode)) }
+		  asDictionary
 ]
 
 { #category : 'lsp - diagnostics' }
@@ -3850,6 +4122,19 @@ PLSServer >> plsCreatePackage: packageName [
 ]
 
 { #category : 'debug' }
+PLSServer >> plsDebugBreakpoints [
+	"Answer the breakpoints of the image on lines of methods, except the function breakpoints: the debug points that stop, whoever set them, so that the client shows the ones it does not know"
+
+	<jrpc: #'pls-debug:breakpoints'>
+	| functions |
+	functions := self debugPoints at: #function ifAbsent: [ #(  ) ].
+	^ ((DebugPoint all asArray select: [ :each |
+			    (each isKindOf: BreakDebugPoint) and: [
+				    (functions includes: each) not ] ]) collect: [ :each |
+		   self debugDescriptionOf: each ]) reject: [ :each | each isNil ]
+]
+
+{ #category : 'debug' }
 PLSServer >> plsDebugDismiss: aDebugSessionId [
 	"Forget the process that stopped on an exception and end it, when the client does not debug it"
 
@@ -3860,6 +4145,45 @@ PLSServer >> plsDebugDismiss: aDebugSessionId [
 		           do: [ :error | ^ false ].
 	session terminate.
 	^ true
+]
+
+{ #category : 'debug' }
+PLSServer >> plsDebugSetBreakpoints: entity breakpoints: breakpoints [
+	"Replace the breakpoints of the method entity, a pls-env id, by breakpoints, the source breakpoints of VS Code: a line of the source of the method, and an optional condition, hitCondition and logMessage. Each one is a debug point of Pharo on the first statement of its line or after it. Answer for each one whether it is installed and the line where it stops"
+
+	<jrpc: #'pls-debug:setBreakpoints'>
+	| method |
+	method := [ self envMethodNamed: (self envPathOf: entity) ]
+		          on: PLSUnknownEntity
+		          do: [ :error |
+				          self debugPointsAt: entity put: #(  ).
+				          ^ breakpoints collect: [ :each |
+					            self debugUnverified: error messageText ] ].
+	^ self
+		  debugInstall: (breakpoints collect: [ :each |
+				   each -> (self debugNodeIn: method atLine: (each at: #line)) ])
+		  at: entity
+]
+
+{ #category : 'debug' }
+PLSServer >> plsDebugSetFunctionBreakpoints: breakpoints [
+	"Replace the function breakpoints by breakpoints, the function breakpoints of VS Code: the name of a method, as Class>>selector or Class class>>selector, and an optional condition and hitCondition. Each one is a debug point of Pharo on the first statement of its method"
+
+	<jrpc: #'pls-debug:setFunctionBreakpoints'>
+	^ self
+		  debugInstall: (breakpoints collect: [ :each |
+					   each -> ([
+						    | method |
+						    method := self envMethodNamed:
+							              ((each at: #name) trimBoth
+								               copyReplaceAll: '>>#'
+								               with: '>>').
+						    method ast statements
+							    ifEmpty: [ method ast ]
+							    ifNotEmpty: [ :statements | statements first ] ]
+						    on: PLSUnknownEntity
+						    do: [ :error | error messageText ]) ])
+		  at: #function
 ]
 
 { #category : 'pls' }

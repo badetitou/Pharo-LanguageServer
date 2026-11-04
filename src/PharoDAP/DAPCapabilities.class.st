@@ -44,6 +44,41 @@ Class {
 	#tag : 'Types'
 }
 
+{ #category : 'accessing' }
+DAPCapabilities class >> exceptionBreakpointFilters [
+	"The exception filters of the client: which unhandled exceptions of the image stop for its debugger (see PLSServer>>#debugShouldStopOn:). A breakpoint always stops"
+
+	^ {
+		  {
+			  (#filter -> 'error').
+			  (#label -> 'Unhandled Errors').
+			  (#description
+			   ->
+			   'Stop on the errors and warnings nobody handles. The condition names the classes of the errors that stop, separated by commas.').
+			  (#default -> true).
+			  (#supportsCondition -> true).
+			  (#conditionDescription
+			   -> 'Classes of the errors, such as ZeroDivide, KeyNotFound') }
+			  asDictionary.
+		  {
+			  (#filter -> 'messageNotUnderstood').
+			  (#label -> 'Message Not Understood').
+			  (#description
+			   ->
+			   'Stop on the messages not understood nobody handles, even when Unhandled Errors is off.').
+			  (#default -> false) } asDictionary.
+		  {
+			  (#filter -> 'halt').
+			  (#label -> 'Halts').
+			  (#description -> 'Stop on self halt and Halt now.').
+			  (#default -> true) } asDictionary.
+		  {
+			  (#filter -> 'deprecation').
+			  (#label -> 'Deprecations').
+			  (#description -> 'Stop when a deprecated method is called.').
+			  (#default -> false) } asDictionary }
+]
+
 { #category : 'converting' }
 DAPCapabilities >> asDAPJSON [
 
@@ -59,6 +94,15 @@ DAPCapabilities >> asDAPJSON [
 	dic at: #supportsExceptionInfoRequest put: true.
 	dic at: #supportsEvaluateForHovers put: true.
 	dic at: #supportsTerminateThreadsRequest put: true.
+	"The breakpoints, debug points of the image"
+	dic at: #supportsConditionalBreakpoints put: true.
+	dic at: #supportsHitConditionalBreakpoints put: true.
+	dic at: #supportsLogPoints put: true.
+	dic at: #supportsFunctionBreakpoints put: true.
+	dic at: #supportsExceptionFilterOptions put: true.
+	dic
+		at: #exceptionBreakpointFilters
+		put: self class exceptionBreakpointFilters.
 	^ dic
 ]
 
