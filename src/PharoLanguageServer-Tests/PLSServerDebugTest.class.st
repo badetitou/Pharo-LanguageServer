@@ -170,6 +170,15 @@ PLSServerDebugTest >> testAttachToAnUnknownSessionFails [
 			  arguments: { (#debugSessionId -> 12345) }) at: #success)
 ]
 
+{ #category : 'tests' }
+PLSServerDebugTest >> testCapabilitiesAnnounceRestartFrameAndTerminateThreads [
+
+	| capabilities |
+	capabilities := DAPCapabilities new asDAPJSON.
+	self assert: (capabilities at: #supportsRestartFrame).
+	self assert: (capabilities at: #supportsTerminateThreadsRequest)
+]
+
 { #category : 'tests - dap' }
 PLSServerDebugTest >> testCreateMissingMethodGoesOnInTheNewMethod [
 
@@ -486,6 +495,33 @@ PLSServerDebugTest >> testStackTraceLoadsByPage [
 			         (#levels -> 2) }) at: #body.
 	self assert: (body at: #stackFrames) size equals: 2.
 	self assert: (body at: #totalFrames) > 2
+]
+
+{ #category : 'tests' }
+PLSServerDebugTest >> testTerminateThreadsEndsTheProcessAndTheSession [
+
+	| adapter value process |
+	adapter := self attachTo: [
+			           1 / 0.
+			           value := #after ].
+	process := (adapter instVarNamed: 'debugSession') interruptedProcess.
+	self assert: ((adapter
+			  request: 'terminateThreads'
+			  arguments: { (#threadIds -> { adapter threads keys anyOne }) })
+			 at: #success).
+	self assert: process isTerminated.
+	self assert: value isNil.
+	self assert: (adapter events: 'terminated') size equals: 1
+]
+
+{ #category : 'tests' }
+PLSServerDebugTest >> testTerminateThreadsNeedsAnAttachedProcess [
+
+	| adapter |
+	adapter := self attachTo: [ 1 / 0 ].
+	adapter request: 'terminateThreads' arguments: {  }.
+	self deny:
+		((adapter request: 'terminateThreads' arguments: {  }) at: #success)
 ]
 
 { #category : 'helpers' }

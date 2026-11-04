@@ -845,6 +845,29 @@ DAPServer >> dapStepOut: aDAPStepOutRequest [
 ]
 
 { #category : 'dap' }
+DAPServer >> dapTerminateThreads: aDAPRequest [
+	"Terminate the attached process, as the debugger of Pharo does when it closes without resuming, and end the debug session"
+
+	<dap: #terminateThreads>
+	| ids |
+	ids := (aDAPRequest arguments ifNil: [ Dictionary new ])
+		       at: #threadIds
+		       ifAbsent: [ #(  ) ].
+	(attachedSessionId isNotNil and: [
+			 debugSession isNotNil and: [
+				 ids isEmpty or: [ ids includes: attachedSessionId ] ] ])
+		ifFalse: [
+				^ self
+					  respondTo: aDAPRequest
+					  failure:
+					  'Only the process the debugger is attached to can be terminated.' ].
+	debugSession terminate.
+	debugSession := nil.
+	self respondTo: aDAPRequest body: nil.
+	self sendEvent: 'terminated' body: Dictionary new
+]
+
+{ #category : 'dap' }
 DAPServer >> dapThreads: aDAPThreadsRequest [
 
 	<dap: #threads>

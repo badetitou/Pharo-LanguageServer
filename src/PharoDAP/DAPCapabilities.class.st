@@ -58,16 +58,18 @@ DAPCapabilities >> asDAPJSON [
 	dic at: #supportsRestartFrame put: true.
 	dic at: #supportsExceptionInfoRequest put: true.
 	dic at: #supportsEvaluateForHovers put: true.
+	dic at: #supportsTerminateThreadsRequest put: true.
 	^ dic
 ]
 
 { #category : 'initialization' }
 DAPCapabilities >> initialize [
+
 	super initialize.
 	supportsDelayedStackTraceLoading := true.
 	supportsConfigurationDoneRequest := true.
 	supportsDataBreakpoints := true.
-	supportsConditionalBreakpoints := true.
+	supportsConditionalBreakpoints := true
 ]
 
 { #category : 'accessing' }
